@@ -18,13 +18,16 @@ on:
 jobs:
   build-windows:
     name: Build Windows (MSI + NSIS)
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 45
     permissions:
       contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
