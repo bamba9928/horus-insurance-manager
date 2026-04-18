@@ -1,0 +1,65 @@
+name: Release
+
+# Crée une release GitHub à partir d'un tag `v*.*.*` en buildant les bundles
+# Windows (MSI + NSIS). Le bundle Windows est la cible principale de ce projet
+# (courtage d'assurance Sénégal — desktop Windows).
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Tag de release (ex: v0.1.0)"
+        required: true
+        type: string
+
+jobs:
+  build-windows:
+    name: Build Windows (MSI + NSIS)
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Tauri et publier la release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.event.inputs.version || github.ref_name }}
+          releaseName: "Horus Assurances Manager ${{ github.event.inputs.version || github.ref_name }}"
+          releaseBody: |
+            Voir [`CHANGELOG.md`](./CHANGELOG.md) pour la liste détaillée des changements.
+
+            **Installation Windows :**
+            - `*_x64-setup.exe` (NSIS) — recommandé pour la plupart des utilisateurs
+            - `*_x64_en-US.msi` (MSI) — pour les déploiements MSI en entreprise
+          releaseDraft: true
+          prerelease: false

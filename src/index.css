@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+/* Active le mode sombre via la classe `dark` sur <html> (Tailwind v4) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --color-bronze: #614e1a;
+  --color-bronze-light: #8b7335;
+  --color-bronze-dark: #3d3110;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f9fafb; /* gray-50 */
+  color: #111827; /* gray-900 */
+}
+
+.dark body {
+  background-color: #0f172a; /* slate-900 */
+  color: #f1f5f9; /* slate-100 */
+}

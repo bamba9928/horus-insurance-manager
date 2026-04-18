@@ -1,0 +1,87 @@
+{
+  "name": "assurauto-manager",
+  "version": "0.1.0",
+  "description": "Horus Assurances Manager - Application de gestion pour courtage en assurance auto",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "tauri",
+    "insurance",
+    "management",
+    "desktop"
+  ],
+  "author": "bamba9928",
+  "license": "MIT",
+  "packageManager": "pnpm@10.26.2",
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@tanstack/react-query": "^5.99.0",
+    "@tanstack/react-router": "^1.168.22",
+    "@tanstack/react-table": "^8.21.3",
+    "@tauri-apps/plugin-log": "^2.8.0",
+    "@tauri-apps/plugin-sql": "^2.4.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
+    "drizzle-orm": "^0.45.2",
+    "exceljs": "^4.4.0",
+    "i18next": "^26.0.5",
+    "papaparse": "^5.5.3",
+    "pdfmake": "^0.3.7",
+    "pino": "^10.3.1",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-hook-form": "^7.72.1",
+    "react-i18next": "^17.0.3",
+    "recharts": "^3.8.1",
+    "tailwind-merge": "^3.5.0",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.12",
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
+    "@playwright/test": "^1.59.1",
+    "@tailwindcss/vite": "^4.2.2",
+    "@tauri-apps/api": "^2.10.1",
+    "@tauri-apps/cli": "^2.10.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/papaparse": "^5.5.2",
+    "@types/pdfmake": "^0.3.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "autoprefixer": "^10.5.0",
+    "drizzle-kit": "^0.31.10",
+    "husky": "^9.1.7",
+    "jsdom": "^29.0.2",
+    "lint-staged": "^16.4.0",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.8",
+    "vitest": "^4.1.4"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "biome check --write"
+    ],
+    "*.{json,css,md}": [
+      "biome format --write"
+    ]
+  }
+}
