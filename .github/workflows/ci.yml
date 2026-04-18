@@ -83,11 +83,14 @@ jobs:
 
   rust-check:
     name: Rust (clippy + test)
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
