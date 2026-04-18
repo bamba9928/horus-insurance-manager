@@ -28,6 +28,15 @@ jobs:
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Verify link.exe is on PATH
+        shell: pwsh
+        run: |
+          Write-Host "VCINSTALLDIR = $env:VCINSTALLDIR"
+          where.exe link.exe
+          where.exe cl.exe
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -42,11 +51,8 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
+          targets: x86_64-pc-windows-msvc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
