@@ -80,7 +80,7 @@
     "*.{ts,tsx}": [
       "biome check --write"
     ],
-    "*.{json,css,md}": [
+    "{src,drizzle,tests}/**/*.{json,css,md}": [
       "biome format --write"
     ]
   }
