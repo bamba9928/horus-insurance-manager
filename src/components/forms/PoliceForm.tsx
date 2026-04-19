@@ -4,13 +4,14 @@
  */
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAssureurs } from "../../hooks/useAssureurs";
 import { useVehicules } from "../../hooks/useVehicules";
 import { calcEcheance, formatDateDisplay, joursRestants } from "../../lib/date-utils";
 import type { Police, PoliceCreate } from "../../schemas/police";
-import { DUREES_MOIS, policeCreateSchema, TYPES_CARTE } from "../../schemas/police";
+import { DUREES_MOIS, policeCreateSchema } from "../../schemas/police";
+import { SearchableSelect } from "../ui/SearchableSelect";
 
 /** Form-level type — dureeMois is `number` here; Zod refine handles the validation */
 type PoliceFormValues = Omit<PoliceCreate, "dureeMois"> & { dureeMois: number };
@@ -105,40 +106,33 @@ export function PoliceForm({
         <label htmlFor="vehiculeId" className="block text-sm font-medium text-gray-700">
           Véhicule *
         </label>
-        <select
-          id="vehiculeId"
-          {...register("vehiculeId", { valueAsNumber: true })}
-          className={inputClass}
-        >
-          <option value="">— Sélectionner un véhicule —</option>
-          {vehicules.map((v) => (
-            <option key={v.id} value={v.id}>
-              {v.immatriculation} {v.marque ? `— ${v.marque} ${v.modele ?? ""}` : ""}
-            </option>
-          ))}
-        </select>
+        <Controller
+          name="vehiculeId"
+          control={control}
+          render={({ field }) => (
+            <SearchableSelect
+              id="vehiculeId"
+              value={field.value ?? null}
+              onChange={(v) => field.onChange(v == null ? undefined : Number(v))}
+              options={vehicules.map((v) => ({
+                value: v.id,
+                label: v.immatriculation,
+                ...(v.marque ? { sublabel: `${v.marque}${v.modele ? ` — ${v.modele}` : ""}` } : {}),
+              }))}
+              placeholder="— Sélectionner un véhicule —"
+              allowClear={false}
+            />
+          )}
+        />
         {errors.vehiculeId && (
           <p className="mt-1 text-xs text-red-600">{errors.vehiculeId.message}</p>
         )}
       </div>
 
-      {/* Type de carte + N° Police (2 colonnes) */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="typeCarte" className="block text-sm font-medium text-gray-700">
-            {t("polices.typeCarte")} *
-          </label>
-          <select id="typeCarte" {...register("typeCarte")} className={inputClass}>
-            {TYPES_CARTE.map((tc) => (
-              <option key={tc} value={tc}>
-                {t(`polices.${tc.toLowerCase()}`)}
-              </option>
-            ))}
-          </select>
-          {errors.typeCarte && (
-            <p className="mt-1 text-xs text-red-600">{errors.typeCarte.message}</p>
-          )}
-        </div>
+      {/* N° Police */}
+      <div className="grid grid-cols-1 gap-4">
+        {/* Champ typeCarte maintenu en hidden : donnée DB conservée (VERTE par défaut) */}
+        <input type="hidden" {...register("typeCarte")} />
         <div>
           <label htmlFor="numeroPolice" className="block text-sm font-medium text-gray-700">
             {t("polices.numero")}
@@ -223,18 +217,19 @@ export function PoliceForm({
         <label htmlFor="assureurId" className="block text-sm font-medium text-gray-700">
           {t("polices.assureur")}
         </label>
-        <select
-          id="assureurId"
-          {...register("assureurId", { valueAsNumber: true })}
-          className={inputClass}
-        >
-          <option value="">— Aucun assureur —</option>
-          {assureurs.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.nom}
-            </option>
-          ))}
-        </select>
+        <Controller
+          name="assureurId"
+          control={control}
+          render={({ field }) => (
+            <SearchableSelect
+              id="assureurId"
+              value={field.value ?? null}
+              onChange={(v) => field.onChange(v == null ? undefined : Number(v))}
+              options={assureurs.map((a) => ({ value: a.id, label: a.nom }))}
+              placeholder="— Aucun assureur —"
+            />
+          )}
+        />
       </div>
 
       {/* Appréciation */}

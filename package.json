@@ -15,7 +15,9 @@
     "test:e2e:ui": "playwright test --ui",
     "check": "biome check .",
     "check:fix": "biome check --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "tauri:dev": "taskkill //F //IM assurauto-manager.exe //T 2>nul & pnpm tauri dev",
+    "tauri:clean-lock": "taskkill //F //IM assurauto-manager.exe //T 2>nul"
   },
   "keywords": [
     "tauri",
@@ -78,10 +80,10 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "biome check --write"
+      "biome check --write --no-errors-on-unmatched"
     ],
-    "{src,drizzle,tests}/**/*.{json,css,md}": [
-      "biome format --write"
+    "{src,drizzle,tests}/**/*.{json,md}": [
+      "biome format --write --no-errors-on-unmatched"
     ]
   }
 }

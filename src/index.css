@@ -22,3 +22,53 @@ body {
   background-color: #0f172a; /* slate-900 */
   color: #f1f5f9; /* slate-100 */
 }
+
+/* ─────────────────────────────────────────────────────────────────
+ * Dark mode : styling global des formulaires.
+ * Les formulaires (VehiculeForm, ClientForm, PoliceForm, PaiementForm)
+ * utilisent des classes figées (text-gray-700, border-gray-300, fond blanc)
+ * non adaptées au dark mode. On override ici globalement plutôt que
+ * d'éditer chaque formulaire.
+ * ───────────────────────────────────────────────────────────────── */
+
+/* color-scheme permet au navigateur de rendre les dropdowns natifs
+ * (<select>, <input type="date">) avec le thème sombre de l'OS.
+ * Sans ça, la liste déroulante est blanche même en dark mode. */
+.dark {
+  color-scheme: dark;
+}
+
+/* Labels plus clairs en dark mode (était text-gray-700 = trop sombre) */
+.dark label.text-gray-700 {
+  color: #e2e8f0; /* slate-200 */
+}
+
+/* Inputs + textarea + select : fond sombre, bordure visible, texte clair */
+.dark input.border-gray-300,
+.dark textarea.border-gray-300,
+.dark select.border-gray-300 {
+  background-color: #1e293b; /* slate-800 */
+  border-color: #475569; /* slate-600 */
+  color: #f1f5f9; /* slate-100 */
+}
+
+.dark input.border-gray-300::placeholder,
+.dark textarea.border-gray-300::placeholder {
+  color: #64748b; /* slate-500 */
+}
+
+/* Options du <select> : fond sombre + texte clair (override du rendu OS) */
+.dark select option {
+  background-color: #1e293b; /* slate-800 */
+  color: #f1f5f9;
+}
+
+/* Bouton "Annuler" (bordure) en dark mode */
+.dark button.border-gray-300 {
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+.dark button.border-gray-300:hover {
+  background-color: #334155; /* slate-700 */
+}

@@ -5,11 +5,12 @@
  */
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useClients } from "../../hooks/useClients";
 import type { Vehicule, VehiculeCreate } from "../../schemas/vehicule";
 import { GENRES_VEHICULE, vehiculeCreateSchema } from "../../schemas/vehicule";
+import { SearchableSelect } from "../ui/SearchableSelect";
 
 interface VehiculeFormProps {
   /** Véhicule existant pour le mode édition */
@@ -37,6 +38,7 @@ export function VehiculeForm({
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<VehiculeCreate>({
     resolver: zodResolver(vehiculeCreateSchema),
@@ -74,18 +76,24 @@ export function VehiculeForm({
         <label htmlFor="clientId" className="block text-sm font-medium text-gray-700">
           Client *
         </label>
-        <select
-          id="clientId"
-          {...register("clientId", { valueAsNumber: true })}
-          className={inputClass}
-        >
-          <option value="">{t("vehicules.selectClient")}</option>
-          {clients.map((client) => (
-            <option key={client.id} value={client.id}>
-              {client.nom_prenom}
-            </option>
-          ))}
-        </select>
+        <Controller
+          name="clientId"
+          control={control}
+          render={({ field }) => (
+            <SearchableSelect
+              id="clientId"
+              value={field.value ?? null}
+              onChange={(v) => field.onChange(v == null ? undefined : Number(v))}
+              options={clients.map((c) => ({
+                value: c.id,
+                label: c.nom_prenom,
+                ...(c.telephone ? { sublabel: c.telephone } : {}),
+              }))}
+              placeholder={t("vehicules.selectClient")}
+              allowClear={false}
+            />
+          )}
+        />
         {errors.clientId && <p className="mt-1 text-xs text-red-600">{errors.clientId.message}</p>}
       </div>
 

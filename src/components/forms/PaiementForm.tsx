@@ -4,13 +4,14 @@
  */
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { usePolices } from "../../hooks/usePolices";
 import { useVehicules } from "../../hooks/useVehicules";
 import { formatFCFA } from "../../lib/date-utils";
 import type { Paiement, PaiementCreate } from "../../schemas/paiement";
 import { getPaiementStatut, MODES_PAIEMENT, paiementCreateSchema } from "../../schemas/paiement";
+import { SearchableSelect } from "../ui/SearchableSelect";
 
 /** Form-level type — paye/avance are required here (have .default() in Zod) */
 type PaiementFormValues = Omit<PaiementCreate, "paye" | "avance"> & {
@@ -109,19 +110,24 @@ export function PaiementForm({
         <label htmlFor="policeId" className="block text-sm font-medium text-gray-700">
           Police *
         </label>
-        <select
-          id="policeId"
-          {...register("policeId", { valueAsNumber: true })}
-          className={inputClass}
-        >
-          <option value="">— Sélectionner une police —</option>
-          {polices.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.numero_police ?? `#${p.id}`} — {vehiculeImmatMap.get(p.vehicule_id) ?? "?"} (
-              {p.type_carte})
-            </option>
-          ))}
-        </select>
+        <Controller
+          name="policeId"
+          control={control}
+          render={({ field }) => (
+            <SearchableSelect
+              id="policeId"
+              value={field.value ?? null}
+              onChange={(v) => field.onChange(v == null ? undefined : Number(v))}
+              options={polices.map((p) => ({
+                value: p.id,
+                label: p.numero_police ?? `#${p.id}`,
+                sublabel: vehiculeImmatMap.get(p.vehicule_id) ?? "?",
+              }))}
+              placeholder="— Sélectionner une police —"
+              allowClear={false}
+            />
+          )}
+        />
         {errors.policeId && <p className="mt-1 text-xs text-red-600">{errors.policeId.message}</p>}
       </div>
 

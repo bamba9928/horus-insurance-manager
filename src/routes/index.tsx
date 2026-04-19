@@ -147,7 +147,7 @@ function EcheanceItem({ echeance }: { echeance: EcheanceRow }) {
           <p className="truncate text-sm font-medium text-gray-900">{echeance.nom_prenom}</p>
           <p className="mt-0.5 text-xs text-gray-500">
             {echeance.immatriculation}
-            {echeance.marque && ` — ${echeance.marque}`} · {echeance.type_carte}
+            {echeance.marque && ` — ${echeance.marque}`}
           </p>
           {echeance.telephone && (
             <p className="mt-0.5 text-xs text-gray-400">☎ {echeance.telephone}</p>

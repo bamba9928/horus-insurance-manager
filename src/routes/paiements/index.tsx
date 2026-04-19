@@ -60,12 +60,11 @@ export function PaiementsPage() {
 
   /** Résout policeId → {numero, vehiculeId} */
   const policeMap = useMemo(() => {
-    const map = new Map<number, { numero: string; vehiculeId: number; typeCarte: string }>();
+    const map = new Map<number, { numero: string; vehiculeId: number }>();
     for (const p of polices) {
       map.set(p.id, {
         numero: p.numero_police ?? `#${p.id}`,
         vehiculeId: p.vehicule_id,
-        typeCarte: p.type_carte,
       });
     }
     return map;
@@ -359,7 +358,7 @@ export function PaiementsPage() {
 
 interface PaiementDetailPanelProps {
   paiement: Paiement;
-  policeMap: Map<number, { numero: string; vehiculeId: number; typeCarte: string }>;
+  policeMap: Map<number, { numero: string; vehiculeId: number }>;
   vehiculeMap: Map<number, { immatriculation: string; clientId: number }>;
   clientNameMap: Map<number, string>;
   onClose: () => void;

@@ -25,7 +25,7 @@ import { useVehicules } from "../../hooks/useVehicules";
 import { calcEcheance, formatDateDisplay, formatFCFA, joursRestants } from "../../lib/date-utils";
 import { getPaiementStatut } from "../../schemas/paiement";
 import type { Police, PoliceCreate } from "../../schemas/police";
-import { STATUTS_POLICE, TYPES_CARTE } from "../../schemas/police";
+import { STATUTS_POLICE } from "../../schemas/police";
 
 /** Couleur de badge par statut */
 function statutBadge(statut: string | null) {
@@ -56,7 +56,6 @@ export function PolicesPage() {
 
   // State
   const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState<string>("");
   const [filterStatut, setFilterStatut] = useState<string>("");
   const [selectedPolice, setSelectedPolice] = useState<Police | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -67,10 +66,9 @@ export function PolicesPage() {
   // Queries & Mutations
   const filters = useMemo(
     () => ({
-      ...(filterType ? { typeCarte: filterType } : {}),
       ...(filterStatut ? { statut: filterStatut } : {}),
     }),
-    [filterType, filterStatut],
+    [filterStatut],
   );
   const { data: polices = [], isLoading } = usePolices(filters);
   const { data: vehicules = [] } = useVehicules();
@@ -137,22 +135,6 @@ export function PolicesPage() {
         id: "client",
         header: "Client",
         cell: ({ row }) => getClientName(row.original),
-      },
-      {
-        accessorKey: "type_carte",
-        header: t("polices.typeCarte"),
-        cell: ({ getValue }) => {
-          const tc = getValue<string>();
-          return (
-            <span
-              className={`rounded px-2 py-0.5 text-xs font-medium ${
-                tc === "VERTE" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-              }`}
-            >
-              {tc}
-            </span>
-          );
-        },
       },
       {
         accessorKey: "date_effet",
@@ -292,19 +274,6 @@ export function PolicesPage() {
               placeholder={`${t("common.search")}...`}
               className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
             />
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              aria-label="Filtrer par type de carte"
-            >
-              <option value="">Tous les types</option>
-              {TYPES_CARTE.map((tc) => (
-                <option key={tc} value={tc}>
-                  {tc}
-                </option>
-              ))}
-            </select>
             <select
               value={filterStatut}
               onChange={(e) => setFilterStatut(e.target.value)}
@@ -462,7 +431,6 @@ function PoliceDetailPanel({
       <div className="mt-4 space-y-3">
         <DetailField label="Client" value={clientName} />
         <DetailField label="Véhicule" value={veh?.immatriculation} />
-        <DetailField label={t("polices.typeCarte")} value={police.type_carte} />
         <DetailField
           label={t("polices.dateEffet")}
           value={formatDateDisplay(new Date(police.date_effet))}

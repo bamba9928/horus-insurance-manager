@@ -90,16 +90,6 @@ export function EcheancesPage() {
         cell: ({ getValue }) => getValue<string | null>() ?? "—",
       },
       {
-        accessorKey: "type_carte",
-        header: t("polices.typeCarte"),
-        cell: ({ getValue }) => {
-          const v = getValue<string>();
-          const cls =
-            v === "VERTE" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800";
-          return <span className={`rounded px-2 py-0.5 text-xs font-medium ${cls}`}>{v}</span>;
-        },
-      },
-      {
         accessorKey: "date_echeance",
         header: t("polices.dateEcheance"),
         cell: ({ getValue }) => formatDateDisplay(new Date(getValue<string>())),

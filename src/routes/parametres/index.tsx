@@ -387,7 +387,7 @@ const IMPORT_LABELS: Record<ImportKind, { title: string; hint: string }> = {
   },
   polices: {
     title: "3. Polices",
-    hint: "Colonnes : immatriculation (requis), numero_police, type_carte (VERTE|JAUNE), date_effet (YYYY-MM-DD ou DD/MM/YYYY), duree_mois, assureur",
+    hint: "Colonnes : immatriculation (requis), numero_police, date_effet (YYYY-MM-DD ou DD/MM/YYYY), duree_mois, assureur",
   },
   paiements: {
     title: "4. Paiements",

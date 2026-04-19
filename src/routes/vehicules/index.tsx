@@ -261,15 +261,6 @@ export function VehiculesPage() {
                         <span className="font-medium text-gray-900">
                           {p.numero_police ?? `#${p.id}`}
                         </span>
-                        <span
-                          className={`rounded px-2 py-0.5 text-xs font-medium ${
-                            p.type_carte === "VERTE"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {p.type_carte}
-                        </span>
                       </div>
                       <p className="mt-1 text-xs text-gray-500">
                         {formatDateDisplay(new Date(p.date_effet))} — {p.duree_mois} mois
