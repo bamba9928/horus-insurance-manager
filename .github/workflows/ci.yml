@@ -106,6 +106,10 @@ jobs:
         with:
           workspaces: src-tauri
 
+      - name: Create dist placeholder for tauri::generate_context!
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force dist
+
       - name: Clippy
         working-directory: src-tauri
         run: cargo clippy --all-targets -- -D warnings
