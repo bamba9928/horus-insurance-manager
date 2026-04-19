@@ -85,6 +85,10 @@ jobs:
     name: Rust (clippy + test)
     runs-on: windows-2022
     timeout-minutes: 25
+    env:
+      # Force cargo à utiliser link.exe du PATH (ilammy/msvc-dev-cmd)
+      # au lieu de la découverte registry qui pointe vers BuildTools fantôme.
+      CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER: link.exe
     steps:
       - name: Checkout
         uses: actions/checkout@v4
