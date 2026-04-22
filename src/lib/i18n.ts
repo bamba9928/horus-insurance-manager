@@ -60,7 +60,8 @@ const resources = {
         immatriculation: "Immatriculation",
         marque: "Marque",
         modele: "Modèle",
-        genre: "Genre",
+        genre: "Catégorie",
+        categorie: "Catégorie",
         puissance: "Puissance (CV)",
         places: "Places",
         typeVehicule: "Type de véhicule",
@@ -111,6 +112,10 @@ const resources = {
         nouveauxClients: "Nouveaux clients",
         echeancesUrgentes: "Échéances urgentes",
         parSemaine: "Par semaine",
+      },
+      tarification: {
+        title: "Tarification",
+        button: "TARIFICATION",
       },
       parametres: {
         assureurs: {
@@ -202,6 +207,7 @@ const resources = {
         marque: "Make",
         modele: "Model",
         genre: "Category",
+        categorie: "Category",
         puissance: "Horsepower (HP)",
         places: "Seats",
         typeVehicule: "Vehicle type",
@@ -252,6 +258,10 @@ const resources = {
         nouveauxClients: "New clients",
         echeancesUrgentes: "Urgent deadlines",
         parSemaine: "Per week",
+      },
+      tarification: {
+        title: "Pricing",
+        button: "PRICING",
       },
       parametres: {
         assureurs: {

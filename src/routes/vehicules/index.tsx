@@ -21,6 +21,7 @@ import {
 } from "../../hooks/useVehicules";
 import { formatDateDisplay } from "../../lib/date-utils";
 import type { Vehicule, VehiculeCreate } from "../../schemas/vehicule";
+import { getCategorieLabel } from "../../schemas/vehicule";
 
 export function VehiculesPage() {
   const { t } = useTranslation();
@@ -73,8 +74,14 @@ export function VehiculesPage() {
       },
       {
         accessorKey: "genre",
-        header: t("vehicules.genre"),
-        cell: ({ getValue }) => getValue<string | null>() ?? "—",
+        header: t("vehicules.categorie"),
+        cell: ({ getValue }) => {
+          const code = getValue<string | null>();
+          if (!code) return "—";
+          // Afficher le code court dans la table (lisibilité) — le libellé
+          // complet reste visible dans la vue détail.
+          return <span className="text-xs">{code.replace("_", " ")}</span>;
+        },
       },
       {
         accessorKey: "client_id",
@@ -163,7 +170,7 @@ export function VehiculesPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Liste principale */}
         <div
-          className={`flex-1 overflow-auto p-6 ${selectedVehicule && !isEditOpen ? "w-1/2" : ""}`}
+          className={`flex-1 overflow-auto p-4 ${selectedVehicule && !isEditOpen ? "w-1/2" : ""}`}
         >
           {/* Barre de recherche */}
           <div className="mb-4">
@@ -189,7 +196,7 @@ export function VehiculesPage() {
 
         {/* Panneau détail (maître-détail) */}
         {selectedVehicule && !isEditOpen && (
-          <div className="w-96 shrink-0 overflow-auto border-l border-gray-200 bg-white p-6">
+          <div className="w-96 shrink-0 overflow-auto border-l border-gray-200 bg-white p-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">
                 {selectedVehicule.immatriculation}
@@ -214,7 +221,10 @@ export function VehiculesPage() {
               />
               <DetailField label={t("vehicules.marque")} value={selectedVehicule.marque} />
               <DetailField label={t("vehicules.modele")} value={selectedVehicule.modele} />
-              <DetailField label={t("vehicules.genre")} value={selectedVehicule.genre} />
+              <DetailField
+                label={t("vehicules.categorie")}
+                value={getCategorieLabel(selectedVehicule.genre)}
+              />
               <DetailField
                 label={t("vehicules.typeVehicule")}
                 value={selectedVehicule.type_vehicule}

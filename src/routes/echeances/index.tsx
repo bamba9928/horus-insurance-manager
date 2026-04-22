@@ -150,7 +150,7 @@ export function EcheancesPage() {
           </button>
         </div>
       </Header>
-      <div className="overflow-auto p-6">
+      <div className="overflow-auto p-4">
         {/* Filtres par période */}
         <div className="mb-4 flex flex-wrap gap-2">
           {PRESETS.map((p) => (
@@ -189,7 +189,7 @@ export function EcheancesPage() {
         {isLoading ? (
           <p className="text-sm text-gray-500">{t("common.loading")}</p>
         ) : filtered.length === 0 ? (
-          <div className="rounded-lg border border-gray-200 bg-white p-6">
+          <div className="rounded-lg border border-gray-200 bg-white p-4">
             <p className="text-sm text-gray-500">{t("common.noData")}</p>
           </div>
         ) : (

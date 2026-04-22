@@ -264,7 +264,7 @@ export function PolicesPage() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Liste principale */}
-        <div className={`flex-1 overflow-auto p-6 ${selectedPolice && !isEditOpen ? "w-1/2" : ""}`}>
+        <div className={`flex-1 overflow-auto p-4 ${selectedPolice && !isEditOpen ? "w-1/2" : ""}`}>
           {/* Barre de recherche + filtres */}
           <div className="mb-4 flex flex-wrap gap-3">
             <input
@@ -405,7 +405,7 @@ function PoliceDetailPanel({
   }
 
   return (
-    <div className="w-96 shrink-0 overflow-auto border-l border-gray-200 bg-white p-6">
+    <div className="w-96 shrink-0 overflow-auto border-l border-gray-200 bg-white p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">
           {police.numero_police ?? `Police #${police.id}`}

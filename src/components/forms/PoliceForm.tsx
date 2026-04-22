@@ -100,7 +100,7 @@ export function PoliceForm({
     "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none";
 
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-3">
       {/* Véhicule */}
       <div>
         <label htmlFor="vehiculeId" className="block text-sm font-medium text-gray-700">

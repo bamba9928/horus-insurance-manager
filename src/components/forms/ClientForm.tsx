@@ -45,7 +45,7 @@ export function ClientForm({ defaultValues, onSubmit, onCancel, isSubmitting }: 
   const onFormSubmit = (data: ClientCreate) => onSubmit(data);
 
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-3">
       {/* Nom & Prénom */}
       <div>
         <label htmlFor="nomPrenom" className="block text-sm font-medium text-gray-700">

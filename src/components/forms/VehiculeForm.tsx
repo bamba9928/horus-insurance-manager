@@ -9,7 +9,7 @@ import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useClients } from "../../hooks/useClients";
 import type { Vehicule, VehiculeCreate } from "../../schemas/vehicule";
-import { GENRES_VEHICULE, vehiculeCreateSchema } from "../../schemas/vehicule";
+import { CATEGORIES_VEHICULE, vehiculeCreateSchema } from "../../schemas/vehicule";
 import { SearchableSelect } from "../ui/SearchableSelect";
 
 interface VehiculeFormProps {
@@ -70,7 +70,7 @@ export function VehiculeForm({
     "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none";
 
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-3">
       {/* Client */}
       <div>
         <label htmlFor="clientId" className="block text-sm font-medium text-gray-700">
@@ -95,6 +95,28 @@ export function VehiculeForm({
           )}
         />
         {errors.clientId && <p className="mt-1 text-xs text-red-600">{errors.clientId.message}</p>}
+      </div>
+
+      {/* Catégorie */}
+      <div>
+        <label htmlFor="genre" className="block text-sm font-medium text-gray-700">
+          {t("vehicules.categorie")}
+        </label>
+        <Controller
+          name="genre"
+          control={control}
+          render={({ field }) => (
+            <SearchableSelect
+              id="genre"
+              value={field.value ?? null}
+              onChange={(v) =>
+                field.onChange(v == null ? undefined : (v as VehiculeCreate["genre"]))
+              }
+              options={CATEGORIES_VEHICULE.map((c) => ({ value: c.value, label: c.label }))}
+              placeholder="— Sélectionner une catégorie —"
+            />
+          )}
+        />
       </div>
 
       {/* Immatriculation */}
@@ -140,21 +162,6 @@ export function VehiculeForm({
             placeholder="Corolla"
           />
         </div>
-      </div>
-
-      {/* Genre */}
-      <div>
-        <label htmlFor="genre" className="block text-sm font-medium text-gray-700">
-          {t("vehicules.genre")}
-        </label>
-        <select id="genre" {...register("genre")} className={inputClass}>
-          <option value="">— Sélectionner —</option>
-          {GENRES_VEHICULE.map((g) => (
-            <option key={g} value={g}>
-              {g}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Type véhicule */}

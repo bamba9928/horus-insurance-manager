@@ -269,7 +269,7 @@ export function PaiementsPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Liste principale */}
         <div
-          className={`flex-1 overflow-auto p-6 ${selectedPaiement && !isEditOpen ? "w-1/2" : ""}`}
+          className={`flex-1 overflow-auto p-4 ${selectedPaiement && !isEditOpen ? "w-1/2" : ""}`}
         >
           {/* Barre de recherche + filtres */}
           <div className="mb-4 flex flex-wrap gap-3">
@@ -391,7 +391,7 @@ function PaiementDetailPanel({
   };
 
   return (
-    <div className="w-96 shrink-0 overflow-auto border-l border-gray-200 bg-white p-6">
+    <div className="w-96 shrink-0 overflow-auto border-l border-gray-200 bg-white p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Détail paiement</h3>
         <button

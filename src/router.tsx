@@ -13,6 +13,7 @@ import { DashboardPage } from "./routes/index";
 import { PaiementsPage } from "./routes/paiements/index";
 import { ParametresPage } from "./routes/parametres/index";
 import { PolicesPage } from "./routes/polices/index";
+import { TarificationPage } from "./routes/tarification/index";
 import { VehiculesPage } from "./routes/vehicules/index";
 
 // ============ Root Route (Layout) ============
@@ -65,6 +66,12 @@ const parametresRoute = createRoute({
   component: ParametresPage,
 });
 
+const tarificationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/tarification",
+  component: TarificationPage,
+});
+
 // ============ Arbre de routes ============
 
 const routeTree = rootRoute.addChildren([
@@ -75,6 +82,7 @@ const routeTree = rootRoute.addChildren([
   paiementsRoute,
   echeancesRoute,
   parametresRoute,
+  tarificationRoute,
 ]);
 
 // ============ Routeur ============

@@ -18,7 +18,7 @@ export function DashboardPage() {
   return (
     <>
       <Header title={t("dashboard.title")} />
-      <div className="overflow-auto p-6">
+      <div className="overflow-auto p-4">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <KPICard
@@ -44,10 +44,10 @@ export function DashboardPage() {
         </div>
 
         {/* Deux colonnes : Échéances urgentes + Impayés */}
-        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
           {/* Échéances urgentes */}
           <section className="rounded-lg border border-gray-200 bg-white">
-            <header className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+            <header className="flex items-center justify-between border-b border-gray-200 px-4 py-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 {t("dashboard.echeancesUrgentes")}
               </h3>
@@ -57,9 +57,9 @@ export function DashboardPage() {
             </header>
             <div className="max-h-96 overflow-auto">
               {echeancesLoading ? (
-                <p className="p-6 text-sm text-gray-500">{t("common.loading")}</p>
+                <p className="p-4 text-sm text-gray-500">{t("common.loading")}</p>
               ) : echeances.length === 0 ? (
-                <p className="p-6 text-sm text-gray-500">Aucune échéance dans les 30 jours.</p>
+                <p className="p-4 text-sm text-gray-500">Aucune échéance dans les 30 jours.</p>
               ) : (
                 <ul className="divide-y divide-gray-100">
                   {echeances.map((e) => (
@@ -72,7 +72,7 @@ export function DashboardPage() {
 
           {/* Impayés */}
           <section className="rounded-lg border border-gray-200 bg-white">
-            <header className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+            <header className="flex items-center justify-between border-b border-gray-200 px-4 py-4">
               <h3 className="text-lg font-semibold text-gray-900">Impayés</h3>
               <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
                 {impayes.length}
@@ -80,9 +80,9 @@ export function DashboardPage() {
             </header>
             <div className="max-h-96 overflow-auto">
               {impayesLoading ? (
-                <p className="p-6 text-sm text-gray-500">{t("common.loading")}</p>
+                <p className="p-4 text-sm text-gray-500">{t("common.loading")}</p>
               ) : impayes.length === 0 ? (
-                <p className="p-6 text-sm text-gray-500">Aucun impayé. 🎉</p>
+                <p className="p-4 text-sm text-gray-500">Aucun impayé. 🎉</p>
               ) : (
                 <ul className="divide-y divide-gray-100">
                   {impayes.map((i) => (
@@ -141,7 +141,7 @@ function EcheanceItem({ echeance }: { echeance: EcheanceRow }) {
     jours < 0 ? `Expirée (${Math.abs(jours)}j)` : jours === 0 ? "Aujourd'hui" : `Dans ${jours}j`;
 
   return (
-    <li className="px-6 py-3 transition-colors hover:bg-gray-50">
+    <li className="px-4 py-3 transition-colors hover:bg-gray-50">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-gray-900">{echeance.nom_prenom}</p>
@@ -173,7 +173,7 @@ function ImpayeItem({ impaye }: { impaye: ImpayeRow }) {
   const ratio = impaye.montant_du > 0 ? (impaye.paye / impaye.montant_du) * 100 : 0;
 
   return (
-    <li className="px-6 py-3 transition-colors hover:bg-gray-50">
+    <li className="px-4 py-3 transition-colors hover:bg-gray-50">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-gray-900">{impaye.nom_prenom}</p>

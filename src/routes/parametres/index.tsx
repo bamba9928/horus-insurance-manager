@@ -34,7 +34,7 @@ export function ParametresPage() {
   return (
     <>
       <Header title={t("nav.parametres")} />
-      <div className="space-y-6 overflow-auto p-6">
+      <div className="space-y-4 overflow-auto p-4">
         <AssureursSection />
         <ImportSection />
         <BackupSection />
@@ -73,7 +73,7 @@ function AssureursSection() {
   };
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+    <section className="rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-start justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
@@ -312,7 +312,7 @@ function BackupSection() {
   };
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+    <section className="rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
         Sauvegarde & Restauration
       </h3>
@@ -442,7 +442,7 @@ function ImportSection() {
   };
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+    <section className="rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
         Import de données (.accdb → CSV)
       </h3>
@@ -597,11 +597,11 @@ function AppearanceSection({
     "mt-1 block rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+    <section className="rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
         {t("parametres.language.title")}
       </h3>
-      <div className="mt-4 flex flex-wrap gap-6">
+      <div className="mt-4 flex flex-wrap gap-4">
         <div>
           <label
             htmlFor="lang-select"

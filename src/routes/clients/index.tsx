@@ -132,7 +132,7 @@ export function ClientsPage() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Liste principale */}
-        <div className={`flex-1 overflow-auto p-6 ${selectedClient && !isEditOpen ? "w-1/2" : ""}`}>
+        <div className={`flex-1 overflow-auto p-4 ${selectedClient && !isEditOpen ? "w-1/2" : ""}`}>
           {/* Barre de recherche */}
           <div className="mb-4">
             <input
@@ -158,7 +158,7 @@ export function ClientsPage() {
 
         {/* Panneau détail (maître-détail) */}
         {selectedClient && !isEditOpen && (
-          <div className="w-96 shrink-0 overflow-auto border-l border-gray-200 bg-white p-6">
+          <div className="w-96 shrink-0 overflow-auto border-l border-gray-200 bg-white p-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">Détail client</h3>
               <button
