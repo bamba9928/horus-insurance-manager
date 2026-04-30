@@ -6,7 +6,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { getDashboardKPI, getEcheances30j, getImpayes } from "../lib/ipc";
+import { getDashboardKPI, getDashboardRecap, getEcheances30j, getImpayes } from "../lib/ipc";
 
 const DASHBOARD_KEY = ["dashboard"] as const;
 
@@ -33,5 +33,13 @@ export function useImpayes() {
   return useQuery({
     queryKey: [...DASHBOARD_KEY, "impayes"],
     queryFn: () => getImpayes(),
+  });
+}
+
+/** Tableau récapitulatif consolidé client + véhicule + police + paiements. */
+export function useDashboardRecap() {
+  return useQuery({
+    queryKey: [...DASHBOARD_KEY, "recap"],
+    queryFn: () => getDashboardRecap(),
   });
 }

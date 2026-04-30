@@ -593,3 +593,79 @@ export async function getDashboardKPI(): Promise<DashboardKPI> {
     nouveauxClientsMois: nouveaux?.count ?? 0,
   };
 }
+
+/** Ligne récapitulative enrichie pour le dashboard. */
+export interface DashboardRecapRow {
+  client_id: number;
+  vehicule_id: number;
+  police_id: number | null;
+  nom_prenom: string;
+  telephone: string | null;
+  immatriculation: string;
+  marque: string | null;
+  modele: string | null;
+  numero_police: string | null;
+  type_carte: string | null;
+  date_effet: string | null;
+  date_echeance: string | null;
+  police_statut: string | null;
+  assureur_nom: string | null;
+  paiements_count: number;
+  montant_du_total: number;
+  paye_total: number;
+  avance_total: number;
+  reste_total: number;
+  derniere_date_paiement: string | null;
+}
+
+/** Récapitulatif consolidé client + véhicule + police + paiements. */
+export async function getDashboardRecap(): Promise<DashboardRecapRow[]> {
+  return select<DashboardRecapRow>(`
+    SELECT
+      c.id AS client_id,
+      v.id AS vehicule_id,
+      p.id AS police_id,
+      c.nom_prenom,
+      c.telephone,
+      v.immatriculation,
+      v.marque,
+      v.modele,
+      p.numero_police,
+      p.type_carte,
+      p.date_effet,
+      p.date_echeance,
+      p.statut AS police_statut,
+      a.nom AS assureur_nom,
+      COUNT(pa.id) AS paiements_count,
+      COALESCE(SUM(pa.montant_du), 0) AS montant_du_total,
+      COALESCE(SUM(pa.paye), 0) AS paye_total,
+      COALESCE(SUM(pa.avance), 0) AS avance_total,
+      COALESCE(SUM(pa.reste), 0) AS reste_total,
+      MAX(pa.date_paiement) AS derniere_date_paiement
+    FROM clients c
+    JOIN vehicules v ON v.client_id = c.id
+    LEFT JOIN polices p ON p.vehicule_id = v.id
+    LEFT JOIN assureurs a ON a.id = p.assureur_id
+    LEFT JOIN paiements pa ON pa.police_id = p.id
+    GROUP BY
+      c.id,
+      v.id,
+      p.id,
+      c.nom_prenom,
+      c.telephone,
+      v.immatriculation,
+      v.marque,
+      v.modele,
+      p.numero_police,
+      p.type_carte,
+      p.date_effet,
+      p.date_echeance,
+      p.statut,
+      a.nom
+    ORDER BY
+      CASE WHEN p.date_echeance IS NULL THEN 1 ELSE 0 END,
+      p.date_echeance ASC,
+      c.nom_prenom ASC,
+      v.immatriculation ASC
+  `);
+}
