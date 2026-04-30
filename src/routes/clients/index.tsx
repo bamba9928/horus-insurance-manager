@@ -18,13 +18,14 @@ import {
   useUpdateClient,
 } from "../../hooks/useClients";
 import { useVehicules } from "../../hooks/useVehicules";
+import { consumePrefillSearch } from "../../lib/prefill-search";
 import type { Client, ClientCreate } from "../../schemas/client";
 
 export function ClientsPage() {
   const { t } = useTranslation();
 
   // State
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => consumePrefillSearch("clients"));
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);

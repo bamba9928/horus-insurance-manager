@@ -20,6 +20,7 @@ import {
   useVehicules,
 } from "../../hooks/useVehicules";
 import { formatDateDisplay } from "../../lib/date-utils";
+import { consumePrefillSearch } from "../../lib/prefill-search";
 import type { Vehicule, VehiculeCreate } from "../../schemas/vehicule";
 import { getCategorieLabel } from "../../schemas/vehicule";
 
@@ -27,7 +28,7 @@ export function VehiculesPage() {
   const { t } = useTranslation();
 
   // State
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => consumePrefillSearch("vehicules"));
   const [selectedVehicule, setSelectedVehicule] = useState<Vehicule | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);

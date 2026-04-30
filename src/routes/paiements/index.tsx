@@ -21,6 +21,7 @@ import {
 import { usePolices } from "../../hooks/usePolices";
 import { useVehicules } from "../../hooks/useVehicules";
 import { formatFCFA } from "../../lib/date-utils";
+import { consumePrefillSearch } from "../../lib/prefill-search";
 import type { Paiement, PaiementCreate } from "../../schemas/paiement";
 import { getPaiementStatut } from "../../schemas/paiement";
 
@@ -42,7 +43,7 @@ export function PaiementsPage() {
   const { t } = useTranslation();
 
   // State
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => consumePrefillSearch("paiements"));
   const [filterStatut, setFilterStatut] = useState<string>("");
   const [selectedPaiement, setSelectedPaiement] = useState<Paiement | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);

@@ -23,6 +23,7 @@ import {
 } from "../../hooks/usePolices";
 import { useVehicules } from "../../hooks/useVehicules";
 import { calcEcheance, formatDateDisplay, formatFCFA, joursRestants } from "../../lib/date-utils";
+import { consumePrefillSearch } from "../../lib/prefill-search";
 import { getPaiementStatut } from "../../schemas/paiement";
 import type { Police, PoliceCreate } from "../../schemas/police";
 import { STATUTS_POLICE } from "../../schemas/police";
@@ -55,7 +56,7 @@ export function PolicesPage() {
   const { t } = useTranslation();
 
   // State
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => consumePrefillSearch("polices"));
   const [filterStatut, setFilterStatut] = useState<string>("");
   const [selectedPolice, setSelectedPolice] = useState<Police | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
