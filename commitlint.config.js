@@ -12,6 +12,8 @@ export default {
         "echeances",
         "dashboard",
         "parametres",
+        "tarification",
+        "search",
         "db",
         "ipc",
         "ui",
