@@ -19,6 +19,7 @@ const resources = {
       },
       nav: {
         dashboard: "Tableau de bord",
+        verification: "Vérification",
         clients: "Clients",
         vehicules: "Véhicules",
         polices: "Polices",
@@ -105,12 +106,12 @@ const resources = {
         expiree: "Expirée",
       },
       dashboard: {
-        title: "Tableau de bord",
+        title: "Accueil",
         policesActives: "Polices actives",
         echeances30j: "Échéances 30j",
         impayes: "Impayés",
         nouveauxClients: "Nouveaux clients",
-        echeancesUrgentes: "Échéances urgentes",
+        echeancesUrgentes: "Échéances",
         parSemaine: "Par semaine",
       },
       tarification: {
@@ -165,6 +166,7 @@ const resources = {
       },
       nav: {
         dashboard: "Dashboard",
+        verification: "Verification",
         clients: "Clients",
         vehicules: "Vehicles",
         polices: "Policies",
@@ -251,12 +253,12 @@ const resources = {
         expiree: "Expired",
       },
       dashboard: {
-        title: "Dashboard",
+        title: "Home",
         policesActives: "Active policies",
         echeances30j: "Deadlines 30d",
         impayes: "Unpaid",
         nouveauxClients: "New clients",
-        echeancesUrgentes: "Urgent deadlines",
+        echeancesUrgentes: "Deadlines",
         parSemaine: "Per week",
       },
       tarification: {

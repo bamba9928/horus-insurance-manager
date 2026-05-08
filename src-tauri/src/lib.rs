@@ -14,10 +14,13 @@ pub fn run() {
                 .level(log::LevelFilter::Info)
                 .build(),
         )
+        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::greet,
             commands::backup::backup_database,
             commands::backup::restore_database,
+            commands::verification::verify_contract,
+            commands::external::open_external_url,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

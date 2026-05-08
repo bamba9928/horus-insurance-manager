@@ -48,6 +48,20 @@ function policeBadge(statut: string | null) {
   }
 }
 
+type QuickAction = {
+  label: string;
+  to:
+    | "/clients"
+    | "/vehicules"
+    | "/polices"
+    | "/paiements"
+    | "/echeances"
+    | "/verification"
+    | "/parametres";
+  tone: "bronze" | "blue" | "green" | "orange" | "slate";
+  icon: React.ReactNode;
+};
+
 export function DashboardPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -59,6 +73,79 @@ export function DashboardPage() {
   const { data: echeances = [], isLoading: echeancesLoading } = useEcheances30j();
   const { data: impayes = [], isLoading: impayesLoading } = useImpayes();
   const { data: recapRows = [], isLoading: recapLoading } = useDashboardRecap();
+
+  const quickActions: QuickAction[] = [
+    {
+      label: "Clients",
+      to: "/clients",
+      tone: "bronze",
+      icon: (
+        <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+          <path d="M7 9a3 3 0 100-6 3 3 0 000 6zm6 1a2 2 0 100-4 2 2 0 000 4zM3 15a4 4 0 118 0v1H3v-1zm9 1v-1a5.98 5.98 0 00-1.1-3.45A4 4 0 0117 15v1h-5z" />
+        </svg>
+      ),
+    },
+    {
+      label: "Véhicules",
+      to: "/vehicules",
+      tone: "blue",
+      icon: (
+        <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+          <path d="M4 11l1.5-4.2A2 2 0 017.38 5h5.24a2 2 0 011.88 1.3L16 11v4h-1a1.5 1.5 0 01-3 0H8a1.5 1.5 0 01-3 0H4v-4zm2.1-1h7.8l-1-2.8a.5.5 0 00-.47-.32H7.57a.5.5 0 00-.47.33L6.1 10z" />
+        </svg>
+      ),
+    },
+    {
+      label: "Polices",
+      to: "/polices",
+      tone: "green",
+      icon: (
+        <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+          <path d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7l-5-5H6zm5 1.5L14.5 7H11V3.5zM7 9h6v1.5H7V9zm0 3h6v1.5H7V12z" />
+        </svg>
+      ),
+    },
+    {
+      label: "Paiements",
+      to: "/paiements",
+      tone: "orange",
+      icon: (
+        <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+          <path d="M3 5a2 2 0 012-2h10a2 2 0 012 2v1H3V5zm14 3v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8h14zM6 11h4v1.5H6V11z" />
+        </svg>
+      ),
+    },
+    {
+      label: "Échéances",
+      to: "/echeances",
+      tone: "orange",
+      icon: (
+        <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+          <path d="M6 2a.75.75 0 011.5 0v1h5V2a.75.75 0 011.5 0v1H15a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h1V2zm9.5 5h-11v7a.5.5 0 00.5.5h10a.5.5 0 00.5-.5V7zM8 10.25a.75.75 0 010 1.5H6.75a.75.75 0 010-1.5H8z" />
+        </svg>
+      ),
+    },
+    {
+      label: "Vérification",
+      to: "/verification",
+      tone: "slate",
+      icon: (
+        <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+          <path d="M8.5 3a5.5 5.5 0 104.39 8.82l2.64 2.65 1.06-1.06-2.64-2.64A5.5 5.5 0 008.5 3zm0 1.5a4 4 0 110 8 4 4 0 010-8z" />
+        </svg>
+      ),
+    },
+    {
+      label: "Nouvel Assureur",
+      to: "/parametres",
+      tone: "slate",
+      icon: (
+        <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+          <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v2.1a5.5 5.5 0 00-1.5-.5V4a.5.5 0 00-.5-.5H7a.5.5 0 00-.5.5v12c0 .28.22.5.5.5h2.8c.16.54.4 1.05.71 1.5H7a2 2 0 01-2-2V4zm8.5 4a4 4 0 100 8 4 4 0 000-8zm0 1.5c.41 0 .75.34.75.75v1.5h1.5a.75.75 0 010 1.5h-1.5v1.5a.75.75 0 01-1.5 0v-1.5h-1.5a.75.75 0 010-1.5h1.5v-1.5c0-.41.34-.75.75-.75z" />
+        </svg>
+      ),
+    },
+  ];
 
   const openModule = (
     target: "clients" | "vehicules" | "polices" | "paiements",
@@ -113,20 +200,6 @@ export function DashboardPage() {
             </p>
             <p className="text-xs text-gray-500 dark:text-slate-400">
               {[row.original.marque, row.original.modele].filter(Boolean).join(" ") || "—"}
-            </p>
-          </div>
-        ),
-      },
-      {
-        accessorKey: "numero_police",
-        header: "Police",
-        cell: ({ row }) => (
-          <div>
-            <p className="font-medium text-gray-900 dark:text-slate-100">
-              {row.original.numero_police ?? "—"}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-slate-400">
-              {row.original.type_carte ?? "Sans police"}
             </p>
           </div>
         ),
@@ -196,10 +269,6 @@ export function DashboardPage() {
         },
       },
       {
-        accessorKey: "paiements_count",
-        header: "Nb paiements",
-      },
-      {
         id: "actions",
         header: "Actions",
         enableSorting: false,
@@ -258,9 +327,35 @@ export function DashboardPage() {
 
   return (
     <>
-      <Header title={t("dashboard.title")} />
-      <div className="overflow-auto p-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <Header title="">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 py-0.5">
+            {quickActions.map((action) => (
+              <button
+                key={action.to}
+                type="button"
+                onClick={() => navigate({ to: action.to })}
+                className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg transition-colors ${
+                  action.tone === "bronze"
+                    ? "bg-[#614e1a] px-2.5 text-xs font-semibold text-white shadow-sm hover:bg-[#8b7335] focus:outline-none focus:ring-2 focus:ring-[#614e1a]/40"
+                    : action.tone === "blue"
+                      ? "border border-blue-400/70 px-2.5 text-xs font-semibold text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20"
+                      : action.tone === "green"
+                        ? "border border-green-400/70 px-2.5 text-xs font-semibold text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-300 dark:hover:bg-green-900/20"
+                        : action.tone === "orange"
+                          ? "border border-orange-400/70 px-2.5 text-xs font-semibold text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-900/20"
+                          : "border border-slate-400/60 px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                {action.icon}
+                <span>{action.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </Header>
+      <div className="overflow-auto p-5">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <KPICard
             label={t("dashboard.policesActives")}
             value={kpiLoading ? "…" : String(kpi?.policesActives ?? 0)}
@@ -283,7 +378,7 @@ export function DashboardPage() {
           />
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="mt-7 grid grid-cols-1 gap-5 lg:grid-cols-2">
           <section className="rounded-lg border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800">
             <header className="flex items-center justify-between border-b border-gray-200 px-4 py-4 dark:border-slate-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
@@ -337,15 +432,12 @@ export function DashboardPage() {
           </section>
         </div>
 
-        <section className="mt-8 rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+        <section className="mt-7 rounded-xl border border-gray-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
                 Tableau récapitulatif complet
               </h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
-                Vue consolidée client, véhicule, police et paiements.
-              </p>
             </div>
 
             <div className="w-full sm:max-w-md">

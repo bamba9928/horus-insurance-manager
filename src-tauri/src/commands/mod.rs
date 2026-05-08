@@ -4,6 +4,8 @@ pub mod polices;
 pub mod paiements;
 pub mod exports;
 pub mod backup;
+pub mod external;
+pub mod verification;
 
 /// Commande de test pour vérifier que l'IPC fonctionne
 #[tauri::command]

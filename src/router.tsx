@@ -15,6 +15,7 @@ import { ParametresPage } from "./routes/parametres/index";
 import { PolicesPage } from "./routes/polices/index";
 import { TarificationPage } from "./routes/tarification/index";
 import { VehiculesPage } from "./routes/vehicules/index";
+import { VerificationPage } from "./routes/verification/index";
 
 // ============ Root Route (Layout) ============
 
@@ -34,6 +35,12 @@ const clientsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/clients",
   component: ClientsPage,
+});
+
+const verificationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/verification",
+  component: VerificationPage,
 });
 
 const vehiculesRoute = createRoute({
@@ -76,6 +83,7 @@ const tarificationRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  verificationRoute,
   clientsRoute,
   vehiculesRoute,
   policesRoute,

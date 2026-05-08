@@ -17,6 +17,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { path: "/", labelKey: "nav.dashboard", icon: "\u{1F4CA}" },
+  { path: "/verification", labelKey: "nav.verification", icon: "\u{1F50E}" },
   { path: "/clients", labelKey: "nav.clients", icon: "\u{1F465}" },
   { path: "/vehicules", labelKey: "nav.vehicules", icon: "\u{1F697}" },
   { path: "/polices", labelKey: "nav.polices", icon: "\u{1F4C4}" },
@@ -43,7 +44,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "flex h-full flex-col bg-[#614e1a] text-white transition-[width] duration-200 ease-out",
+        "flex h-full flex-col border-r border-black/20 bg-[#614e1a] text-white transition-[width] duration-200 ease-out",
         collapsed ? "w-16" : "w-60",
       )}
     >
@@ -51,7 +52,7 @@ export function Sidebar() {
       <div
         className={cn(
           "flex items-center border-b border-white/20",
-          collapsed ? "justify-center px-2 py-3" : "justify-end px-2 py-2",
+          collapsed ? "justify-center px-2 py-1.5" : "justify-end px-2 py-1.5",
         )}
       >
         <button
@@ -59,32 +60,24 @@ export function Sidebar() {
           onClick={() => setCollapsed((v) => !v)}
           aria-label={collapsed ? "Déplier le menu" : "Plier le menu"}
           title={collapsed ? "Déplier le menu" : "Plier le menu"}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex h-9 w-9 items-center justify-center rounded-xl text-white/80 transition-colors hover:bg-white/10 hover:text-white"
         >
           <span className="text-lg leading-none">{collapsed ? "\u{00BB}" : "\u{00AB}"}</span>
         </button>
       </div>
 
       {/* Logo / Titre */}
-      <div
-        className={cn(
-          "flex items-center border-b border-white/20 py-5",
-          collapsed ? "justify-center px-2" : "gap-3 px-4",
-        )}
-      >
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white/20 text-xl font-bold">
-          H
-        </div>
-        {!collapsed && (
+      {!collapsed && (
+        <div className="flex items-center border-b border-white/20 px-4 py-3.5">
           <div className="overflow-hidden">
             <h1 className="text-sm font-bold leading-tight">HORUS</h1>
             <p className="whitespace-nowrap text-xs text-white/70">Assurances Manager</p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Navigation */}
-      <nav className={cn("flex-1 space-y-1 py-4", collapsed ? "px-2" : "px-2")}>
+      <nav className="flex-1 space-y-1.5 pt-2.5 pb-3 px-2">
         {NAV_ITEMS.map((item) => {
           const isActive =
             item.path === "/"
@@ -97,14 +90,14 @@ export function Sidebar() {
               to={item.path}
               title={collapsed ? t(item.labelKey) : undefined}
               className={cn(
-                "flex items-center rounded-lg py-2.5 text-sm transition-colors",
+                "flex h-11 items-center rounded-xl text-sm transition-colors",
                 collapsed ? "justify-center px-2" : "gap-3 px-3",
                 isActive
-                  ? "bg-white/20 font-semibold text-white"
+                  ? "bg-white/20 font-semibold text-white ring-1 ring-white/25"
                   : "text-white/80 hover:bg-white/10 hover:text-white",
               )}
             >
-              <span className="text-lg">{item.icon}</span>
+              <span className="text-xl leading-none">{item.icon}</span>
               {!collapsed && <span className="whitespace-nowrap">{t(item.labelKey)}</span>}
             </Link>
           );

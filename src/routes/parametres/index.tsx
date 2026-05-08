@@ -4,7 +4,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Header } from "../../components/layout";
@@ -34,7 +34,7 @@ export function ParametresPage() {
   return (
     <>
       <Header title={t("nav.parametres")} />
-      <div className="space-y-4 overflow-auto p-4">
+      <div className="space-y-5 overflow-auto p-5">
         <AssureursSection />
         <ImportSection />
         <BackupSection />
@@ -58,12 +58,43 @@ function AssureursSection() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editing, setEditing] = useState<Assureur | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Assureur | null>(null);
+  const [status, setStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+
+  const sortedAssureurs = useMemo(
+    () => [...assureurs].sort((a, b) => a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" })),
+    [assureurs],
+  );
 
   const handleSubmit = (data: AssureurCreate) => {
+    const payload: AssureurCreate = {
+      nom: data.nom.trim(),
+      ...(data.contact?.trim() ? { contact: data.contact.trim() } : {}),
+      ...(data.adresse?.trim() ? { adresse: data.adresse.trim() } : {}),
+    };
+
     if (editing) {
-      updateMutation.mutate({ id: editing.id, ...data }, { onSuccess: () => closeForm() });
+      updateMutation.mutate(
+        { id: editing.id, ...payload },
+        {
+          onSuccess: () => {
+            setStatus({ type: "success", msg: "Assureur modifié avec succès." });
+            closeForm();
+          },
+          onError: (e) => {
+            setStatus({ type: "error", msg: `Échec de la modification : ${String(e)}` });
+          },
+        },
+      );
     } else {
-      createMutation.mutate(data, { onSuccess: () => closeForm() });
+      createMutation.mutate(payload, {
+        onSuccess: () => {
+          setStatus({ type: "success", msg: "Assureur ajouté avec succès." });
+          closeForm();
+        },
+        onError: (e) => {
+          setStatus({ type: "error", msg: `Échec de la création : ${String(e)}` });
+        },
+      });
     }
   };
 
@@ -73,7 +104,7 @@ function AssureursSection() {
   };
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+    <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-start justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
@@ -95,6 +126,18 @@ function AssureursSection() {
         </button>
       </div>
 
+      {status && (
+        <div
+          className={`mt-4 rounded-lg border px-4 py-3 text-sm ${
+            status.type === "success"
+              ? "border-green-200 bg-green-50 text-green-800 dark:border-green-800/40 dark:bg-green-900/20 dark:text-green-300"
+              : "border-red-200 bg-red-50 text-red-800 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-300"
+          }`}
+        >
+          {status.msg}
+        </div>
+      )}
+
       <div className="mt-4">
         {isLoading ? (
           <p className="text-sm text-gray-500 dark:text-slate-400">Chargement...</p>
@@ -104,7 +147,7 @@ function AssureursSection() {
           </p>
         ) : (
           <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-slate-700 dark:border-slate-700">
-            {assureurs.map((a) => (
+            {sortedAssureurs.map((a) => (
               <li
                 key={a.id}
                 className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700/50"
@@ -132,6 +175,7 @@ function AssureursSection() {
                   <button
                     type="button"
                     onClick={() => setDeleteTarget(a)}
+                    disabled={deleteMutation.isPending && deleteTarget?.id === a.id}
                     className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                   >
                     Supprimer
@@ -159,10 +203,15 @@ function AssureursSection() {
       <ConfirmDialog
         open={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (deleteTarget) {
-            deleteMutation.mutate(deleteTarget.id, {
-              onSuccess: () => setDeleteTarget(null),
+            await deleteMutation.mutateAsync(deleteTarget.id, {
+              onSuccess: () => {
+                setStatus({ type: "success", msg: "Assureur supprimé." });
+              },
+              onError: (e) => {
+                setStatus({ type: "error", msg: `Échec de la suppression : ${String(e)}` });
+              },
             });
           }
         }}
@@ -188,6 +237,7 @@ function AssureurForm({ defaultValues, onSubmit, onCancel, isSubmitting }: Assur
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<AssureurCreate>({
     resolver: zodResolver(assureurCreateSchema),
@@ -199,6 +249,18 @@ function AssureurForm({ defaultValues, onSubmit, onCancel, isSubmitting }: Assur
         }
       : { nom: "" },
   });
+
+  useEffect(() => {
+    reset(
+      defaultValues
+        ? {
+            nom: defaultValues.nom,
+            ...(defaultValues.contact != null ? { contact: defaultValues.contact } : {}),
+            ...(defaultValues.adresse != null ? { adresse: defaultValues.adresse } : {}),
+          }
+        : { nom: "", contact: "", adresse: "" },
+    );
+  }, [defaultValues, reset]);
 
   const inputClass =
     "mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
@@ -312,7 +374,7 @@ function BackupSection() {
   };
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+    <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
         Sauvegarde & Restauration
       </h3>
@@ -423,7 +485,7 @@ function ImportSection() {
       }
       setReports((prev) => [...prev, { ...report, uid: crypto.randomUUID() }]);
       // Invalider toutes les queries pour rafraîchir les listes
-      qc.invalidateQueries();
+      void qc.invalidateQueries();
     } catch (e) {
       setReports((prev) => [
         ...prev,
@@ -442,7 +504,7 @@ function ImportSection() {
   };
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+    <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
         Import de données (.accdb → CSV)
       </h3>
@@ -597,7 +659,7 @@ function AppearanceSection({
     "mt-1 block rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+    <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
         {t("parametres.language.title")}
       </h3>

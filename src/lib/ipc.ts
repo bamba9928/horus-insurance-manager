@@ -32,6 +32,30 @@ export async function restoreDatabase(bytes: Uint8Array): Promise<string> {
   return invoke<string>("restore_database", { bytes: Array.from(bytes) });
 }
 
+export interface VerificationData {
+  attestationNumber: string;
+  dateVerification: string;
+  immatriculation: string;
+  dateEffet: string;
+  dateEcheance: string;
+  marque: string;
+  modele: string;
+}
+
+export interface VerificationApiResponse {
+  operationStatus: "SUCCESS" | "ERROR";
+  operationMessage: string;
+  data: VerificationData | null;
+}
+
+export async function verifyContract(immatriculation: string): Promise<VerificationApiResponse> {
+  return invoke<VerificationApiResponse>("verify_contract", { immatriculation });
+}
+
+export async function openExternalUrl(url: string): Promise<void> {
+  return invoke<void>("open_external_url", { url });
+}
+
 // ============ CLIENTS ============
 
 /** Paramètres de pagination et recherche */

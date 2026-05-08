@@ -67,11 +67,11 @@ export function DataTable<TData>({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 font-medium text-gray-700 select-none dark:text-slate-300"
+                    className="px-4 py-3 font-medium text-gray-700 select-none whitespace-nowrap dark:text-slate-300"
                     style={{ cursor: header.column.getCanSort() ? "pointer" : "default" }}
                     onClick={header.column.getToggleSortingHandler()}
                   >
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 whitespace-nowrap">
                       {header.isPlaceholder
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}
