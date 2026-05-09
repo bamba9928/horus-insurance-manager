@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { computeTarif, getDefaultFrais, TarifError } from "../../src/lib/tarification";
 
 describe("computeTarif — CAT 01 VP", () => {
-  it("12 mois, 7 CV, bonus 20% — calcul de référence", () => {
+  it("12 mois, 7 CV, réduction 20% — calcul de référence", () => {
     const r = computeTarif({
       categorie: "CAT_01_VP",
       puissance: 7,
@@ -48,15 +48,46 @@ describe("computeTarif — CAT 01 VP", () => {
     ).toBe(104143);
   });
 
-  it("bonus paramétrable", () => {
-    const r = computeTarif({
+  it("réduction paramétrable et appliquée à la responsabilité civile", () => {
+    const sansReduction = computeTarif({
       categorie: "CAT_01_VP",
       puissance: 7,
       dureeMois: 12,
       frais: 3000,
       bonus: 0,
     });
-    expect(r.rCivil).toBe(51078);
+    const reduction50 = computeTarif({
+      categorie: "CAT_01_VP",
+      puissance: 7,
+      dureeMois: 12,
+      frais: 3000,
+      bonus: 0.5,
+    });
+
+    expect(sansReduction.rCivil).toBe(51078);
+    expect(reduction50.rCivil).toBe(25539);
+    expect(reduction50.primeTotale).toBeLessThan(sansReduction.primeTotale);
+  });
+
+  it("frais de police paramétrables et intégrés à la taxe, prime totale et net à verser", () => {
+    const sansFrais = computeTarif({
+      categorie: "CAT_01_VP",
+      puissance: 7,
+      dureeMois: 12,
+      frais: 0,
+    });
+    const frais5000 = computeTarif({
+      categorie: "CAT_01_VP",
+      puissance: 7,
+      dureeMois: 12,
+      frais: 5000,
+    });
+
+    expect(frais5000.frais).toBe(5000);
+    expect(frais5000.rCivil).toBe(sansFrais.rCivil);
+    expect(frais5000.taxe - sansFrais.taxe).toBe(700);
+    expect(frais5000.primeTotale - sansFrais.primeTotale).toBe(5700);
+    expect(frais5000.netAVerser - sansFrais.netAVerser).toBe(700);
   });
 });
 
@@ -133,6 +164,18 @@ describe("computeTarif — erreurs", () => {
     expect(() =>
       computeTarif({ categorie: "CAT_01_VP", puissance: 7, dureeMois: 13, frais: 3000 }),
     ).toThrow(TarifError);
+  });
+
+  it("rejette une réduction invalide", () => {
+    expect(() =>
+      computeTarif({
+        categorie: "CAT_01_VP",
+        puissance: 7,
+        dureeMois: 12,
+        frais: 3000,
+        bonus: 1.2,
+      }),
+    ).toThrow(/Réduction invalide/);
   });
 
   it("exige une puissance pour les catégories CV", () => {

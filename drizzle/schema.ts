@@ -54,6 +54,14 @@ export const assureurs = sqliteTable("assureurs", {
   nom: text("nom").notNull().unique(),
   contact: text("contact"),
   adresse: text("adresse"),
+  code: text("code"),
+  integrationType: text("integration_type", { enum: ["MANUAL", "MOCK", "API"] }).default("MANUAL"),
+  apiBaseUrl: text("api_base_url"),
+  portalUrl: text("portal_url"),
+  technicalContact: text("technical_contact"),
+  integrationEnabled: integer("integration_enabled").default(0),
+  lastConnectionStatus: text("last_connection_status"),
+  lastConnectionAt: text("last_connection_at"),
 });
 
 // ============ POLICES (cœur métier) ============
@@ -76,6 +84,12 @@ export const polices = sqliteTable(
     statut: text("statut", {
       enum: ["ACTIVE", "EXPIRÉE", "ANNULÉE", "RENOUVELÉE"],
     }).default("ACTIVE"),
+    externalReference: text("external_reference"),
+    integrationStatus: text("integration_status", {
+      enum: ["LOCAL", "PENDING", "SYNCED", "ERROR"],
+    }).default("LOCAL"),
+    lastSyncAt: text("last_sync_at"),
+    syncError: text("sync_error"),
     createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
     updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
   },
@@ -118,3 +132,27 @@ export const auditLog = sqliteTable("audit_log", {
   user: text("user").default("system"),
   timestamp: text("timestamp").default(sql`CURRENT_TIMESTAMP`),
 });
+
+// ============ INTEGRATION EXCHANGE LOGS ============
+
+export const integrationExchangeLogs = sqliteTable(
+  "integration_exchange_logs",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    assureurId: integer("assureur_id").references(() => assureurs.id, { onDelete: "set null" }),
+    policeId: integer("police_id").references(() => polices.id, { onDelete: "set null" }),
+    action: text("action").notNull(),
+    direction: text("direction", { enum: ["IN", "OUT"] }).notNull(),
+    status: text("status", { enum: ["SUCCESS", "ERROR", "PENDING"] }).notNull(),
+    requestPayload: text("request_payload"),
+    responsePayload: text("response_payload"),
+    externalReference: text("external_reference"),
+    errorMessage: text("error_message"),
+    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("idx_exchange_logs_assureur").on(table.assureurId),
+    index("idx_exchange_logs_police").on(table.policeId),
+    index("idx_exchange_logs_created").on(table.createdAt),
+  ],
+);

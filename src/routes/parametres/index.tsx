@@ -16,6 +16,11 @@ import {
   useDeleteAssureur,
   useUpdateAssureur,
 } from "../../hooks/useAssureurs";
+import {
+  useIntegrationExchangeLogs,
+  useIntegrationOverview,
+  useTestAssureurIntegration,
+} from "../../hooks/useIntegrations";
 import { type Theme, useTheme } from "../../hooks/useTheme";
 import { backupDatabase, restoreDatabase } from "../../lib/ipc";
 import {
@@ -36,6 +41,7 @@ export function ParametresPage() {
       <Header title={t("nav.parametres")} />
       <div className="space-y-5 overflow-auto p-5">
         <AssureursSection />
+        <IntegrationsSection />
         <ImportSection />
         <BackupSection />
         <AppearanceSection
@@ -70,6 +76,14 @@ function AssureursSection() {
       nom: data.nom.trim(),
       ...(data.contact?.trim() ? { contact: data.contact.trim() } : {}),
       ...(data.adresse?.trim() ? { adresse: data.adresse.trim() } : {}),
+      ...(data.code?.trim() ? { code: data.code.trim().toUpperCase() } : { code: "" }),
+      integrationType: data.integrationType ?? "MANUAL",
+      ...(data.apiBaseUrl?.trim() ? { apiBaseUrl: data.apiBaseUrl.trim() } : { apiBaseUrl: "" }),
+      ...(data.portalUrl?.trim() ? { portalUrl: data.portalUrl.trim() } : { portalUrl: "" }),
+      ...(data.technicalContact?.trim()
+        ? { technicalContact: data.technicalContact.trim() }
+        : { technicalContact: "" }),
+      integrationEnabled: data.integrationEnabled ?? false,
     };
 
     if (editing) {
@@ -238,6 +252,7 @@ function AssureurForm({ defaultValues, onSubmit, onCancel, isSubmitting }: Assur
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<AssureurCreate>({
     resolver: zodResolver(assureurCreateSchema),
@@ -246,8 +261,16 @@ function AssureurForm({ defaultValues, onSubmit, onCancel, isSubmitting }: Assur
           nom: defaultValues.nom,
           ...(defaultValues.contact != null ? { contact: defaultValues.contact } : {}),
           ...(defaultValues.adresse != null ? { adresse: defaultValues.adresse } : {}),
+          ...(defaultValues.code != null ? { code: defaultValues.code } : {}),
+          integrationType: defaultValues.integration_type ?? "MANUAL",
+          ...(defaultValues.api_base_url != null ? { apiBaseUrl: defaultValues.api_base_url } : {}),
+          ...(defaultValues.portal_url != null ? { portalUrl: defaultValues.portal_url } : {}),
+          ...(defaultValues.technical_contact != null
+            ? { technicalContact: defaultValues.technical_contact }
+            : {}),
+          integrationEnabled: defaultValues.integration_enabled === 1,
         }
-      : { nom: "" },
+      : { nom: "", integrationType: "MANUAL", integrationEnabled: false },
   });
 
   useEffect(() => {
@@ -257,14 +280,35 @@ function AssureurForm({ defaultValues, onSubmit, onCancel, isSubmitting }: Assur
             nom: defaultValues.nom,
             ...(defaultValues.contact != null ? { contact: defaultValues.contact } : {}),
             ...(defaultValues.adresse != null ? { adresse: defaultValues.adresse } : {}),
+            ...(defaultValues.code != null ? { code: defaultValues.code } : {}),
+            integrationType: defaultValues.integration_type ?? "MANUAL",
+            ...(defaultValues.api_base_url != null
+              ? { apiBaseUrl: defaultValues.api_base_url }
+              : {}),
+            ...(defaultValues.portal_url != null ? { portalUrl: defaultValues.portal_url } : {}),
+            ...(defaultValues.technical_contact != null
+              ? { technicalContact: defaultValues.technical_contact }
+              : {}),
+            integrationEnabled: defaultValues.integration_enabled === 1,
           }
-        : { nom: "", contact: "", adresse: "" },
+        : {
+            nom: "",
+            contact: "",
+            adresse: "",
+            code: "",
+            integrationType: "MANUAL",
+            apiBaseUrl: "",
+            portalUrl: "",
+            technicalContact: "",
+            integrationEnabled: false,
+          },
     );
   }, [defaultValues, reset]);
 
   const inputClass =
     "mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
   const labelClass = "block text-sm font-medium text-gray-700 dark:text-slate-300";
+  const integrationType = watch("integrationType") ?? "MANUAL";
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -295,6 +339,64 @@ function AssureurForm({ defaultValues, onSubmit, onCancel, isSubmitting }: Assur
         </label>
         <input id="adresse" type="text" {...register("adresse")} className={inputClass} />
       </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="code" className={labelClass}>
+            Code compagnie
+          </label>
+          <input id="code" type="text" {...register("code")} className={inputClass} />
+        </div>
+        <div>
+          <label htmlFor="integrationType" className={labelClass}>
+            Type d'intégration
+          </label>
+          <select id="integrationType" {...register("integrationType")} className={inputClass}>
+            <option value="MANUAL">Manuel</option>
+            <option value="MOCK">Simulation API</option>
+            <option value="API">API réelle</option>
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="apiBaseUrl" className={labelClass}>
+            URL API
+          </label>
+          <input
+            id="apiBaseUrl"
+            type="url"
+            {...register("apiBaseUrl")}
+            className={inputClass}
+            disabled={integrationType === "MANUAL"}
+          />
+        </div>
+        <div>
+          <label htmlFor="portalUrl" className={labelClass}>
+            Portail compagnie
+          </label>
+          <input id="portalUrl" type="url" {...register("portalUrl")} className={inputClass} />
+        </div>
+      </div>
+      <div>
+        <label htmlFor="technicalContact" className={labelClass}>
+          Contact technique
+        </label>
+        <input
+          id="technicalContact"
+          type="text"
+          {...register("technicalContact")}
+          className={inputClass}
+          placeholder="Email ou téléphone support API"
+        />
+      </div>
+      <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+        <input
+          type="checkbox"
+          {...register("integrationEnabled")}
+          className="h-4 w-4 rounded border-gray-300 text-[#614e1a] focus:ring-[#614e1a]"
+        />
+        Connecteur actif
+      </label>
       <div className="flex justify-end gap-3 pt-2">
         <button
           type="button"
@@ -312,6 +414,180 @@ function AssureurForm({ defaultValues, onSubmit, onCancel, isSubmitting }: Assur
         </button>
       </div>
     </form>
+  );
+}
+
+// ─── Section Intégrations Compagnies ───
+
+function IntegrationsSection() {
+  const { data: integrations = [], isLoading } = useIntegrationOverview();
+  const { data: logs = [] } = useIntegrationExchangeLogs(8);
+  const testMutation = useTestAssureurIntegration();
+  const [status, setStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+
+  const handleTest = async (assureurId: number, nom: string) => {
+    setStatus(null);
+    try {
+      await testMutation.mutateAsync(assureurId);
+      setStatus({ type: "success", msg: `Test de connexion enregistré pour ${nom}.` });
+    } catch (e) {
+      setStatus({ type: "error", msg: `Test échoué pour ${nom} : ${String(e)}` });
+    }
+  };
+
+  return (
+    <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+          Intégrations compagnies
+        </h3>
+        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
+          Préparation des connecteurs API, suivi des statuts et journal des échanges externes.
+        </p>
+      </div>
+
+      {status && (
+        <div
+          className={`mt-4 rounded-lg border px-4 py-3 text-sm ${
+            status.type === "success"
+              ? "border-green-200 bg-green-50 text-green-800 dark:border-green-800/40 dark:bg-green-900/20 dark:text-green-300"
+              : "border-red-200 bg-red-50 text-red-800 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-300"
+          }`}
+        >
+          {status.msg}
+        </div>
+      )}
+
+      <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700">
+        {isLoading ? (
+          <p className="p-4 text-sm text-gray-500 dark:text-slate-400">Chargement...</p>
+        ) : integrations.length === 0 ? (
+          <p className="p-4 text-sm text-gray-500 dark:text-slate-400">
+            Ajoutez un assureur pour préparer son connecteur.
+          </p>
+        ) : (
+          <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-slate-700">
+            <thead className="bg-gray-50 dark:bg-slate-900/50">
+              <tr>
+                <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-slate-300">
+                  Compagnie
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-slate-300">
+                  Connecteur
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-slate-300">
+                  Polices
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-slate-300">
+                  Dernier test
+                </th>
+                <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-slate-300">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+              {integrations.map((item) => (
+                <tr key={item.assureur_id} className="dark:text-slate-100">
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-gray-900 dark:text-slate-100">{item.nom}</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                      {item.code ?? "Code non défini"}
+                    </p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <IntegrationBadge
+                      type={item.integration_type ?? "MANUAL"}
+                      enabled={item.integration_enabled === 1}
+                    />
+                  </td>
+                  <td className="px-4 py-3 text-gray-700 dark:text-slate-300">
+                    {item.synced_polices}/{item.total_polices} synchronisées
+                    {item.error_polices > 0 && (
+                      <span className="ml-2 text-xs text-red-600 dark:text-red-400">
+                        {item.error_polices} erreur(s)
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-gray-700 dark:text-slate-300">
+                    {item.last_connection_status ?? "Jamais testé"}
+                    {item.last_connection_at && (
+                      <p className="text-xs text-gray-500 dark:text-slate-400">
+                        {new Date(item.last_connection_at).toLocaleString()}
+                      </p>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => handleTest(item.assureur_id, item.nom)}
+                      disabled={testMutation.isPending}
+                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+                    >
+                      Tester
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {logs.length > 0 && (
+        <div className="mt-4">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+            Derniers échanges
+          </h4>
+          <ul className="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-slate-700 dark:border-slate-700">
+            {logs.map((log) => (
+              <li key={log.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-gray-900 dark:text-slate-100">
+                    {log.assureur_nom ?? "Assureur supprimé"} · {log.action}
+                  </p>
+                  <p className="truncate text-xs text-gray-500 dark:text-slate-400">
+                    {log.error_message ?? log.response_payload ?? "Échange enregistré"}
+                  </p>
+                </div>
+                <span
+                  className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${
+                    log.status === "SUCCESS"
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                      : log.status === "ERROR"
+                        ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                        : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                  }`}
+                >
+                  {log.status}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function IntegrationBadge({
+  type,
+  enabled,
+}: {
+  type: "MANUAL" | "MOCK" | "API";
+  enabled: boolean;
+}) {
+  const label = type === "MANUAL" ? "Manuel" : type === "MOCK" ? "Simulation" : "API réelle";
+  return (
+    <span
+      className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+        enabled
+          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+          : "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300"
+      }`}
+    >
+      {label} · {enabled ? "actif" : "inactif"}
+    </span>
   );
 }
 

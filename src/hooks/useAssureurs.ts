@@ -9,6 +9,7 @@ import { createAssureur, deleteAssureur, listAssureurs, updateAssureur } from ".
 import type { AssureurCreate, AssureurUpdate } from "../schemas/assureur";
 
 const ASSUREURS_KEY = ["assureurs"] as const;
+const INTEGRATIONS_KEY = ["integrations"] as const;
 
 /** Liste de tous les assureurs. */
 export function useAssureurs() {
@@ -23,7 +24,10 @@ export function useCreateAssureur() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: AssureurCreate) => createAssureur(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [...ASSUREURS_KEY] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: [...ASSUREURS_KEY] });
+      void qc.invalidateQueries({ queryKey: [...INTEGRATIONS_KEY] });
+    },
   });
 }
 
@@ -32,7 +36,10 @@ export function useUpdateAssureur() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: AssureurUpdate) => updateAssureur(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [...ASSUREURS_KEY] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: [...ASSUREURS_KEY] });
+      void qc.invalidateQueries({ queryKey: [...INTEGRATIONS_KEY] });
+    },
   });
 }
 
@@ -41,6 +48,9 @@ export function useDeleteAssureur() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteAssureur(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [...ASSUREURS_KEY] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: [...ASSUREURS_KEY] });
+      void qc.invalidateQueries({ queryKey: [...INTEGRATIONS_KEY] });
+    },
   });
 }

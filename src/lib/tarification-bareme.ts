@@ -214,7 +214,7 @@ export const TRICYCLE_RC = 40880;
 
 /** Constantes fiscales et commerciales (toutes catégories sauf override). */
 export const BAREME_CONSTANTS = {
-  /** Bonus par défaut (20 %) */
+  /** Réduction par défaut (20 %) */
   bonusDefaut: 0.2,
   /** Taxe sur (P_Nette + Frais) */
   tauxTaxe: 0.14,

@@ -5,9 +5,12 @@
  */
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useClients } from "../../hooks/useClients";
+import { useVehicules } from "../../hooks/useVehicules";
+import { REFERENTIEL_MARQUES } from "../../lib/referentiel-marques";
 import type { Vehicule, VehiculeCreate } from "../../schemas/vehicule";
 import { CATEGORIES_VEHICULE, vehiculeCreateSchema } from "../../schemas/vehicule";
 import { SearchableSelect } from "../ui/SearchableSelect";
@@ -25,6 +28,18 @@ interface VehiculeFormProps {
   isSubmitting?: boolean;
 }
 
+function normalizeText(value: string | null | undefined): string {
+  return value?.trim().replace(/\s+/g, " ") ?? "";
+}
+
+function normalizeBrand(value: string | null | undefined): string {
+  return normalizeText(value).toUpperCase();
+}
+
+function uniqueSorted(values: string[]): string[] {
+  return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr"));
+}
+
 export function VehiculeForm({
   defaultValues,
   preselectedClientId,
@@ -34,11 +49,13 @@ export function VehiculeForm({
 }: VehiculeFormProps) {
   const { t } = useTranslation();
   const { data: clients = [] } = useClients();
+  const { data: vehicules = [] } = useVehicules();
 
   const {
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors },
   } = useForm<VehiculeCreate>({
     resolver: zodResolver(vehiculeCreateSchema),
@@ -64,7 +81,35 @@ export function VehiculeForm({
         : {}),
   });
 
-  const onFormSubmit = (data: VehiculeCreate) => onSubmit(data as VehiculeCreate);
+  const selectedMarque = watch("marque");
+
+  const marqueOptions = useMemo(() => {
+    const marquesSaisies = vehicules.map((vehicule) => normalizeBrand(vehicule.marque));
+    return uniqueSorted([...REFERENTIEL_MARQUES, ...marquesSaisies]).map((marque) => ({
+      value: marque,
+      label: marque,
+    }));
+  }, [vehicules]);
+
+  const modeleOptions = useMemo(() => {
+    const marque = normalizeBrand(selectedMarque);
+    if (!marque) return [];
+    return uniqueSorted(
+      vehicules
+        .filter((vehicule) => normalizeBrand(vehicule.marque) === marque)
+        .map((vehicule) => normalizeText(vehicule.modele)),
+    ).map((modele) => ({
+      value: modele,
+      label: modele,
+    }));
+  }, [selectedMarque, vehicules]);
+
+  const onFormSubmit = (data: VehiculeCreate) =>
+    onSubmit({
+      ...data,
+      marque: normalizeBrand(data.marque) || undefined,
+      modele: normalizeText(data.modele) || undefined,
+    } as VehiculeCreate);
 
   const inputClass =
     "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none";
@@ -142,24 +187,45 @@ export function VehiculeForm({
           <label htmlFor="marque" className="block text-sm font-medium text-gray-700">
             {t("vehicules.marque")}
           </label>
-          <input
-            id="marque"
-            type="text"
-            {...register("marque")}
-            className={inputClass}
-            placeholder="Toyota"
+          <Controller
+            name="marque"
+            control={control}
+            render={({ field }) => (
+              <SearchableSelect
+                id="marque"
+                value={field.value ?? null}
+                onChange={(v) => field.onChange(v == null ? undefined : normalizeBrand(String(v)))}
+                options={marqueOptions}
+                placeholder="— Sélectionner une marque —"
+                emptyText="Aucune marque trouvée"
+                allowCustomValue
+                getCustomValueLabel={(value) => `Ajouter "${normalizeBrand(value)}"`}
+              />
+            )}
           />
         </div>
         <div>
           <label htmlFor="modele" className="block text-sm font-medium text-gray-700">
             {t("vehicules.modele")}
           </label>
-          <input
-            id="modele"
-            type="text"
-            {...register("modele")}
-            className={inputClass}
-            placeholder="Corolla"
+          <Controller
+            name="modele"
+            control={control}
+            render={({ field }) => (
+              <SearchableSelect
+                id="modele"
+                value={field.value ?? null}
+                onChange={(v) => field.onChange(v == null ? undefined : normalizeText(String(v)))}
+                options={modeleOptions}
+                placeholder={
+                  selectedMarque ? "— Sélectionner ou ajouter un modèle —" : "Choisir une marque"
+                }
+                emptyText="Aucun modèle enregistré"
+                disabled={!selectedMarque}
+                allowCustomValue
+                getCustomValueLabel={(value) => `Ajouter "${normalizeText(value)}"`}
+              />
+            )}
           />
         </div>
       </div>

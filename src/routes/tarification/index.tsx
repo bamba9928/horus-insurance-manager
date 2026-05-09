@@ -169,7 +169,7 @@ export function TarificationPage() {
               </div>
             )}
 
-            {/* Durée + bonus */}
+            {/* Durée + réduction */}
             <div className="mb-4 grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="tarif-duree" className={labelClass}>
@@ -187,7 +187,7 @@ export function TarificationPage() {
               </div>
               <div>
                 <label htmlFor="tarif-bonus" className={labelClass}>
-                  Bonus (%)
+                  Réduction (%)
                 </label>
                 <input
                   id="tarif-bonus"
@@ -216,9 +216,6 @@ export function TarificationPage() {
                 className={inputClass}
                 placeholder="3000"
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Varie selon la compagnie. Défaut : 3 000 (2 000 pour TPV).
-              </p>
             </div>
 
             <div className="flex gap-3">

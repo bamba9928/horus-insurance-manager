@@ -253,11 +253,23 @@ export async function listAssureurs(): Promise<Assureur[]> {
 
 /** Crée un assureur. */
 export async function createAssureur(data: AssureurCreate): Promise<number> {
-  const result = await execute("INSERT INTO assureurs (nom, contact, adresse) VALUES (?, ?, ?)", [
-    data.nom,
-    data.contact ?? null,
-    data.adresse ?? null,
-  ]);
+  const result = await execute(
+    `INSERT INTO assureurs (
+      nom, contact, adresse, code, integration_type, api_base_url, portal_url,
+      technical_contact, integration_enabled
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      data.nom,
+      data.contact ?? null,
+      data.adresse ?? null,
+      data.code ?? null,
+      data.integrationType ?? "MANUAL",
+      data.apiBaseUrl ?? null,
+      data.portalUrl ?? null,
+      data.technicalContact ?? null,
+      data.integrationEnabled ? 1 : 0,
+    ],
+  );
   return result.lastInsertId ?? 0;
 }
 
@@ -278,6 +290,30 @@ export async function updateAssureur(data: AssureurUpdate): Promise<void> {
     fields.push("adresse = ?");
     binds.push(data.adresse);
   }
+  if (data.code !== undefined) {
+    fields.push("code = ?");
+    binds.push(data.code);
+  }
+  if (data.integrationType !== undefined) {
+    fields.push("integration_type = ?");
+    binds.push(data.integrationType);
+  }
+  if (data.apiBaseUrl !== undefined) {
+    fields.push("api_base_url = ?");
+    binds.push(data.apiBaseUrl);
+  }
+  if (data.portalUrl !== undefined) {
+    fields.push("portal_url = ?");
+    binds.push(data.portalUrl);
+  }
+  if (data.technicalContact !== undefined) {
+    fields.push("technical_contact = ?");
+    binds.push(data.technicalContact);
+  }
+  if (data.integrationEnabled !== undefined) {
+    fields.push("integration_enabled = ?");
+    binds.push(data.integrationEnabled ? 1 : 0);
+  }
 
   if (fields.length === 0) return;
   binds.push(data.id);
@@ -287,6 +323,131 @@ export async function updateAssureur(data: AssureurUpdate): Promise<void> {
 /** Supprime un assureur. */
 export async function deleteAssureur(id: number): Promise<void> {
   await execute("DELETE FROM assureurs WHERE id = ?", [id]);
+}
+
+export interface IntegrationOverview {
+  assureur_id: number;
+  nom: string;
+  code: string | null;
+  integration_type: "MANUAL" | "MOCK" | "API" | null;
+  api_base_url: string | null;
+  portal_url: string | null;
+  technical_contact: string | null;
+  integration_enabled: number | null;
+  last_connection_status: string | null;
+  last_connection_at: string | null;
+  total_polices: number;
+  synced_polices: number;
+  error_polices: number;
+  last_exchange_at: string | null;
+  last_error: string | null;
+}
+
+export interface IntegrationExchangeLog {
+  id: number;
+  assureur_id: number | null;
+  police_id: number | null;
+  assureur_nom: string | null;
+  action: string;
+  direction: "IN" | "OUT";
+  status: "SUCCESS" | "ERROR" | "PENDING";
+  request_payload: string | null;
+  response_payload: string | null;
+  external_reference: string | null;
+  error_message: string | null;
+  created_at: string | null;
+}
+
+export async function listIntegrationOverview(): Promise<IntegrationOverview[]> {
+  return select<IntegrationOverview>(`
+    SELECT
+      a.id AS assureur_id,
+      a.nom,
+      a.code,
+      a.integration_type,
+      a.api_base_url,
+      a.portal_url,
+      a.technical_contact,
+      a.integration_enabled,
+      a.last_connection_status,
+      a.last_connection_at,
+      COUNT(p.id) AS total_polices,
+      SUM(CASE WHEN p.integration_status = 'SYNCED' THEN 1 ELSE 0 END) AS synced_polices,
+      SUM(CASE WHEN p.integration_status = 'ERROR' THEN 1 ELSE 0 END) AS error_polices,
+      MAX(l.created_at) AS last_exchange_at,
+      (
+        SELECT l2.error_message
+        FROM integration_exchange_logs l2
+        WHERE l2.assureur_id = a.id AND l2.error_message IS NOT NULL
+        ORDER BY l2.created_at DESC
+        LIMIT 1
+      ) AS last_error
+    FROM assureurs a
+    LEFT JOIN polices p ON p.assureur_id = a.id
+    LEFT JOIN integration_exchange_logs l ON l.assureur_id = a.id
+    GROUP BY a.id
+    ORDER BY a.nom ASC
+  `);
+}
+
+export async function listIntegrationExchangeLogs(limit = 20): Promise<IntegrationExchangeLog[]> {
+  return select<IntegrationExchangeLog>(
+    `SELECT
+      l.*,
+      a.nom AS assureur_nom
+    FROM integration_exchange_logs l
+    LEFT JOIN assureurs a ON a.id = l.assureur_id
+    ORDER BY l.created_at DESC
+    LIMIT ?`,
+    [limit],
+  );
+}
+
+export async function testAssureurIntegration(assureurId: number): Promise<void> {
+  const [assureur] = await select<Assureur>("SELECT * FROM assureurs WHERE id = ?", [assureurId]);
+  if (!assureur) throw new Error(`Assureur ${assureurId} introuvable`);
+
+  const integrationType = assureur.integration_type ?? "MANUAL";
+  const now = new Date().toISOString();
+
+  if (integrationType === "API") {
+    const error = assureur.api_base_url
+      ? "Connecteur API réel non implémenté pour cette compagnie."
+      : "URL API manquante pour cette compagnie.";
+    await execute(
+      `INSERT INTO integration_exchange_logs (
+        assureur_id, action, direction, status, request_payload, error_message
+      ) VALUES (?, 'TEST_CONNECTION', 'OUT', 'ERROR', ?, ?)`,
+      [assureurId, JSON.stringify({ apiBaseUrl: assureur.api_base_url }), error],
+    );
+    await execute(
+      "UPDATE assureurs SET last_connection_status = ?, last_connection_at = ? WHERE id = ?",
+      ["ERROR", now, assureurId],
+    );
+    throw new Error(error);
+  }
+
+  const status = integrationType === "MOCK" ? "SUCCESS" : "PENDING";
+  const message =
+    integrationType === "MOCK"
+      ? "Connecteur mock disponible."
+      : "Mode manuel : aucune API à tester.";
+
+  await execute(
+    `INSERT INTO integration_exchange_logs (
+      assureur_id, action, direction, status, request_payload, response_payload
+    ) VALUES (?, 'TEST_CONNECTION', 'OUT', ?, ?, ?)`,
+    [
+      assureurId,
+      status,
+      JSON.stringify({ integrationType }),
+      JSON.stringify({ message, checkedAt: now }),
+    ],
+  );
+  await execute(
+    "UPDATE assureurs SET last_connection_status = ?, last_connection_at = ? WHERE id = ?",
+    [status, now, assureurId],
+  );
 }
 
 // ============ POLICES ============
@@ -326,8 +487,11 @@ export async function getPolice(id: number): Promise<Police | undefined> {
 /** Crée une police. */
 export async function createPolice(data: PoliceCreate): Promise<number> {
   const result = await execute(
-    `INSERT INTO polices (vehicule_id, assureur_id, numero_police, type_carte, date_effet, duree_mois, appreciation)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO polices (
+      vehicule_id, assureur_id, numero_police, type_carte, date_effet, duree_mois,
+      appreciation, external_reference, integration_status, sync_error
+    )
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.vehiculeId,
       data.assureurId ?? null,
@@ -336,6 +500,9 @@ export async function createPolice(data: PoliceCreate): Promise<number> {
       data.dateEffet,
       data.dureeMois,
       data.appreciation ?? null,
+      data.externalReference ?? null,
+      data.integrationStatus ?? "LOCAL",
+      data.syncError ?? null,
     ],
   );
   return result.lastInsertId ?? 0;
@@ -377,6 +544,18 @@ export async function updatePolice(data: PoliceUpdate): Promise<void> {
   if (data.statut !== undefined) {
     fields.push("statut = ?");
     binds.push(data.statut);
+  }
+  if (data.externalReference !== undefined) {
+    fields.push("external_reference = ?");
+    binds.push(data.externalReference);
+  }
+  if (data.integrationStatus !== undefined) {
+    fields.push("integration_status = ?");
+    binds.push(data.integrationStatus);
+  }
+  if (data.syncError !== undefined) {
+    fields.push("sync_error = ?");
+    binds.push(data.syncError);
   }
 
   if (fields.length === 0) return;

@@ -6,8 +6,8 @@
  * de calcul.
  *
  * Formules communes (toutes catégories) :
- *  - R. Civil  = ROUND(RC_annuel × coeffMensuel × mois × (1 − bonus))   pour 1 ≤ mois ≤ 11
- *                ROUND(RC_annuel × (1 − bonus))                         pour mois = 12
+ *  - R. Civil  = ROUND(RC_annuel × coeffMensuel × mois × (1 − réduction)) pour 1 ≤ mois ≤ 11
+ *                ROUND(RC_annuel × (1 − réduction))                       pour mois = 12
  *  - P. Nette  = R. Civil (P. Trans = 0)
  *  - Taxe      = ROUND((P_Nette + Frais) × tauxTaxe)
  *  - FGA       = ROUND(R_Civil × tauxFga)
@@ -63,14 +63,14 @@ export interface TarifInput {
   dureeMois: number;
   /** Frais de police / coût de police */
   frais: number;
-  /** Bonus accordé (0.2 = 20 %) ; si non fourni, valeur par défaut du barème */
+  /** Réduction accordée (0.2 = 20 %) ; si non fourni, valeur par défaut du barème */
   bonus?: number;
 }
 
 export interface TarifResult {
   /** RC annuel utilisé */
   rcAnnuel: number;
-  /** Responsabilité civile (prorata durée + bonus) */
+  /** Responsabilité civile (prorata durée + réduction) */
   rCivil: number;
   /** Prime Nette */
   primeNette: number;
@@ -151,6 +151,8 @@ export function computeTarif(input: TarifInput): TarifResult {
   if (!Number.isFinite(dureeMois) || dureeMois < 1 || dureeMois > 12)
     throw new TarifError("Durée invalide (1 à 12 mois).");
   if (!Number.isFinite(frais) || frais < 0) throw new TarifError("Frais invalide.");
+  if (!Number.isFinite(bonus) || bonus < 0 || bonus > 1)
+    throw new TarifError("Réduction invalide (0 à 100 %).");
 
   const rcAnnuel = resolveRcAnnuel(input);
 

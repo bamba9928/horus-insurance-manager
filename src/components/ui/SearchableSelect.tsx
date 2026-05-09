@@ -32,6 +32,10 @@ interface SearchableSelectProps {
   id?: string;
   /** Permet l'option "aucune sélection" */
   allowClear?: boolean;
+  /** Permet de sélectionner le texte recherché même absent de la liste */
+  allowCustomValue?: boolean;
+  /** Construit le libellé de l'option de création */
+  getCustomValueLabel?: (value: string) => string;
 }
 
 export function SearchableSelect({
@@ -44,6 +48,8 @@ export function SearchableSelect({
   className,
   id,
   allowClear = true,
+  allowCustomValue = false,
+  getCustomValueLabel = (customValue) => `Ajouter "${customValue}"`,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -58,8 +64,8 @@ export function SearchableSelect({
 
   const selectedLabel = useMemo(() => {
     if (value == null || value === "") return "";
-    return options.find((o) => o.value === value)?.label ?? "";
-  }, [options, value]);
+    return options.find((o) => o.value === value)?.label ?? (allowCustomValue ? String(value) : "");
+  }, [allowCustomValue, options, value]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return options;
@@ -68,6 +74,21 @@ export function SearchableSelect({
       (o) => o.label.toLowerCase().includes(q) || o.sublabel?.toLowerCase().includes(q),
     );
   }, [options, search]);
+
+  const visibleOptions = useMemo(() => {
+    const customValue = search.trim();
+    if (!allowCustomValue || !customValue) return filtered;
+    const exactMatch = options.some((o) => o.label.toLowerCase() === customValue.toLowerCase());
+    if (exactMatch) return filtered;
+    return [
+      {
+        value: customValue,
+        label: getCustomValueLabel(customValue),
+        sublabel: "Nouvelle valeur",
+      },
+      ...filtered,
+    ];
+  }, [allowCustomValue, filtered, getCustomValueLabel, options, search]);
 
   // Fermeture au clic extérieur
   useEffect(() => {
@@ -107,13 +128,13 @@ export function SearchableSelect({
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActiveIndex((i) => Math.min(i + 1, filtered.length - 1));
+      setActiveIndex((i) => Math.min(i + 1, visibleOptions.length - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActiveIndex((i) => Math.max(i - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      const opt = filtered[activeIndex];
+      const opt = visibleOptions[activeIndex];
       if (opt) commit(opt.value);
     } else if (e.key === "Escape") {
       e.preventDefault();
@@ -184,12 +205,12 @@ export function SearchableSelect({
                 — Aucune sélection —
               </div>
             )}
-            {filtered.length === 0 && (
+            {visibleOptions.length === 0 && (
               <div className="px-3 py-2 text-center text-xs text-gray-500 dark:text-slate-400">
                 {emptyText}
               </div>
             )}
-            {filtered.map((opt, idx) => {
+            {visibleOptions.map((opt, idx) => {
               const selected = opt.value === value;
               const active = idx === activeIndex;
               return (
