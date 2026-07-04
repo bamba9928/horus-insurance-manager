@@ -6,6 +6,7 @@
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { Header } from "../components/layout";
 import { useAuth } from "../lib/auth";
+import { csrfHeaders } from "../lib/csrf";
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -21,12 +22,18 @@ interface AdminUser {
 }
 
 async function adminFetch<T>(path: string, method = "GET", body?: unknown): Promise<T> {
+  const headers = {
+    ...(body !== undefined ? { "content-type": "application/json" } : {}),
+    ...csrfHeaders(method),
+  };
   const res = await fetch(`${BASE}/api/admin${path}`, {
     method,
     credentials: "include",
     ...(body !== undefined
-      ? { headers: { "content-type": "application/json" }, body: JSON.stringify(body) }
-      : {}),
+      ? { headers, body: JSON.stringify(body) }
+      : Object.keys(headers).length > 0
+        ? { headers }
+        : {}),
   });
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as { error?: string };

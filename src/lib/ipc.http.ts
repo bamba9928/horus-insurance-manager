@@ -12,6 +12,7 @@ import type { DossierCreate, DossierCreated } from "../schemas/dossier";
 import type { Paiement, PaiementCreate, PaiementUpdate } from "../schemas/paiement";
 import type { Police, PoliceCreate, PoliceUpdate } from "../schemas/police";
 import type { Vehicule, VehiculeCreate, VehiculeUpdate } from "../schemas/vehicule";
+import { csrfHeaders } from "./csrf";
 import type {
   DashboardKPI,
   DashboardRecapRow,
@@ -38,12 +39,18 @@ export class ApiError extends Error {
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const headers = {
+    ...(body !== undefined ? { "content-type": "application/json" } : {}),
+    ...csrfHeaders(method),
+  };
   const res = await fetch(`${BASE}/api${path}`, {
     method,
     credentials: "include",
     ...(body !== undefined
-      ? { headers: { "content-type": "application/json" }, body: JSON.stringify(body) }
-      : {}),
+      ? { headers, body: JSON.stringify(body) }
+      : Object.keys(headers).length > 0
+        ? { headers }
+        : {}),
   });
 
   if (!res.ok) {
@@ -87,7 +94,7 @@ export async function restoreDatabase(bytes: Uint8Array): Promise<string> {
   const res = await fetch(`${BASE}/api/restore`, {
     method: "POST",
     credentials: "include",
-    headers: { "content-type": "application/octet-stream" },
+    headers: { "content-type": "application/octet-stream", ...csrfHeaders("POST") },
     body: bytes as unknown as BodyInit,
   });
   if (!res.ok) throw new ApiError(res.status, `Erreur ${res.status}`);

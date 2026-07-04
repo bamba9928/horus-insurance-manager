@@ -7,6 +7,7 @@
  */
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { csrfHeaders } from "./csrf";
 
 /** Vrai si l'app tourne en mode web (API HTTP + authentification). */
 export const isWebMode = import.meta.env.VITE_API_MODE === "http";
@@ -82,9 +83,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await fetch(`${BASE}/api/auth/logout`, { method: "POST", credentials: "include" }).catch(
-      () => {},
-    );
+    await fetch(`${BASE}/api/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+      headers: csrfHeaders("POST"),
+    }).catch(() => {});
     setUser(null);
   }, []);
 

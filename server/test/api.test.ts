@@ -22,6 +22,13 @@ let dataDir: string;
 let adminDb: ReturnType<typeof openAdminDb>;
 let app: Hono<AuthEnv>;
 
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+function cookieValue(cookieHeader: string, name: string): string | undefined {
+  const match = cookieHeader.match(new RegExp(`${name}=([^;]+)`));
+  return match ? decodeURIComponent(match[1] ?? "") : undefined;
+}
+
 async function seedUser(login: string): Promise<number> {
   const id = createUser(adminDb, {
     login,
@@ -40,9 +47,10 @@ async function loginAs(login: string): Promise<string> {
     body: JSON.stringify({ login, password: PASSWORD }),
   });
   const raw = res.headers.get("set-cookie") ?? "";
-  const match = raw.match(/horus_session=([^;]+)/);
-  if (!match) throw new Error("Pas de cookie");
-  return `horus_session=${match[1]}`;
+  const session = raw.match(/horus_session=([^;,]+)/);
+  const csrf = raw.match(/horus_csrf=([^;,]+)/);
+  if (!session || !csrf) throw new Error(`Cookies de session incomplets : ${raw}`);
+  return `horus_session=${session[1]}; horus_csrf=${csrf[1]}`;
 }
 
 interface CallOptions {
@@ -52,10 +60,13 @@ interface CallOptions {
 }
 
 async function call(route: string, opts: CallOptions): Promise<Response> {
+  const method = opts.method ?? "GET";
   const headers: Record<string, string> = { cookie: opts.cookie };
   if (opts.body !== undefined) headers["content-type"] = "application/json";
+  const csrfToken = cookieValue(opts.cookie, "horus_csrf");
+  if (csrfToken && MUTATING_METHODS.has(method)) headers["x-csrf-token"] = csrfToken;
   return app.request(route, {
-    method: opts.method ?? "GET",
+    method,
     headers,
     ...(opts.body !== undefined ? { body: JSON.stringify(opts.body) } : {}),
   });
@@ -291,7 +302,11 @@ describe("sauvegarde / restauration", () => {
 
     const restore = await app.request("/api/restore", {
       method: "POST",
-      headers: { cookie: cookieA, "content-type": "application/octet-stream" },
+      headers: {
+        cookie: cookieA,
+        "content-type": "application/octet-stream",
+        "x-csrf-token": cookieValue(cookieA, "horus_csrf") ?? "",
+      },
       body: bytes,
     });
     expect(restore.status).toBe(200);
@@ -305,7 +320,11 @@ describe("sauvegarde / restauration", () => {
   it("rejette un fichier qui n'est pas une base Horus", async () => {
     const res = await app.request("/api/restore", {
       method: "POST",
-      headers: { cookie: cookieA, "content-type": "application/octet-stream" },
+      headers: {
+        cookie: cookieA,
+        "content-type": "application/octet-stream",
+        "x-csrf-token": cookieValue(cookieA, "horus_csrf") ?? "",
+      },
       body: new Uint8Array([1, 2, 3, 4, 5]),
     });
     expect(res.status).toBe(400);

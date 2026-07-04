@@ -9,6 +9,7 @@ import fs from "node:fs";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AppContext } from "../app.js";
+import { requireCsrf } from "../auth/csrf.js";
 import type { AuthEnv } from "../auth/middleware.js";
 import { requireAdmin, requireAuth } from "../auth/middleware.js";
 import { hashPassword } from "../auth/password.js";
@@ -18,6 +19,7 @@ import {
   findUserById,
   findUserByLogin,
   listUsers,
+  recordSecurityEvent,
   setUserActive,
   updateUserPassword,
 } from "../db/adminDb.js";
@@ -44,10 +46,15 @@ function parseUserId(raw: string): number | null {
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
+function clientIp(header: string | undefined): string {
+  return header?.split(",")[0]?.trim() || "local";
+}
+
 export function adminRoutes(ctx: AppContext): Hono<AuthEnv> {
   const app = new Hono<AuthEnv>();
 
   app.use("*", requireAuth(ctx.adminDb, ctx.env.cookieSecure), requireAdmin);
+  app.use("*", requireCsrf);
 
   /** Liste des comptes avec la taille de leur base. */
   app.get("/users", (c) => {
@@ -93,6 +100,14 @@ export function adminRoutes(ctx: AppContext): Hono<AuthEnv> {
       throw err;
     }
     provisionTenantDb(ctx.env.dataDir, userId);
+    recordSecurityEvent(ctx.adminDb, {
+      action: "USER_CREATE",
+      userId: c.get("user").id,
+      login: c.get("user").login,
+      ip: clientIp(c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip")),
+      success: true,
+      detail: JSON.stringify({ targetUserId: userId, targetLogin: parsed.data.login }),
+    });
 
     const user = findUserById(ctx.adminDb, userId);
     return c.json(
@@ -118,6 +133,14 @@ export function adminRoutes(ctx: AppContext): Hono<AuthEnv> {
 
     updateUserPassword(ctx.adminDb, userId, await hashPassword(parsed.data.password));
     deleteUserSessions(ctx.adminDb, userId);
+    recordSecurityEvent(ctx.adminDb, {
+      action: "USER_PASSWORD_RESET",
+      userId: c.get("user").id,
+      login: c.get("user").login,
+      ip: clientIp(c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip")),
+      success: true,
+      detail: JSON.stringify({ targetUserId: userId }),
+    });
     return c.json({ ok: true });
   });
 
@@ -139,6 +162,14 @@ export function adminRoutes(ctx: AppContext): Hono<AuthEnv> {
 
     setUserActive(ctx.adminDb, userId, parsed.data.actif);
     if (!parsed.data.actif) deleteUserSessions(ctx.adminDb, userId);
+    recordSecurityEvent(ctx.adminDb, {
+      action: "USER_ACTIVE_CHANGE",
+      userId: c.get("user").id,
+      login: c.get("user").login,
+      ip: clientIp(c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip")),
+      success: true,
+      detail: JSON.stringify({ targetUserId: userId, actif: parsed.data.actif }),
+    });
     return c.json({ ok: true });
   });
 

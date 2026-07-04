@@ -9,6 +9,7 @@ import type { MiddlewareHandler } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 import type { SafeUser } from "../db/adminDb.js";
 import { toSafeUser } from "../db/adminDb.js";
+import { CSRF_COOKIE, createCsrfToken, setCsrfCookie } from "./csrf.js";
 import {
   deleteUserSessions,
   getSessionUser,
@@ -52,6 +53,12 @@ export function requireAuth(
       path: "/",
       maxAge: SESSION_MAX_AGE_SECONDS,
     });
+    setCsrfCookie(
+      c,
+      getCookie(c, CSRF_COOKIE) ?? createCsrfToken(),
+      cookieSecure,
+      SESSION_MAX_AGE_SECONDS,
+    );
 
     c.set("user", toSafeUser(user));
     await next();

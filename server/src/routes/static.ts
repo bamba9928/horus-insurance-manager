@@ -29,6 +29,16 @@ const MIME: Record<string, string> = {
   ".txt": "text/plain; charset=utf-8",
 };
 
+const SECURITY_HEADERS = {
+  "content-security-policy":
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+  "cross-origin-opener-policy": "same-origin",
+  "permissions-policy": "camera=(), microphone=(), geolocation=()",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+};
+
 /** Détecte un nom de fichier versionné (hash Vite) → cache long immuable. */
 function isHashed(fileName: string): boolean {
   return /\.[0-9a-zA-Z_-]{8,}\.(js|css|woff2?|ttf|png|jpe?g|svg|webp)$/.test(fileName);
@@ -64,6 +74,7 @@ export function mountStatic(app: Hono<AuthEnv>, dir: string): void {
 
     return new Response(new Uint8Array(body), {
       headers: {
+        ...SECURITY_HEADERS,
         "content-type": MIME[ext] ?? "application/octet-stream",
         "cache-control": cacheControl,
       },

@@ -14,8 +14,10 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AppContext } from "../app.js";
+import { requireCsrf } from "../auth/csrf.js";
 import type { AuthEnv } from "../auth/middleware.js";
 import { requireAuth } from "../auth/middleware.js";
+import { recordSecurityEvent } from "../db/adminDb.js";
 import * as q from "../db/queries.js";
 import { closeTenantDb, openTenantDb, tenantDbPath } from "../db/tenants.js";
 import {
@@ -45,6 +47,35 @@ function parseId(raw: string): number | null {
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
+function clientIp(header: string | undefined): string {
+  return header?.split(",")[0]?.trim() || "local";
+}
+
+const REQUIRED_RESTORE_COLUMNS: Record<string, string[]> = {
+  clients: ["id", "nom_prenom"],
+  vehicules: ["id", "client_id", "immatriculation"],
+  assureurs: ["id", "nom"],
+  polices: ["id", "vehicule_id", "type_carte", "date_effet", "duree_mois"],
+  paiements: ["id", "police_id", "montant_du"],
+};
+
+function hasRequiredTenantSchema(db: Database.Database): boolean {
+  for (const [table, requiredColumns] of Object.entries(REQUIRED_RESTORE_COLUMNS)) {
+    const exists = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?")
+      .get(table);
+    if (!exists) return false;
+
+    const columns = new Set(
+      (db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>).map(
+        (row) => row.name,
+      ),
+    );
+    if (!requiredColumns.every((column) => columns.has(column))) return false;
+  }
+  return true;
+}
+
 /** Exécute une mutation en traduisant les erreurs de contrainte SQLite. */
 function guardMutation<T>(c: Context<AuthEnv>, fn: () => T): Response | T {
   try {
@@ -64,6 +95,7 @@ function guardMutation<T>(c: Context<AuthEnv>, fn: () => T): Response | T {
 export function apiRoutes(ctx: AppContext): Hono<AuthEnv> {
   const app = new Hono<AuthEnv>();
   app.use("*", requireAuth(ctx.adminDb, ctx.env.cookieSecure));
+  app.use("*", requireCsrf);
 
   // ============ CLIENTS ============
 
@@ -325,6 +357,14 @@ export function apiRoutes(ctx: AppContext): Hono<AuthEnv> {
     try {
       await db.backup(tmp);
       const bytes = fs.readFileSync(tmp);
+      const user = c.get("user");
+      recordSecurityEvent(ctx.adminDb, {
+        action: "BACKUP_DATABASE",
+        userId: user.id,
+        login: user.login,
+        ip: clientIp(c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip")),
+        success: true,
+      });
       return new Response(bytes, {
         headers: {
           "content-type": "application/octet-stream",
@@ -353,10 +393,9 @@ export function apiRoutes(ctx: AppContext): Hono<AuthEnv> {
         try {
           const integrity = candidate.pragma("integrity_check", { simple: true });
           if (integrity !== "ok") return c.json({ error: "Fichier de base corrompu" }, 400);
-          const hasClients = candidate
-            .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='clients'")
-            .get();
-          if (!hasClients) return c.json({ error: "Ce fichier n'est pas une base Horus" }, 400);
+          if (!hasRequiredTenantSchema(candidate)) {
+            return c.json({ error: "Ce fichier n'est pas une base Horus compatible" }, 400);
+          }
         } finally {
           candidate.close();
         }
@@ -372,6 +411,15 @@ export function apiRoutes(ctx: AppContext): Hono<AuthEnv> {
       fs.rmSync(`${target}-shm`, { force: true });
       // Réouverture immédiate : applique les migrations manquantes si besoin.
       openTenantDb(ctx.env.dataDir, userId);
+      const user = c.get("user");
+      recordSecurityEvent(ctx.adminDb, {
+        action: "RESTORE_DATABASE",
+        userId: user.id,
+        login: user.login,
+        ip: clientIp(c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip")),
+        success: true,
+        detail: JSON.stringify({ bytes: buffer.length }),
+      });
       return c.json({ ok: true });
     } finally {
       fs.rmSync(tmp, { force: true });

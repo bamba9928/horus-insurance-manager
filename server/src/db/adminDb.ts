@@ -32,6 +32,17 @@ export interface SafeUser {
   role: Role;
 }
 
+export type SecurityAction =
+  | "LOGIN_SUCCESS"
+  | "LOGIN_FAILURE"
+  | "LOGIN_BLOCKED"
+  | "LOGOUT"
+  | "USER_CREATE"
+  | "USER_PASSWORD_RESET"
+  | "USER_ACTIVE_CHANGE"
+  | "BACKUP_DATABASE"
+  | "RESTORE_DATABASE";
+
 export function toSafeUser(row: UserRow): SafeUser {
   return { id: row.id, login: row.login, nom: row.nom, role: row.role };
 }
@@ -57,6 +68,21 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user    ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
+
+CREATE TABLE IF NOT EXISTS security_events (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  login      TEXT,
+  action     TEXT NOT NULL,
+  ip         TEXT,
+  success    INTEGER NOT NULL CHECK(success IN (0,1)),
+  detail     TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_security_events_created ON security_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_security_events_user    ON security_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_security_events_action  ON security_events(action);
 `;
 
 /** Ouvre (et initialise si besoin) la base d'administration. */
@@ -114,5 +140,29 @@ export function touchLastLogin(db: Database.Database, userId: number): void {
   db.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").run(
     new Date().toISOString(),
     userId,
+  );
+}
+
+export function recordSecurityEvent(
+  db: Database.Database,
+  event: {
+    action: SecurityAction;
+    success: boolean;
+    userId?: number | null;
+    login?: string | null;
+    ip?: string | null;
+    detail?: string | null;
+  },
+): void {
+  db.prepare(
+    `INSERT INTO security_events (user_id, login, action, ip, success, detail)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run(
+    event.userId ?? null,
+    event.login ?? null,
+    event.action,
+    event.ip ?? null,
+    event.success ? 1 : 0,
+    event.detail ?? null,
   );
 }

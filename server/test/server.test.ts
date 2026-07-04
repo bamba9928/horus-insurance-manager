@@ -34,13 +34,23 @@ interface ApiOptions {
   ip?: string;
 }
 
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+function cookieValue(cookieHeader: string, name: string): string | undefined {
+  const match = cookieHeader.match(new RegExp(`${name}=([^;]+)`));
+  return match ? decodeURIComponent(match[1] ?? "") : undefined;
+}
+
 async function api(route: string, opts: ApiOptions = {}): Promise<Response> {
+  const method = opts.method ?? "GET";
   const headers: Record<string, string> = {};
   if (opts.body !== undefined) headers["content-type"] = "application/json";
   if (opts.cookie) headers.cookie = opts.cookie;
+  const csrfToken = opts.cookie ? cookieValue(opts.cookie, "horus_csrf") : undefined;
+  if (csrfToken && MUTATING_METHODS.has(method)) headers["x-csrf-token"] = csrfToken;
   if (opts.ip) headers["x-forwarded-for"] = opts.ip;
   return app.request(route, {
-    method: opts.method ?? "GET",
+    method,
     headers,
     ...(opts.body !== undefined ? { body: JSON.stringify(opts.body) } : {}),
   });
@@ -56,9 +66,10 @@ async function login(loginName: string, password: string, ip?: string): Promise<
 
 function extractCookie(res: Response): string {
   const raw = res.headers.get("set-cookie") ?? "";
-  const match = raw.match(/horus_session=([^;]+)/);
-  if (!match) throw new Error(`Pas de cookie de session dans : ${raw}`);
-  return `horus_session=${match[1]}`;
+  const session = raw.match(/horus_session=([^;,]+)/);
+  const csrf = raw.match(/horus_csrf=([^;,]+)/);
+  if (!session || !csrf) throw new Error(`Cookies de session incomplets : ${raw}`);
+  return `horus_session=${session[1]}; horus_csrf=${csrf[1]}`;
 }
 
 beforeAll(async () => {
@@ -226,6 +237,16 @@ describe("administration des comptes", () => {
     agentCookie = extractCookie(loginRes);
 
     const res = await api("/api/admin/users", { cookie: agentCookie });
+    expect(res.status).toBe(403);
+  });
+
+  it("refuse une mutation authentifiée sans jeton CSRF", async () => {
+    const sessionOnly = `horus_session=${cookieValue(adminCookie, "horus_session")}`;
+    const res = await app.request("/api/admin/users", {
+      method: "POST",
+      headers: { cookie: sessionOnly, "content-type": "application/json" },
+      body: JSON.stringify({ login: "sanscsrf", nom: "Sans CSRF", password: "password-123" }),
+    });
     expect(res.status).toBe(403);
   });
 
