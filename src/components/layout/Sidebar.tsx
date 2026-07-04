@@ -7,25 +7,9 @@
 import { Link, useMatchRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { isWebMode, useAuth } from "../../lib/auth";
+import { useAuth } from "../../lib/auth";
 import { cn } from "../../lib/utils";
-
-interface NavItem {
-  path: string;
-  labelKey: string;
-  icon: string;
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { path: "/", labelKey: "nav.dashboard", icon: "\u{1F4CA}" },
-  { path: "/verification", labelKey: "nav.verification", icon: "\u{1F50E}" },
-  { path: "/clients", labelKey: "nav.clients", icon: "\u{1F465}" },
-  { path: "/vehicules", labelKey: "nav.vehicules", icon: "\u{1F697}" },
-  { path: "/polices", labelKey: "nav.polices", icon: "\u{1F4C4}" },
-  { path: "/paiements", labelKey: "nav.paiements", icon: "\u{1F4B0}" },
-  { path: "/echeances", labelKey: "nav.echeances", icon: "\u{1F4C5}" },
-  { path: "/parametres", labelKey: "nav.parametres", icon: "\u{2699}\u{FE0F}" },
-];
+import { getNavigationItems } from "./navigation";
 
 const STORAGE_KEY = "ham-sidebar-collapsed";
 const LOGO_SRC = "/horus-manager-logo.png";
@@ -37,17 +21,7 @@ export function Sidebar() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  // Le menu Administration n'apparaît qu'en mode web pour le super admin.
-  const navItems =
-    isWebMode && user
-      ? [
-          ...NAV_ITEMS,
-          { path: "/profil", labelKey: "nav.profile", icon: "\u{1F464}" },
-          ...(user.role === "ADMIN"
-            ? [{ path: "/admin", labelKey: "nav.admin", icon: "\u{1F510}" }]
-            : []),
-        ]
-      : NAV_ITEMS;
+  const navItems = getNavigationItems(user);
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -145,7 +119,7 @@ export function Sidebar() {
       </nav>
 
       {/* Compte connecté + déconnexion (mode web) */}
-      {isWebMode && user && (
+      {user && (
         <div className={cn("border-t border-white/20", collapsed ? "px-2 py-1.5" : "px-4 py-2.5")}>
           {!collapsed && (
             <div className="mb-1.5 overflow-hidden">

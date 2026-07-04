@@ -18,6 +18,7 @@ const resources = {
         subtitle: "Gestion de courtage en assurance auto",
       },
       nav: {
+        home: "Accueil",
         dashboard: "Tableau de bord",
         verification: "Vérification",
         clients: "Clients",
@@ -200,6 +201,7 @@ const resources = {
         subtitle: "Auto insurance brokerage management",
       },
       nav: {
+        home: "Home",
         dashboard: "Dashboard",
         verification: "Verification",
         clients: "Clients",
