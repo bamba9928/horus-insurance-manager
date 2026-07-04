@@ -1,0 +1,17 @@
+# Reverse proxy Caddy : HTTPS automatique (Let's Encrypt) pour {$DOMAIN}.
+# Caddy termine le TLS et transmet à l'app en HTTP interne.
+
+{$DOMAIN} {
+	encode gzip zstd
+
+	# En-têtes de sécurité de base
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	reverse_proxy app:3000
+}

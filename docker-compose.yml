@@ -1,0 +1,39 @@
+# Déploiement Horus (web) : app Node + reverse proxy Caddy (HTTPS auto).
+# Copier .env.example en .env et renseigner DOMAIN / ADMIN_PASSWORD.
+
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATA_DIR: /data
+      STATIC_DIR: /app/public
+      COOKIE_SECURE: "true"
+      ADMIN_LOGIN: ${ADMIN_LOGIN:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    volumes:
+      - horus-data:/data
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+
+volumes:
+  horus-data:
+  caddy-data:
+  caddy-config:

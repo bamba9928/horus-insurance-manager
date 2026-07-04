@@ -1,0 +1,15 @@
+.git
+**/node_modules
+dist
+dist-web
+build
+data
+server/data
+**/*.db
+**/*.db-wal
+**/*.db-shm
+src-tauri/target
+src-tauri/gen
+*.log
+.env
+.DS_Store
