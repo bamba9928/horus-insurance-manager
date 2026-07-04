@@ -41,6 +41,7 @@
     "drizzle-orm": "^0.45.2",
     "exceljs": "^4.4.0",
     "i18next": "^26.0.5",
+    "lucide-react": "^1.23.0",
     "papaparse": "^5.5.3",
     "pdfmake": "^0.3.7",
     "pino": "^10.3.1",
