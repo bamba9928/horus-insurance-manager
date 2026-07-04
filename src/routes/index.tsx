@@ -314,7 +314,7 @@ export function DashboardPage() {
 
   return (
     <>
-      <Header title="">
+      <Header title={t("nav.dashboard")}>
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 py-0.5">
             <NouveauDossierButton className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#614e1a] px-2.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#8b7335] focus:outline-none focus:ring-2 focus:ring-[#614e1a]/40" />

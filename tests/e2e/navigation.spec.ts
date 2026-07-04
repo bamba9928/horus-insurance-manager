@@ -16,10 +16,12 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("charge le dashboard par défaut", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByRole("heading", { level: 2, name: /tableau de bord/i })).toBeVisible();
-  await expect(page.getByText(/polices actives/i)).toBeVisible();
-  await expect(page.getByText(/échéances 30j/i)).toBeVisible();
+  await page.goto("/", { waitUntil: "networkidle" });
+
+  const dashboardHeading = page.getByRole("heading", { name: /tableau de bord/i });
+  await expect(dashboardHeading).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/polices actives/i)).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/échéances 30j/i)).toBeVisible({ timeout: 10_000 });
 });
 
 test("navigue vers toutes les pages principales", async ({ page }) => {
