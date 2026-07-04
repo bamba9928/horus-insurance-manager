@@ -38,6 +38,13 @@
     }
   },
   "files": {
-    "includes": ["src/**", "drizzle/**", "tests/**", "!src/**/*.css"]
+    "includes": [
+      "src/**",
+      "drizzle/**",
+      "tests/**",
+      "server/src/**",
+      "server/test/**",
+      "!src/**/*.css"
+    ]
   }
 }

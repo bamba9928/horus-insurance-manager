@@ -1,1 +1,8 @@
-onlyBuiltDependencies: '["esbuild","@tailwindcss/oxide-win32-x64-msvc"]'
+packages:
+  - server
+
+onlyBuiltDependencies:
+  - esbuild
+  - "@tailwindcss/oxide-win32-x64-msvc"
+  - better-sqlite3
+  - "@node-rs/argon2"

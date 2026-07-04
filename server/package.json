@@ -1,0 +1,27 @@
+{
+  "name": "horus-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Backend multi-utilisateurs Horus Assurances Manager (une base SQLite par utilisateur)",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.0",
+    "@node-rs/argon2": "^2.0.2",
+    "better-sqlite3": "^12.0.0",
+    "hono": "^4.7.0",
+    "tsx": "^4.19.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.0",
+    "vitest": "^4.0.0"
+  }
+}
