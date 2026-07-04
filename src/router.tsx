@@ -7,6 +7,7 @@
 
 import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
 import { AppLayout } from "./components/layout";
+import { AdminPage } from "./routes/admin";
 import { ClientsPage } from "./routes/clients/index";
 import { EcheancesPage } from "./routes/echeances/index";
 import { DashboardPage } from "./routes/index";
@@ -79,6 +80,13 @@ const tarificationRoute = createRoute({
   component: TarificationPage,
 });
 
+// Administration des comptes (mode web, super admin) ; inoffensive en desktop.
+const adminRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin",
+  component: AdminPage,
+});
+
 // ============ Arbre de routes ============
 
 const routeTree = rootRoute.addChildren([
@@ -91,6 +99,7 @@ const routeTree = rootRoute.addChildren([
   echeancesRoute,
   parametresRoute,
   tarificationRoute,
+  adminRoute,
 ]);
 
 // ============ Routeur ============

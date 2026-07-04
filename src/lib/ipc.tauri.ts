@@ -1,0 +1,964 @@
+/**
+ * Wrapper typé pour les commandes IPC Tauri.
+ * Les CRUD passent par tauri-plugin-sql (requêtes paramétrées).
+ * Les commandes métier complexes passent par invoke().
+ *
+ * @module ipc
+ */
+
+import { invoke } from "@tauri-apps/api/core";
+import type { Assureur, AssureurCreate, AssureurUpdate } from "../schemas/assureur";
+import type { Client, ClientCreate, ClientUpdate } from "../schemas/client";
+import type { DossierCreate, DossierCreated } from "../schemas/dossier";
+import type { Paiement, PaiementCreate, PaiementUpdate } from "../schemas/paiement";
+import type { Police, PoliceCreate, PoliceUpdate } from "../schemas/police";
+import type { Vehicule, VehiculeCreate, VehiculeUpdate } from "../schemas/vehicule";
+import { execute, select, transaction } from "./db";
+
+// ============ Commandes Rust (invoke) ============
+
+/** Commande de test : salutation depuis le backend Rust. */
+export async function greet(name: string): Promise<string> {
+  return invoke<string>("greet", { name });
+}
+
+/** Lit le fichier SQLite de l'application et renvoie ses octets. */
+export async function backupDatabase(): Promise<Uint8Array> {
+  const arr = await invoke<number[]>("backup_database");
+  return new Uint8Array(arr);
+}
+
+/** Remplace le fichier SQLite de l'application par les octets fournis. */
+export async function restoreDatabase(bytes: Uint8Array): Promise<string> {
+  return invoke<string>("restore_database", { bytes: Array.from(bytes) });
+}
+
+export interface VerificationData {
+  attestationNumber: string;
+  dateVerification: string;
+  immatriculation: string;
+  dateEffet: string;
+  dateEcheance: string;
+  marque: string;
+  modele: string;
+}
+
+export interface VerificationApiResponse {
+  operationStatus: "SUCCESS" | "ERROR";
+  operationMessage: string;
+  data: VerificationData | null;
+}
+
+export async function verifyContract(immatriculation: string): Promise<VerificationApiResponse> {
+  return invoke<VerificationApiResponse>("verify_contract", { immatriculation });
+}
+
+export async function openExternalUrl(url: string): Promise<void> {
+  return invoke<void>("open_external_url", { url });
+}
+
+// ============ CLIENTS ============
+
+/** Paramètres de pagination et recherche */
+export interface ListParams {
+  search?: string;
+  limit?: number;
+  offset?: number;
+  orderBy?: string;
+  orderDir?: "ASC" | "DESC";
+}
+
+/** Liste les clients avec pagination et recherche optionnelle. */
+export async function listClients(params: ListParams = {}): Promise<Client[]> {
+  const { search, limit = 50, offset = 0, orderBy = "nom_prenom", orderDir = "ASC" } = params;
+  let query = "SELECT * FROM clients";
+  const binds: unknown[] = [];
+
+  if (search) {
+    query += " WHERE nom_prenom LIKE ? OR telephone LIKE ? OR email LIKE ?";
+    const pattern = `%${search}%`;
+    binds.push(pattern, pattern, pattern);
+  }
+
+  query += ` ORDER BY ${orderBy} ${orderDir} LIMIT ? OFFSET ?`;
+  binds.push(limit, offset);
+
+  return select<Client>(query, binds);
+}
+
+/** Compte le nombre total de clients (avec recherche optionnelle). */
+export async function countClients(search?: string): Promise<number> {
+  let query = "SELECT COUNT(*) as count FROM clients";
+  const binds: unknown[] = [];
+
+  if (search) {
+    query += " WHERE nom_prenom LIKE ? OR telephone LIKE ? OR email LIKE ?";
+    const pattern = `%${search}%`;
+    binds.push(pattern, pattern, pattern);
+  }
+
+  const result = await select<{ count: number }>(query, binds);
+  return result[0]?.count ?? 0;
+}
+
+/** Récupère un client par son ID. */
+export async function getClient(id: number): Promise<Client | undefined> {
+  const result = await select<Client>("SELECT * FROM clients WHERE id = ?", [id]);
+  return result[0];
+}
+
+/** Crée un nouveau client. */
+export async function createClient(data: ClientCreate): Promise<number> {
+  const result = await execute(
+    "INSERT INTO clients (nom_prenom, adresse, telephone, email, notes) VALUES (?, ?, ?, ?, ?)",
+    [
+      data.nomPrenom,
+      data.adresse ?? null,
+      data.telephone ?? null,
+      data.email ?? null,
+      data.notes ?? null,
+    ],
+  );
+  return result.lastInsertId ?? 0;
+}
+
+/** Met à jour un client existant. */
+export async function updateClient(data: ClientUpdate): Promise<void> {
+  const fields: string[] = [];
+  const binds: unknown[] = [];
+
+  if (data.nomPrenom !== undefined) {
+    fields.push("nom_prenom = ?");
+    binds.push(data.nomPrenom);
+  }
+  if (data.adresse !== undefined) {
+    fields.push("adresse = ?");
+    binds.push(data.adresse);
+  }
+  if (data.telephone !== undefined) {
+    fields.push("telephone = ?");
+    binds.push(data.telephone);
+  }
+  if (data.email !== undefined) {
+    fields.push("email = ?");
+    binds.push(data.email);
+  }
+  if (data.notes !== undefined) {
+    fields.push("notes = ?");
+    binds.push(data.notes);
+  }
+
+  if (fields.length === 0) return;
+
+  binds.push(data.id);
+  await execute(`UPDATE clients SET ${fields.join(", ")} WHERE id = ?`, binds);
+}
+
+/** Supprime un client par son ID (cascade sur véhicules et polices). */
+export async function deleteClient(id: number): Promise<void> {
+  await execute("DELETE FROM clients WHERE id = ?", [id]);
+}
+
+// ============ VÉHICULES ============
+
+/** Liste les véhicules (optionnellement filtrés par client). */
+export async function listVehicules(clientId?: number): Promise<Vehicule[]> {
+  if (clientId) {
+    return select<Vehicule>(
+      "SELECT * FROM vehicules WHERE client_id = ? ORDER BY immatriculation",
+      [clientId],
+    );
+  }
+  return select<Vehicule>("SELECT * FROM vehicules ORDER BY immatriculation");
+}
+
+/** Récupère un véhicule par son ID. */
+export async function getVehicule(id: number): Promise<Vehicule | undefined> {
+  const result = await select<Vehicule>("SELECT * FROM vehicules WHERE id = ?", [id]);
+  return result[0];
+}
+
+/** Crée un nouveau véhicule. */
+export async function createVehicule(data: VehiculeCreate): Promise<number> {
+  const result = await execute(
+    `INSERT INTO vehicules (client_id, immatriculation, marque, modele, genre, type_vehicule, puissance, places)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      data.clientId,
+      data.immatriculation,
+      data.marque ?? null,
+      data.modele ?? null,
+      data.genre ?? null,
+      data.typeVehicule ?? null,
+      data.puissance ?? null,
+      data.places ?? null,
+    ],
+  );
+  return result.lastInsertId ?? 0;
+}
+
+/** Met à jour un véhicule existant. */
+export async function updateVehicule(data: VehiculeUpdate): Promise<void> {
+  const fields: string[] = [];
+  const binds: unknown[] = [];
+
+  if (data.clientId !== undefined) {
+    fields.push("client_id = ?");
+    binds.push(data.clientId);
+  }
+  if (data.immatriculation !== undefined) {
+    fields.push("immatriculation = ?");
+    binds.push(data.immatriculation);
+  }
+  if (data.marque !== undefined) {
+    fields.push("marque = ?");
+    binds.push(data.marque);
+  }
+  if (data.modele !== undefined) {
+    fields.push("modele = ?");
+    binds.push(data.modele);
+  }
+  if (data.genre !== undefined) {
+    fields.push("genre = ?");
+    binds.push(data.genre);
+  }
+  if (data.typeVehicule !== undefined) {
+    fields.push("type_vehicule = ?");
+    binds.push(data.typeVehicule);
+  }
+  if (data.puissance !== undefined) {
+    fields.push("puissance = ?");
+    binds.push(data.puissance);
+  }
+  if (data.places !== undefined) {
+    fields.push("places = ?");
+    binds.push(data.places);
+  }
+
+  if (fields.length === 0) return;
+  binds.push(data.id);
+  await execute(`UPDATE vehicules SET ${fields.join(", ")} WHERE id = ?`, binds);
+}
+
+/** Supprime un véhicule. */
+export async function deleteVehicule(id: number): Promise<void> {
+  await execute("DELETE FROM vehicules WHERE id = ?", [id]);
+}
+
+// ============ ASSUREURS ============
+
+/** Liste tous les assureurs. */
+export async function listAssureurs(): Promise<Assureur[]> {
+  return select<Assureur>("SELECT * FROM assureurs ORDER BY nom");
+}
+
+/** Crée un assureur. */
+export async function createAssureur(data: AssureurCreate): Promise<number> {
+  const result = await execute(
+    `INSERT INTO assureurs (
+      nom, contact, adresse, code, integration_type, api_base_url, portal_url,
+      technical_contact, integration_enabled
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      data.nom,
+      data.contact ?? null,
+      data.adresse ?? null,
+      data.code ?? null,
+      data.integrationType ?? "MANUAL",
+      data.apiBaseUrl ?? null,
+      data.portalUrl ?? null,
+      data.technicalContact ?? null,
+      data.integrationEnabled ? 1 : 0,
+    ],
+  );
+  return result.lastInsertId ?? 0;
+}
+
+/** Met à jour un assureur. */
+export async function updateAssureur(data: AssureurUpdate): Promise<void> {
+  const fields: string[] = [];
+  const binds: unknown[] = [];
+
+  if (data.nom !== undefined) {
+    fields.push("nom = ?");
+    binds.push(data.nom);
+  }
+  if (data.contact !== undefined) {
+    fields.push("contact = ?");
+    binds.push(data.contact);
+  }
+  if (data.adresse !== undefined) {
+    fields.push("adresse = ?");
+    binds.push(data.adresse);
+  }
+  if (data.code !== undefined) {
+    fields.push("code = ?");
+    binds.push(data.code);
+  }
+  if (data.integrationType !== undefined) {
+    fields.push("integration_type = ?");
+    binds.push(data.integrationType);
+  }
+  if (data.apiBaseUrl !== undefined) {
+    fields.push("api_base_url = ?");
+    binds.push(data.apiBaseUrl);
+  }
+  if (data.portalUrl !== undefined) {
+    fields.push("portal_url = ?");
+    binds.push(data.portalUrl);
+  }
+  if (data.technicalContact !== undefined) {
+    fields.push("technical_contact = ?");
+    binds.push(data.technicalContact);
+  }
+  if (data.integrationEnabled !== undefined) {
+    fields.push("integration_enabled = ?");
+    binds.push(data.integrationEnabled ? 1 : 0);
+  }
+
+  if (fields.length === 0) return;
+  binds.push(data.id);
+  await execute(`UPDATE assureurs SET ${fields.join(", ")} WHERE id = ?`, binds);
+}
+
+/** Supprime un assureur. */
+export async function deleteAssureur(id: number): Promise<void> {
+  await execute("DELETE FROM assureurs WHERE id = ?", [id]);
+}
+
+export interface IntegrationOverview {
+  assureur_id: number;
+  nom: string;
+  code: string | null;
+  integration_type: "MANUAL" | "MOCK" | "API" | null;
+  api_base_url: string | null;
+  portal_url: string | null;
+  technical_contact: string | null;
+  integration_enabled: number | null;
+  last_connection_status: string | null;
+  last_connection_at: string | null;
+  total_polices: number;
+  synced_polices: number;
+  error_polices: number;
+  last_exchange_at: string | null;
+  last_error: string | null;
+}
+
+export interface IntegrationExchangeLog {
+  id: number;
+  assureur_id: number | null;
+  police_id: number | null;
+  assureur_nom: string | null;
+  action: string;
+  direction: "IN" | "OUT";
+  status: "SUCCESS" | "ERROR" | "PENDING";
+  request_payload: string | null;
+  response_payload: string | null;
+  external_reference: string | null;
+  error_message: string | null;
+  created_at: string | null;
+}
+
+export async function listIntegrationOverview(): Promise<IntegrationOverview[]> {
+  return select<IntegrationOverview>(`
+    SELECT
+      a.id AS assureur_id,
+      a.nom,
+      a.code,
+      a.integration_type,
+      a.api_base_url,
+      a.portal_url,
+      a.technical_contact,
+      a.integration_enabled,
+      a.last_connection_status,
+      a.last_connection_at,
+      COUNT(p.id) AS total_polices,
+      SUM(CASE WHEN p.integration_status = 'SYNCED' THEN 1 ELSE 0 END) AS synced_polices,
+      SUM(CASE WHEN p.integration_status = 'ERROR' THEN 1 ELSE 0 END) AS error_polices,
+      MAX(l.created_at) AS last_exchange_at,
+      (
+        SELECT l2.error_message
+        FROM integration_exchange_logs l2
+        WHERE l2.assureur_id = a.id AND l2.error_message IS NOT NULL
+        ORDER BY l2.created_at DESC
+        LIMIT 1
+      ) AS last_error
+    FROM assureurs a
+    LEFT JOIN polices p ON p.assureur_id = a.id
+    LEFT JOIN integration_exchange_logs l ON l.assureur_id = a.id
+    GROUP BY a.id
+    ORDER BY a.nom ASC
+  `);
+}
+
+export async function listIntegrationExchangeLogs(limit = 20): Promise<IntegrationExchangeLog[]> {
+  return select<IntegrationExchangeLog>(
+    `SELECT
+      l.*,
+      a.nom AS assureur_nom
+    FROM integration_exchange_logs l
+    LEFT JOIN assureurs a ON a.id = l.assureur_id
+    ORDER BY l.created_at DESC
+    LIMIT ?`,
+    [limit],
+  );
+}
+
+export async function testAssureurIntegration(assureurId: number): Promise<void> {
+  const [assureur] = await select<Assureur>("SELECT * FROM assureurs WHERE id = ?", [assureurId]);
+  if (!assureur) throw new Error(`Assureur ${assureurId} introuvable`);
+
+  const integrationType = assureur.integration_type ?? "MANUAL";
+  const now = new Date().toISOString();
+
+  if (integrationType === "API") {
+    const error = assureur.api_base_url
+      ? "Connecteur API réel non implémenté pour cette compagnie."
+      : "URL API manquante pour cette compagnie.";
+    await execute(
+      `INSERT INTO integration_exchange_logs (
+        assureur_id, action, direction, status, request_payload, error_message
+      ) VALUES (?, 'TEST_CONNECTION', 'OUT', 'ERROR', ?, ?)`,
+      [assureurId, JSON.stringify({ apiBaseUrl: assureur.api_base_url }), error],
+    );
+    await execute(
+      "UPDATE assureurs SET last_connection_status = ?, last_connection_at = ? WHERE id = ?",
+      ["ERROR", now, assureurId],
+    );
+    throw new Error(error);
+  }
+
+  const status = integrationType === "MOCK" ? "SUCCESS" : "PENDING";
+  const message =
+    integrationType === "MOCK"
+      ? "Connecteur mock disponible."
+      : "Mode manuel : aucune API à tester.";
+
+  await execute(
+    `INSERT INTO integration_exchange_logs (
+      assureur_id, action, direction, status, request_payload, response_payload
+    ) VALUES (?, 'TEST_CONNECTION', 'OUT', ?, ?, ?)`,
+    [
+      assureurId,
+      status,
+      JSON.stringify({ integrationType }),
+      JSON.stringify({ message, checkedAt: now }),
+    ],
+  );
+  await execute(
+    "UPDATE assureurs SET last_connection_status = ?, last_connection_at = ? WHERE id = ?",
+    [status, now, assureurId],
+  );
+}
+
+// ============ POLICES ============
+
+/** Liste les polices (optionnellement filtrées par véhicule ou statut). */
+export async function listPolices(filters?: {
+  vehiculeId?: number;
+  statut?: string;
+  typeCarte?: string;
+}): Promise<Police[]> {
+  let query = "SELECT * FROM polices WHERE 1=1";
+  const binds: unknown[] = [];
+
+  if (filters?.vehiculeId) {
+    query += " AND vehicule_id = ?";
+    binds.push(filters.vehiculeId);
+  }
+  if (filters?.statut) {
+    query += " AND statut = ?";
+    binds.push(filters.statut);
+  }
+  if (filters?.typeCarte) {
+    query += " AND type_carte = ?";
+    binds.push(filters.typeCarte);
+  }
+
+  query += " ORDER BY date_echeance DESC";
+  return select<Police>(query, binds);
+}
+
+/** Récupère une police par son ID. */
+export async function getPolice(id: number): Promise<Police | undefined> {
+  const result = await select<Police>("SELECT * FROM polices WHERE id = ?", [id]);
+  return result[0];
+}
+
+/** Crée une police. */
+export async function createPolice(data: PoliceCreate): Promise<number> {
+  const result = await execute(
+    `INSERT INTO polices (
+      vehicule_id, assureur_id, numero_police, type_carte, date_effet, duree_mois,
+      appreciation, external_reference, integration_status, sync_error
+    )
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      data.vehiculeId,
+      data.assureurId ?? null,
+      data.numeroPolice ?? null,
+      data.typeCarte,
+      data.dateEffet,
+      data.dureeMois,
+      data.appreciation ?? null,
+      data.externalReference ?? null,
+      data.integrationStatus ?? "LOCAL",
+      data.syncError ?? null,
+    ],
+  );
+  return result.lastInsertId ?? 0;
+}
+
+/** Met à jour une police. */
+export async function updatePolice(data: PoliceUpdate): Promise<void> {
+  const fields: string[] = [];
+  const binds: unknown[] = [];
+
+  if (data.vehiculeId !== undefined) {
+    fields.push("vehicule_id = ?");
+    binds.push(data.vehiculeId);
+  }
+  if (data.assureurId !== undefined) {
+    fields.push("assureur_id = ?");
+    binds.push(data.assureurId);
+  }
+  if (data.numeroPolice !== undefined) {
+    fields.push("numero_police = ?");
+    binds.push(data.numeroPolice);
+  }
+  if (data.typeCarte !== undefined) {
+    fields.push("type_carte = ?");
+    binds.push(data.typeCarte);
+  }
+  if (data.dateEffet !== undefined) {
+    fields.push("date_effet = ?");
+    binds.push(data.dateEffet);
+  }
+  if (data.dureeMois !== undefined) {
+    fields.push("duree_mois = ?");
+    binds.push(data.dureeMois);
+  }
+  if (data.appreciation !== undefined) {
+    fields.push("appreciation = ?");
+    binds.push(data.appreciation);
+  }
+  if (data.statut !== undefined) {
+    fields.push("statut = ?");
+    binds.push(data.statut);
+  }
+  if (data.externalReference !== undefined) {
+    fields.push("external_reference = ?");
+    binds.push(data.externalReference);
+  }
+  if (data.integrationStatus !== undefined) {
+    fields.push("integration_status = ?");
+    binds.push(data.integrationStatus);
+  }
+  if (data.syncError !== undefined) {
+    fields.push("sync_error = ?");
+    binds.push(data.syncError);
+  }
+
+  if (fields.length === 0) return;
+  binds.push(data.id);
+  await execute(`UPDATE polices SET ${fields.join(", ")} WHERE id = ?`, binds);
+}
+
+/** Supprime une police. */
+export async function deletePolice(id: number): Promise<void> {
+  await execute("DELETE FROM polices WHERE id = ?", [id]);
+}
+
+/**
+ * Renouvelle une police : crée une nouvelle police avec date_effet = ancienne_echeance + 1 jour.
+ * Marque l'ancienne police comme RENOUVELÉE.
+ */
+export async function renewPolice(policeId: number): Promise<number> {
+  return transaction(async ({ execute: exec, select: sel }) => {
+    const [old] = await sel<Police>("SELECT * FROM polices WHERE id = ?", [policeId]);
+    if (!old) throw new Error(`Police ${policeId} introuvable`);
+    if (!old.date_echeance) throw new Error("Date d'échéance manquante");
+
+    // Nouvelle date d'effet = ancienne échéance + 1 jour
+    const [newDate] = await sel<{ d: string }>("SELECT date(?, '+1 day') as d", [
+      old.date_echeance,
+    ]);
+    if (!newDate) throw new Error("Erreur calcul date");
+
+    // Créer la nouvelle police
+    const result = await exec(
+      `INSERT INTO polices (vehicule_id, assureur_id, numero_police, type_carte, date_effet, duree_mois, appreciation)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        old.vehicule_id,
+        old.assureur_id,
+        null,
+        old.type_carte,
+        newDate.d,
+        old.duree_mois,
+        old.appreciation,
+      ],
+    );
+
+    // Marquer l'ancienne comme renouvelée
+    await exec("UPDATE polices SET statut = 'RENOUVELÉE' WHERE id = ?", [policeId]);
+
+    return result.lastInsertId ?? 0;
+  });
+}
+
+// ============ PAIEMENTS ============
+
+/** Liste les paiements (optionnellement filtrés par police). */
+export async function listPaiements(policeId?: number): Promise<Paiement[]> {
+  if (policeId) {
+    return select<Paiement>(
+      "SELECT * FROM paiements WHERE police_id = ? ORDER BY created_at DESC",
+      [policeId],
+    );
+  }
+  return select<Paiement>("SELECT * FROM paiements ORDER BY created_at DESC");
+}
+
+/** Crée un paiement. */
+export async function createPaiement(data: PaiementCreate): Promise<number> {
+  const result = await execute(
+    `INSERT INTO paiements (police_id, montant_du, paye, avance, date_paiement, mode, reference, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      data.policeId,
+      data.montantDu,
+      data.paye ?? 0,
+      data.avance ?? 0,
+      data.datePaiement ?? null,
+      data.mode ?? null,
+      data.reference ?? null,
+      data.notes ?? null,
+    ],
+  );
+  return result.lastInsertId ?? 0;
+}
+
+/** Met à jour un paiement. */
+export async function updatePaiement(data: PaiementUpdate): Promise<void> {
+  const fields: string[] = [];
+  const binds: unknown[] = [];
+
+  if (data.policeId !== undefined) {
+    fields.push("police_id = ?");
+    binds.push(data.policeId);
+  }
+  if (data.montantDu !== undefined) {
+    fields.push("montant_du = ?");
+    binds.push(data.montantDu);
+  }
+  if (data.paye !== undefined) {
+    fields.push("paye = ?");
+    binds.push(data.paye);
+  }
+  if (data.avance !== undefined) {
+    fields.push("avance = ?");
+    binds.push(data.avance);
+  }
+  if (data.datePaiement !== undefined) {
+    fields.push("date_paiement = ?");
+    binds.push(data.datePaiement);
+  }
+  if (data.mode !== undefined) {
+    fields.push("mode = ?");
+    binds.push(data.mode);
+  }
+  if (data.reference !== undefined) {
+    fields.push("reference = ?");
+    binds.push(data.reference);
+  }
+  if (data.notes !== undefined) {
+    fields.push("notes = ?");
+    binds.push(data.notes);
+  }
+
+  if (fields.length === 0) return;
+  binds.push(data.id);
+  await execute(`UPDATE paiements SET ${fields.join(", ")} WHERE id = ?`, binds);
+}
+
+/** Supprime un paiement. */
+export async function deletePaiement(id: number): Promise<void> {
+  await execute("DELETE FROM paiements WHERE id = ?", [id]);
+}
+
+// ============ DOSSIER COMPLET ============
+
+/**
+ * Enregistre un dossier complet (client, véhicule, police, paiement)
+ * en une seule transaction : rollback intégral si une étape échoue.
+ * Les entités marquées "existant" sont réutilisées telles quelles.
+ */
+export async function createDossier(data: DossierCreate): Promise<DossierCreated> {
+  return transaction(async ({ execute: exec }) => {
+    const clientId =
+      data.client.mode === "existant"
+        ? data.client.clientId
+        : ((
+            await exec(
+              "INSERT INTO clients (nom_prenom, adresse, telephone, email, notes) VALUES (?, ?, ?, ?, ?)",
+              [
+                data.client.data.nomPrenom,
+                data.client.data.adresse ?? null,
+                data.client.data.telephone ?? null,
+                data.client.data.email ?? null,
+                data.client.data.notes ?? null,
+              ],
+            )
+          ).lastInsertId ?? 0);
+
+    const vehiculeId =
+      data.vehicule.mode === "existant"
+        ? data.vehicule.vehiculeId
+        : ((
+            await exec(
+              `INSERT INTO vehicules (client_id, immatriculation, marque, modele, genre, type_vehicule, puissance, places)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                clientId,
+                data.vehicule.data.immatriculation,
+                data.vehicule.data.marque ?? null,
+                data.vehicule.data.modele ?? null,
+                data.vehicule.data.genre ?? null,
+                data.vehicule.data.typeVehicule ?? null,
+                data.vehicule.data.puissance ?? null,
+                data.vehicule.data.places ?? null,
+              ],
+            )
+          ).lastInsertId ?? 0);
+
+    const policeResult = await exec(
+      `INSERT INTO polices (
+        vehicule_id, assureur_id, numero_police, type_carte, date_effet, duree_mois,
+        appreciation, external_reference, integration_status, sync_error
+      )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        vehiculeId,
+        data.police.assureurId ?? null,
+        data.police.numeroPolice ?? null,
+        data.police.typeCarte,
+        data.police.dateEffet,
+        data.police.dureeMois,
+        data.police.appreciation ?? null,
+        data.police.externalReference ?? null,
+        data.police.integrationStatus ?? "LOCAL",
+        data.police.syncError ?? null,
+      ],
+    );
+    const policeId = policeResult.lastInsertId ?? 0;
+
+    let paiementId: number | null = null;
+    if (data.paiement) {
+      const paiementResult = await exec(
+        `INSERT INTO paiements (police_id, montant_du, paye, avance, date_paiement, mode, reference, notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          policeId,
+          data.paiement.montantDu,
+          data.paiement.paye ?? 0,
+          data.paiement.avance ?? 0,
+          data.paiement.datePaiement ?? null,
+          data.paiement.mode ?? null,
+          data.paiement.reference ?? null,
+          data.paiement.notes ?? null,
+        ],
+      );
+      paiementId = paiementResult.lastInsertId ?? null;
+    }
+
+    return { clientId, vehiculeId, policeId, paiementId };
+  });
+}
+
+// ============ DASHBOARD (vues SQL) ============
+
+/** Données d'échéance enrichie (vue v_echeances_30j) */
+export interface EcheanceRow {
+  id: number;
+  nom_prenom: string;
+  telephone: string | null;
+  immatriculation: string;
+  marque: string | null;
+  date_effet: string;
+  date_echeance: string;
+  type_carte: string;
+  numero_police: string | null;
+  jours_restants: number;
+}
+
+/** Données d'impayé (vue v_impayes) */
+export interface ImpayeRow {
+  id: number;
+  nom_prenom: string;
+  immatriculation: string;
+  numero_police: string | null;
+  montant_du: number;
+  paye: number;
+  reste: number;
+  date_echeance: string | null;
+}
+
+/** Récupère les échéances dans la fenêtre -7 à +30 jours. */
+export async function getEcheances30j(): Promise<EcheanceRow[]> {
+  return select<EcheanceRow>("SELECT * FROM v_echeances_30j");
+}
+
+/**
+ * Récupère les échéances dans une fenêtre personnalisée (en jours par rapport à aujourd'hui).
+ * `fromDays` et `toDays` sont relatifs à la date du jour (ex: -30 = il y a 30j, +60 = dans 60j).
+ * Si `expiredOnly` est vrai, renvoie uniquement les polices ACTIVES échues (< aujourd'hui).
+ */
+export async function getEcheancesRange(params: {
+  fromDays?: number;
+  toDays?: number;
+  expiredOnly?: boolean;
+}): Promise<EcheanceRow[]> {
+  const { fromDays, toDays, expiredOnly } = params;
+
+  let where = "p.statut = 'ACTIVE'";
+  const binds: unknown[] = [];
+
+  if (expiredOnly) {
+    where += " AND date(p.date_echeance) < date('now')";
+  } else {
+    if (fromDays !== undefined) {
+      where += ` AND date(p.date_echeance) >= date('now', ?)`;
+      binds.push(`${fromDays >= 0 ? "+" : ""}${fromDays} days`);
+    }
+    if (toDays !== undefined) {
+      where += ` AND date(p.date_echeance) <= date('now', ?)`;
+      binds.push(`${toDays >= 0 ? "+" : ""}${toDays} days`);
+    }
+  }
+
+  const query = `
+    SELECT p.id, c.nom_prenom, c.telephone, v.immatriculation, v.marque,
+           p.date_effet, p.date_echeance, p.type_carte, p.numero_police,
+           CAST(julianday(p.date_echeance) - julianday('now') AS INTEGER) AS jours_restants
+    FROM polices p
+    JOIN vehicules v ON v.id = p.vehicule_id
+    JOIN clients   c ON c.id = v.client_id
+    WHERE ${where}
+    ORDER BY p.date_echeance ASC
+  `;
+
+  return select<EcheanceRow>(query, binds);
+}
+
+/** Récupère la liste des impayés. */
+export async function getImpayes(): Promise<ImpayeRow[]> {
+  return select<ImpayeRow>("SELECT * FROM v_impayes");
+}
+
+/** KPI du dashboard */
+export interface DashboardKPI {
+  policesActives: number;
+  echeances30j: number;
+  totalImpayes: number;
+  nouveauxClientsMois: number;
+}
+
+/** Récupère les KPI pour le dashboard. */
+export async function getDashboardKPI(): Promise<DashboardKPI> {
+  const [actives] = await select<{ count: number }>(
+    "SELECT COUNT(*) as count FROM polices WHERE statut = 'ACTIVE'",
+  );
+  const [echeances] = await select<{ count: number }>(
+    "SELECT COUNT(*) as count FROM v_echeances_30j",
+  );
+  const [impayes] = await select<{ total: number }>(
+    "SELECT COALESCE(SUM(reste), 0) as total FROM v_impayes",
+  );
+  const [nouveaux] = await select<{ count: number }>(
+    "SELECT COUNT(*) as count FROM clients WHERE created_at >= date('now', 'start of month')",
+  );
+
+  return {
+    policesActives: actives?.count ?? 0,
+    echeances30j: echeances?.count ?? 0,
+    totalImpayes: impayes?.total ?? 0,
+    nouveauxClientsMois: nouveaux?.count ?? 0,
+  };
+}
+
+/** Ligne récapitulative enrichie pour le dashboard. */
+export interface DashboardRecapRow {
+  client_id: number;
+  vehicule_id: number;
+  police_id: number | null;
+  nom_prenom: string;
+  telephone: string | null;
+  immatriculation: string;
+  marque: string | null;
+  modele: string | null;
+  numero_police: string | null;
+  type_carte: string | null;
+  date_effet: string | null;
+  date_echeance: string | null;
+  police_statut: string | null;
+  assureur_nom: string | null;
+  paiements_count: number;
+  montant_du_total: number;
+  paye_total: number;
+  avance_total: number;
+  reste_total: number;
+  derniere_date_paiement: string | null;
+}
+
+/** Récapitulatif consolidé client + véhicule + police + paiements. */
+export async function getDashboardRecap(): Promise<DashboardRecapRow[]> {
+  return select<DashboardRecapRow>(`
+    SELECT
+      c.id AS client_id,
+      v.id AS vehicule_id,
+      p.id AS police_id,
+      c.nom_prenom,
+      c.telephone,
+      v.immatriculation,
+      v.marque,
+      v.modele,
+      p.numero_police,
+      p.type_carte,
+      p.date_effet,
+      p.date_echeance,
+      p.statut AS police_statut,
+      a.nom AS assureur_nom,
+      COUNT(pa.id) AS paiements_count,
+      COALESCE(SUM(pa.montant_du), 0) AS montant_du_total,
+      COALESCE(SUM(pa.paye), 0) AS paye_total,
+      COALESCE(SUM(pa.avance), 0) AS avance_total,
+      COALESCE(SUM(pa.reste), 0) AS reste_total,
+      MAX(pa.date_paiement) AS derniere_date_paiement
+    FROM clients c
+    JOIN vehicules v ON v.client_id = c.id
+    LEFT JOIN polices p ON p.vehicule_id = v.id
+    LEFT JOIN assureurs a ON a.id = p.assureur_id
+    LEFT JOIN paiements pa ON pa.police_id = p.id
+    GROUP BY
+      c.id,
+      v.id,
+      p.id,
+      c.nom_prenom,
+      c.telephone,
+      v.immatriculation,
+      v.marque,
+      v.modele,
+      p.numero_police,
+      p.type_carte,
+      p.date_effet,
+      p.date_echeance,
+      p.statut,
+      a.nom
+    ORDER BY
+      CASE WHEN p.date_echeance IS NULL THEN 1 ELSE 0 END,
+      p.date_echeance ASC,
+      c.nom_prenom ASC,
+      v.immatriculation ASC
+  `);
+}

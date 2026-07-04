@@ -7,6 +7,7 @@
 import { Link, useMatchRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { isWebMode, useAuth } from "../../lib/auth";
 import { cn } from "../../lib/utils";
 
 interface NavItem {
@@ -31,6 +32,13 @@ const STORAGE_KEY = "ham-sidebar-collapsed";
 export function Sidebar() {
   const { t } = useTranslation();
   const matchRoute = useMatchRoute();
+  const { user, logout } = useAuth();
+
+  // Le menu Administration n'apparaît qu'en mode web pour le super admin.
+  const navItems =
+    isWebMode && user?.role === "ADMIN"
+      ? [...NAV_ITEMS, { path: "/admin", labelKey: "nav.admin", icon: "\u{1F510}" }]
+      : NAV_ITEMS;
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -78,19 +86,21 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1.5 pt-2.5 pb-3 px-2">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const isActive =
             item.path === "/"
               ? matchRoute({ to: "/", fuzzy: false })
               : matchRoute({ to: item.path, fuzzy: true });
+          const label = t(item.labelKey);
 
           return (
             <Link
               key={item.path}
               to={item.path}
-              title={collapsed ? t(item.labelKey) : undefined}
+              title={collapsed ? label : undefined}
+              aria-label={collapsed ? label : undefined}
               className={cn(
-                "flex h-11 items-center rounded-xl text-sm transition-colors",
+                "group relative flex h-11 items-center rounded-xl text-sm transition-colors",
                 collapsed ? "justify-center px-2" : "gap-3 px-3",
                 isActive
                   ? "bg-white/20 font-semibold text-white ring-1 ring-white/25"
@@ -98,11 +108,42 @@ export function Sidebar() {
               )}
             >
               <span className="text-xl leading-none">{item.icon}</span>
-              {!collapsed && <span className="whitespace-nowrap">{t(item.labelKey)}</span>}
+              {collapsed ? (
+                <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg ring-1 ring-white/10 transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                  {label}
+                </span>
+              ) : (
+                <span className="whitespace-nowrap">{label}</span>
+              )}
             </Link>
           );
         })}
       </nav>
+
+      {/* Compte connecté + déconnexion (mode web) */}
+      {isWebMode && user && (
+        <div className={cn("border-t border-white/20", collapsed ? "px-2 py-2" : "px-4 py-3")}>
+          {!collapsed && (
+            <div className="mb-2 overflow-hidden">
+              <p className="truncate text-sm font-medium text-white">{user.nom}</p>
+              <p className="truncate text-xs text-white/60">{user.login}</p>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => void logout()}
+            title="Se déconnecter"
+            aria-label="Se déconnecter"
+            className={cn(
+              "flex h-9 items-center rounded-xl text-sm text-white/80 transition-colors hover:bg-white/10 hover:text-white",
+              collapsed ? "w-full justify-center" : "w-full gap-2 px-2",
+            )}
+          >
+            <span className="text-lg leading-none">{"\u{23FB}"}</span>
+            {!collapsed && <span>Se déconnecter</span>}
+          </button>
+        </div>
+      )}
 
       {/* Footer */}
       {!collapsed && (
