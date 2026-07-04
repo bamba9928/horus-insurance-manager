@@ -1,9 +1,3 @@
-/**
- * Référentiel nettoyé des marques de véhicules.
- * Source initiale : C:/Users/TBE/Downloads/referentiel_marque.
- * Les codes M0000... ont été retirés.
- */
-
 export const REFERENTIEL_MARQUES = [
   "2TWENTY",
   "ABILLAMA",
