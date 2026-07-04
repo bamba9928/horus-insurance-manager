@@ -14,6 +14,7 @@ import type { ServerEnv } from "./env.js";
 import { adminRoutes } from "./routes/admin.js";
 import { apiRoutes } from "./routes/api.js";
 import { authRoutes } from "./routes/auth.js";
+import { profileRoutes } from "./routes/profile.js";
 import { mountStatic } from "./routes/static.js";
 
 export interface AppContext {
@@ -45,6 +46,7 @@ export function buildApp(ctx: AppContext): Hono<AuthEnv> {
   app.get("/api/health", (c) => c.json({ ok: true }));
 
   app.route("/api/auth", authRoutes(ctx));
+  app.route("/api/profile", profileRoutes(ctx));
 
   app.get("/api/me", requireAuth(ctx.adminDb, ctx.env.cookieSecure), (c) =>
     c.json({ user: c.get("user") }),

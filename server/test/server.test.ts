@@ -26,6 +26,7 @@ let app: Hono<AuthEnv>;
 let adminCookie = "";
 let agentCookie = "";
 let agentId = 0;
+let agentPassword = AGENT_PASSWORD;
 
 interface ApiOptions {
   method?: string;
@@ -141,6 +142,21 @@ describe("authentification", () => {
     const body = (await res.json()) as { user: { login: string } };
     expect(body.user.login).toBe("admin");
   });
+
+  it("met à jour le profil de l'utilisateur connecté", async () => {
+    const res = await api("/api/profile", {
+      method: "PATCH",
+      cookie: adminCookie,
+      body: { nom: "Admin Principal" },
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { user: { nom: string } };
+    expect(body.user.nom).toBe("Admin Principal");
+
+    const meRes = await api("/api/me", { cookie: adminCookie });
+    const me = (await meRes.json()) as { user: { nom: string } };
+    expect(me.user.nom).toBe("Admin Principal");
+  });
 });
 
 describe("administration des comptes", () => {
@@ -221,6 +237,28 @@ describe("administration des comptes", () => {
     expect(statuses).toEqual([201, 409]);
   });
 
+  it("permet à un admin de créer un autre compte administrateur", async () => {
+    const res = await api("/api/admin/users", {
+      method: "POST",
+      cookie: adminCookie,
+      body: {
+        login: "admin2",
+        nom: "Administrateur Deux",
+        password: "admin-two-password",
+        role: "ADMIN",
+      },
+    });
+    expect(res.status).toBe(201);
+    const body = (await res.json()) as { user: { login: string; role: string } };
+    expect(body.user.login).toBe("admin2");
+    expect(body.user.role).toBe("ADMIN");
+
+    const loginRes = await login("admin2", "admin-two-password");
+    expect(loginRes.status).toBe(200);
+    const cookie = extractCookie(loginRes);
+    expect((await api("/api/admin/users", { cookie })).status).toBe(200);
+  });
+
   it("liste les comptes sans exposer les hashes", async () => {
     const res = await api("/api/admin/users", { cookie: adminCookie });
     expect(res.status).toBe(200);
@@ -229,6 +267,11 @@ describe("administration des comptes", () => {
     for (const user of body.users) {
       expect(user).not.toHaveProperty("password_hash");
     }
+    const agent = body.users.find((u) => u.login === "agent1");
+    expect(Number(agent?.clients_count ?? 0)).toBeGreaterThanOrEqual(1);
+    expect(Number(agent?.vehicules_count ?? 0)).toBeGreaterThanOrEqual(1);
+    expect(agent).toHaveProperty("polices_count");
+    expect(agent).toHaveProperty("paiements_count");
   });
 
   it("interdit les routes admin à un simple utilisateur", async () => {
@@ -267,6 +310,7 @@ describe("administration des comptes", () => {
     const newLogin = await login("agent1", "nouveau-mdp-456");
     expect(newLogin.status).toBe(200);
     agentCookie = extractCookie(newLogin);
+    agentPassword = "nouveau-mdp-456";
   });
 
   it("suspend puis réactive un compte", async () => {
@@ -279,7 +323,7 @@ describe("administration des comptes", () => {
 
     // Session coupée et connexion refusée
     expect((await api("/api/me", { cookie: agentCookie })).status).toBe(401);
-    expect((await login("agent1", "nouveau-mdp-456")).status).toBe(403);
+    expect((await login("agent1", agentPassword)).status).toBe(403);
 
     const reactivate = await api(`/api/admin/users/${agentId}/active`, {
       method: "POST",
@@ -287,7 +331,51 @@ describe("administration des comptes", () => {
       body: { actif: true },
     });
     expect(reactivate.status).toBe(200);
-    expect((await login("agent1", "nouveau-mdp-456")).status).toBe(200);
+    expect((await login("agent1", agentPassword)).status).toBe(200);
+  });
+
+  it("permet à l'utilisateur connecté de changer son mot de passe", async () => {
+    const loginRes = await login("agent1", agentPassword);
+    expect(loginRes.status).toBe(200);
+    agentCookie = extractCookie(loginRes);
+
+    const wrongCurrent = await api("/api/profile/password", {
+      method: "POST",
+      cookie: agentCookie,
+      body: { currentPassword: "mauvais-mdp", password: "profil-mdp-789" },
+    });
+    expect(wrongCurrent.status).toBe(400);
+
+    const res = await api("/api/profile/password", {
+      method: "POST",
+      cookie: agentCookie,
+      body: { currentPassword: agentPassword, password: "profil-mdp-789" },
+    });
+    expect(res.status).toBe(200);
+    expect((await login("agent1", agentPassword)).status).toBe(401);
+
+    const newLogin = await login("agent1", "profil-mdp-789");
+    expect(newLogin.status).toBe(200);
+    agentCookie = extractCookie(newLogin);
+    agentPassword = "profil-mdp-789";
+  });
+
+  it("bloque le changement de mot de passe après 10 essais de mot de passe actuel erronés", async () => {
+    for (let i = 0; i < 10; i++) {
+      const res = await api("/api/profile/password", {
+        method: "POST",
+        cookie: agentCookie,
+        body: { currentPassword: `mauvais-${i}`, password: "nouveau-mdp-000" },
+      });
+      expect(res.status).toBe(400);
+    }
+    // Même le bon mot de passe actuel est bloqué pendant la fenêtre
+    const blocked = await api("/api/profile/password", {
+      method: "POST",
+      cookie: agentCookie,
+      body: { currentPassword: agentPassword, password: "nouveau-mdp-000" },
+    });
+    expect(blocked.status).toBe(429);
   });
 
   it("empêche l'admin de suspendre son propre compte", async () => {
@@ -317,7 +405,7 @@ describe("protection contre la force brute", () => {
 
 describe("déconnexion", () => {
   it("invalide la session au logout", async () => {
-    const loginRes = await login("agent1", "nouveau-mdp-456");
+    const loginRes = await login("agent1", agentPassword);
     const cookie = extractCookie(loginRes);
 
     const logoutRes = await api("/api/auth/logout", { method: "POST", cookie });

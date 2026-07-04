@@ -37,6 +37,8 @@ export type SecurityAction =
   | "LOGIN_FAILURE"
   | "LOGIN_BLOCKED"
   | "LOGOUT"
+  | "PROFILE_UPDATE"
+  | "PROFILE_PASSWORD_CHANGE"
   | "USER_CREATE"
   | "USER_PASSWORD_RESET"
   | "USER_ACTIVE_CHANGE"
@@ -130,6 +132,10 @@ export function updateUserPassword(
   passwordHash: string,
 ): void {
   db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(passwordHash, userId);
+}
+
+export function updateUserProfile(db: Database.Database, userId: number, nom: string): void {
+  db.prepare("UPDATE users SET nom = ? WHERE id = ?").run(nom, userId);
 }
 
 export function setUserActive(db: Database.Database, userId: number, actif: boolean): void {

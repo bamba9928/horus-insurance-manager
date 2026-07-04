@@ -24,6 +24,7 @@ export interface AuthUser {
 interface AuthState {
   user: AuthUser | null;
   loading: boolean;
+  refresh: () => Promise<AuthUser | null>;
   login: (login: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -31,6 +32,7 @@ interface AuthState {
 const defaultState: AuthState = {
   user: null,
   loading: false,
+  refresh: async () => null,
   login: async () => {
     throw new Error("Authentification indisponible");
   },
@@ -48,16 +50,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchCurrentUser = useCallback(async (): Promise<AuthUser | null> => {
+    try {
+      const res = await fetch(`${BASE}/api/me`, { credentials: "include" });
+      const data = res.ok ? ((await res.json()) as { user: AuthUser }) : null;
+      return data?.user ?? null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const refresh = useCallback(async (): Promise<AuthUser | null> => {
+    const nextUser = await fetchCurrentUser();
+    setUser(nextUser);
+    return nextUser;
+  }, [fetchCurrentUser]);
+
   // Récupère la session existante au démarrage.
   useEffect(() => {
     let cancelled = false;
-    fetch(`${BASE}/api/me`, { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { user: AuthUser } | null) => {
-        if (!cancelled) setUser(data?.user ?? null);
-      })
-      .catch(() => {
-        if (!cancelled) setUser(null);
+    fetchCurrentUser()
+      .then((nextUser) => {
+        if (!cancelled) setUser(nextUser);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -65,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fetchCurrentUser]);
 
   const login = useCallback(async (loginName: string, password: string) => {
     const res = await fetch(`${BASE}/api/auth/login`, {
@@ -92,6 +106,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading, refresh, login, logout }}>
+      {children}
+    </AuthContext.Provider>
   );
 }

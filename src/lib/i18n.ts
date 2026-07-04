@@ -26,6 +26,7 @@ const resources = {
         paiements: "Paiements",
         echeances: "Échéances",
         parametres: "Paramètres",
+        profile: "Profil",
         admin: "Administration",
       },
       common: {
@@ -207,6 +208,7 @@ const resources = {
         paiements: "Payments",
         echeances: "Deadlines",
         parametres: "Settings",
+        profile: "Profile",
         admin: "Administration",
       },
       common: {

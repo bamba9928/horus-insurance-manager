@@ -72,6 +72,15 @@ export function deleteUserSessions(db: Database.Database, userId: number): void 
   db.prepare("DELETE FROM sessions WHERE user_id = ?").run(userId);
 }
 
+/** Détruit les autres sessions d'un utilisateur en conservant la session courante. */
+export function deleteOtherUserSessions(
+  db: Database.Database,
+  userId: number,
+  currentToken: string,
+): void {
+  db.prepare("DELETE FROM sessions WHERE user_id = ? AND token <> ?").run(userId, currentToken);
+}
+
 export function purgeExpiredSessions(db: Database.Database): void {
   db.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(new Date().toISOString());
 }

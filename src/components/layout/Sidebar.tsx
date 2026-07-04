@@ -4,7 +4,7 @@
  * Pliable/dépliable via bouton — état persisté dans localStorage.
  */
 
-import { Link, useMatchRoute } from "@tanstack/react-router";
+import { Link, useMatchRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { isWebMode, useAuth } from "../../lib/auth";
@@ -34,12 +34,19 @@ const LOGO_SRC_SET = "/horus-manager-logo.png 1x, /horus-manager-logo@2x.png 2x"
 export function Sidebar() {
   const { t } = useTranslation();
   const matchRoute = useMatchRoute();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
 
   // Le menu Administration n'apparaît qu'en mode web pour le super admin.
   const navItems =
-    isWebMode && user?.role === "ADMIN"
-      ? [...NAV_ITEMS, { path: "/admin", labelKey: "nav.admin", icon: "\u{1F510}" }]
+    isWebMode && user
+      ? [
+          ...NAV_ITEMS,
+          { path: "/profil", labelKey: "nav.profile", icon: "\u{1F464}" },
+          ...(user.role === "ADMIN"
+            ? [{ path: "/admin", labelKey: "nav.admin", icon: "\u{1F510}" }]
+            : []),
+        ]
       : NAV_ITEMS;
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -50,6 +57,11 @@ export function Sidebar() {
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, collapsed ? "1" : "0");
   }, [collapsed]);
+
+  const handleLogout = async () => {
+    await logout();
+    await navigate({ to: "/", replace: true });
+  };
 
   return (
     <aside
@@ -143,7 +155,7 @@ export function Sidebar() {
           )}
           <button
             type="button"
-            onClick={() => void logout()}
+            onClick={() => void handleLogout()}
             title="Se déconnecter"
             aria-label="Se déconnecter"
             className={cn(

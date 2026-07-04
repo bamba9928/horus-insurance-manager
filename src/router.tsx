@@ -14,6 +14,7 @@ import { DashboardPage } from "./routes/index";
 import { PaiementsPage } from "./routes/paiements/index";
 import { ParametresPage } from "./routes/parametres/index";
 import { PolicesPage } from "./routes/polices/index";
+import { ProfilePage } from "./routes/profil";
 import { TarificationPage } from "./routes/tarification/index";
 import { VehiculesPage } from "./routes/vehicules/index";
 import { VerificationPage } from "./routes/verification/index";
@@ -74,6 +75,12 @@ const parametresRoute = createRoute({
   component: ParametresPage,
 });
 
+const profileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profil",
+  component: ProfilePage,
+});
+
 const tarificationRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/tarification",
@@ -98,6 +105,7 @@ const routeTree = rootRoute.addChildren([
   paiementsRoute,
   echeancesRoute,
   parametresRoute,
+  profileRoute,
   tarificationRoute,
   adminRoute,
 ]);

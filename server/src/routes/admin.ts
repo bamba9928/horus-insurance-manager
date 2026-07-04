@@ -6,6 +6,7 @@
  */
 
 import fs from "node:fs";
+import Database from "better-sqlite3";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AppContext } from "../app.js";
@@ -31,6 +32,7 @@ const createUserSchema = z.object({
     .regex(/^[a-zA-Z0-9._-]{3,50}$/, "Login invalide (3-50 caractères, lettres/chiffres/._-)"),
   nom: z.string().min(2).max(200),
   password: z.string().min(8, "8 caractères minimum").max(200),
+  role: z.enum(["ADMIN", "USER"]).optional().default("USER"),
 });
 
 const passwordSchema = z.object({
@@ -50,6 +52,52 @@ function clientIp(header: string | undefined): string {
   return header?.split(",")[0]?.trim() || "local";
 }
 
+function countRows(db: Database.Database, table: string): number {
+  const row = db.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get() as
+    | { count: number }
+    | undefined;
+  return row?.count ?? 0;
+}
+
+function tenantStats(dataDir: string, userId: number) {
+  const dbPath = tenantDbPath(dataDir, userId);
+  let dbSizeBytes: number | null = null;
+  try {
+    dbSizeBytes = fs.statSync(dbPath).size;
+  } catch {
+    return {
+      db_size_bytes: null,
+      clients_count: null,
+      vehicules_count: null,
+      polices_count: null,
+      paiements_count: null,
+    };
+  }
+
+  try {
+    const db = new Database(dbPath, { readonly: true, fileMustExist: true });
+    try {
+      return {
+        db_size_bytes: dbSizeBytes,
+        clients_count: countRows(db, "clients"),
+        vehicules_count: countRows(db, "vehicules"),
+        polices_count: countRows(db, "polices"),
+        paiements_count: countRows(db, "paiements"),
+      };
+    } finally {
+      db.close();
+    }
+  } catch {
+    return {
+      db_size_bytes: dbSizeBytes,
+      clients_count: null,
+      vehicules_count: null,
+      polices_count: null,
+      paiements_count: null,
+    };
+  }
+}
+
 export function adminRoutes(ctx: AppContext): Hono<AuthEnv> {
   const app = new Hono<AuthEnv>();
 
@@ -58,15 +106,10 @@ export function adminRoutes(ctx: AppContext): Hono<AuthEnv> {
 
   /** Liste des comptes avec la taille de leur base. */
   app.get("/users", (c) => {
-    const users = listUsers(ctx.adminDb).map((u) => {
-      let dbSizeBytes: number | null = null;
-      try {
-        dbSizeBytes = fs.statSync(tenantDbPath(ctx.env.dataDir, u.id)).size;
-      } catch {
-        // base pas encore créée
-      }
-      return { ...u, db_size_bytes: dbSizeBytes };
-    });
+    const users = listUsers(ctx.adminDb).map((u) => ({
+      ...u,
+      ...tenantStats(ctx.env.dataDir, u.id),
+    }));
     return c.json({ users });
   });
 
@@ -89,7 +132,7 @@ export function adminRoutes(ctx: AppContext): Hono<AuthEnv> {
         login: parsed.data.login,
         nom: parsed.data.nom,
         passwordHash,
-        role: "USER",
+        role: parsed.data.role,
       });
     } catch (err) {
       // Course entre le contrôle ci-dessus et l'INSERT (double soumission) :
@@ -106,7 +149,11 @@ export function adminRoutes(ctx: AppContext): Hono<AuthEnv> {
       login: c.get("user").login,
       ip: clientIp(c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip")),
       success: true,
-      detail: JSON.stringify({ targetUserId: userId, targetLogin: parsed.data.login }),
+      detail: JSON.stringify({
+        targetUserId: userId,
+        targetLogin: parsed.data.login,
+        targetRole: parsed.data.role,
+      }),
     });
 
     const user = findUserById(ctx.adminDb, userId);

@@ -3,6 +3,7 @@
  * créer un compte, réinitialiser un mot de passe, suspendre / réactiver.
  */
 
+import { Navigate } from "@tanstack/react-router";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { Header } from "../components/layout";
 import { useAuth } from "../lib/auth";
@@ -19,6 +20,10 @@ interface AdminUser {
   created_at: string;
   last_login_at: string | null;
   db_size_bytes: number | null;
+  clients_count: number | null;
+  vehicules_count: number | null;
+  polices_count: number | null;
+  paiements_count: number | null;
 }
 
 async function adminFetch<T>(path: string, method = "GET", body?: unknown): Promise<T> {
@@ -73,14 +78,7 @@ export function AdminPage() {
   }, [reload]);
 
   if (user?.role !== "ADMIN") {
-    return (
-      <>
-        <Header title="Administration" />
-        <div className="p-6">
-          <p className="text-sm text-red-600">Accès réservé à l'administrateur.</p>
-        </div>
-      </>
-    );
+    return <Navigate to="/profil" replace />;
   }
 
   return (
@@ -92,7 +90,7 @@ export function AdminPage() {
         <section className="rounded-xl border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800">
           <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-slate-700">
             <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
-              Comptes ({users.length})
+              Profils et comptes ({users.length})
             </h3>
             <button
               type="button"
@@ -114,7 +112,7 @@ export function AdminPage() {
                   <th className="px-4 py-1.5 font-medium">Nom</th>
                   <th className="px-4 py-1.5 font-medium">Rôle</th>
                   <th className="px-4 py-1.5 font-medium">État</th>
-                  <th className="px-4 py-1.5 font-medium">Base</th>
+                  <th className="px-4 py-1.5 font-medium">Base / données</th>
                   <th className="px-4 py-1.5 font-medium">Dernière connexion</th>
                   <th className="px-4 py-1.5 font-medium">Actions</th>
                 </tr>
@@ -136,6 +134,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
   const [login, setLogin] = useState("");
   const [nom, setNom] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<AdminUser["role"]>("USER");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -146,11 +145,12 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
     setMessage(null);
     setSubmitting(true);
     try {
-      await adminFetch("/users", "POST", { login: login.trim(), nom: nom.trim(), password });
+      await adminFetch("/users", "POST", { login: login.trim(), nom: nom.trim(), password, role });
       setMessage(`Compte « ${login.trim()} » créé.`);
       setLogin("");
       setNom("");
       setPassword("");
+      setRole("USER");
       onCreated();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur");
@@ -167,7 +167,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
       <h3 className="mb-3 text-base font-semibold text-gray-900 dark:text-slate-100">
         Créer un compte
       </h3>
-      <form onSubmit={onSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-4 sm:items-end">
+      <form onSubmit={onSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-5 sm:items-end">
         <div>
           <label
             htmlFor="new-login"
@@ -219,6 +219,23 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
             className={inputClass}
             placeholder="mot de passe initial"
           />
+        </div>
+        <div>
+          <label
+            htmlFor="new-role"
+            className="block text-xs font-medium text-gray-600 dark:text-slate-400"
+          >
+            Rôle
+          </label>
+          <select
+            id="new-role"
+            value={role}
+            onChange={(e) => setRole(e.target.value as AdminUser["role"])}
+            className={inputClass}
+          >
+            <option value="USER">Utilisateur</option>
+            <option value="ADMIN">Administrateur</option>
+          </select>
         </div>
         <button
           type="submit"
@@ -276,6 +293,11 @@ function UserRow({
   };
 
   const isSelf = user.id === currentUserId;
+  const hasStats =
+    user.clients_count != null &&
+    user.vehicules_count != null &&
+    user.polices_count != null &&
+    user.paiements_count != null;
 
   return (
     <tr className="border-b border-gray-100 last:border-0 dark:border-slate-700/60">
@@ -302,7 +324,15 @@ function UserRow({
         </span>
       </td>
       <td className="px-4 py-1.5 text-gray-500 dark:text-slate-400">
-        {formatSize(user.db_size_bytes)}
+        <div>{formatSize(user.db_size_bytes)}</div>
+        {hasStats ? (
+          <div className="mt-1 text-xs text-gray-400 dark:text-slate-500">
+            {user.clients_count} clients · {user.vehicules_count} véhicules · {user.polices_count}{" "}
+            polices · {user.paiements_count} paiements
+          </div>
+        ) : (
+          <div className="mt-1 text-xs text-gray-400 dark:text-slate-500">Aucune base active</div>
+        )}
       </td>
       <td className="px-4 py-1.5 text-gray-500 dark:text-slate-400">
         {user.last_login_at ? new Date(user.last_login_at).toLocaleString("fr-FR") : "jamais"}
