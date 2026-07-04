@@ -41,9 +41,6 @@ export function LoginPage() {
             className="mx-auto h-auto w-64 max-w-full object-contain drop-shadow-lg"
           />
           <h1 className="sr-only">HORUS</h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
-            Gestion de courtage en assurance auto
-          </p>
         </div>
 
         {/* Carte de connexion */}
