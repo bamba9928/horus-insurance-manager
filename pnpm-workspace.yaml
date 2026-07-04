@@ -1,6 +1,10 @@
 packages:
   - server
 
+allowBuilds:
+  better-sqlite3: true
+  esbuild: true
+
 onlyBuiltDependencies:
   - esbuild
   - "@tailwindcss/oxide-win32-x64-msvc"
