@@ -75,6 +75,41 @@ Caddy gère le HTTPS automatiquement (Let's Encrypt) pour `DOMAIN`. Les données
 sont dans le volume `horus-data` (à sauvegarder). Le frontend est buildé en
 mode `VITE_API_MODE=http` et servi par le serveur (`STATIC_DIR=/app/public`).
 
+### Variante : VPS qui héberge déjà d'autres sites (nginx existant)
+
+Si le VPS a déjà un nginx qui écoute sur 80/443 pour d'autres domaines,
+ne pas lancer Caddy (conflit de port). Utiliser `docker-compose.shared-nginx.yml` :
+l'app écoute uniquement sur `127.0.0.1:3010`, jamais exposée directement.
+
+```bash
+cp .env.example .env          # renseigner ADMIN_PASSWORD (DOMAIN inutile ici)
+docker compose -f docker-compose.shared-nginx.yml up -d --build
+```
+
+Puis ajouter un site nginx dédié (nouveau fichier, sans toucher aux sites
+existants) et un certificat, par exemple `/etc/nginx/sites-available/assur-manager` :
+
+```nginx
+server {
+    listen 80;
+    server_name assur-manager.pro;
+
+    location / {
+        proxy_pass http://127.0.0.1:3010;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+```bash
+sudo ln -s /etc/nginx/sites-available/assur-manager /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d assur-manager.pro
+```
+
 ## Sauvegarde
 
 Tout l'état vit dans `DATA_DIR` : sauvegarder ce répertoire suffit

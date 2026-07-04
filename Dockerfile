@@ -20,8 +20,10 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN VITE_API_MODE=http pnpm exec vite build --outDir dist-web
 
-# Déploiement autonome du serveur (node_modules prod réel, modules natifs compilés)
-RUN pnpm --filter=horus-server deploy --prod /app
+# Déploiement autonome du serveur (node_modules prod réel, modules natifs compilés).
+# --legacy : horus-server ne dépend d'aucun autre paquet du workspace, pas besoin
+# de l'injection de dépendances introduite par défaut dans pnpm 10.
+RUN pnpm --filter=horus-server deploy --prod --legacy /app
 
 # ─── Étape 2 : image d'exécution ───
 FROM node:22-bookworm-slim AS runtime
@@ -42,5 +44,7 @@ COPY --from=builder /repo/dist-web /app/public
 VOLUME /data
 EXPOSE 3000
 
-# Arrêt propre : Node reçoit SIGTERM (handler dans src/index.ts)
-CMD ["pnpm", "start"]
+# Arrêt propre : Node reçoit SIGTERM (handler dans src/index.ts).
+# tsx est appelé directement (pas "pnpm start") : sans TTY, pnpm déclenche
+# une vérification interactive des dépendances qui fait planter le conteneur.
+CMD ["node_modules/.bin/tsx", "src/index.ts"]

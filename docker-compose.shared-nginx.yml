@@ -1,0 +1,27 @@
+# Variante pour un VPS qui héberge déjà d'autres sites derrière un nginx
+# hôte (le cas courant). Pas de Caddy ici : l'app écoute uniquement sur
+# 127.0.0.1 (jamais exposée directement à Internet) et c'est le nginx
+# existant qui reçoit le trafic 80/443 et le relaie en interne.
+#
+# Usage : docker compose -f docker-compose.shared-nginx.yml up -d --build
+# Voir server/README.md pour le bloc nginx + certbot à ajouter.
+
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATA_DIR: /data
+      STATIC_DIR: /app/public
+      COOKIE_SECURE: "true"
+      ADMIN_LOGIN: ${ADMIN_LOGIN:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    volumes:
+      - horus-data:/data
+    ports:
+      - "127.0.0.1:3010:3000"
+
+volumes:
+  horus-data:
