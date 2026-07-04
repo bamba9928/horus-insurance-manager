@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Horus Assurances Manager",
         "width": 1280,
         "height": 800,

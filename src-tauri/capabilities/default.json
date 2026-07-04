@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Main window permissions for Horus Assurances Manager.",
+  "remote": {
+    "urls": ["http://localhost:1420", "http://127.0.0.1:1420"]
+  },
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "log:default",
+    "opener:default",
+    "sql:default",
+    "sql:allow-execute"
+  ]
+}
