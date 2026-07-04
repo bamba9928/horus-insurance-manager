@@ -7,18 +7,14 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DataTable } from "../../components/data-table/DataTable";
+import { NouveauDossierButton } from "../../components/forms/NouveauDossierButton";
 import { VehiculeForm } from "../../components/forms/VehiculeForm";
 import { Header } from "../../components/layout";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Dialog } from "../../components/ui/Dialog";
 import { useClients } from "../../hooks/useClients";
 import { usePolices } from "../../hooks/usePolices";
-import {
-  useCreateVehicule,
-  useDeleteVehicule,
-  useUpdateVehicule,
-  useVehicules,
-} from "../../hooks/useVehicules";
+import { useDeleteVehicule, useUpdateVehicule, useVehicules } from "../../hooks/useVehicules";
 import { formatDateDisplay } from "../../lib/date-utils";
 import { consumePrefillSearch } from "../../lib/prefill-search";
 import type { Vehicule, VehiculeCreate } from "../../schemas/vehicule";
@@ -30,14 +26,12 @@ export function VehiculesPage() {
   // State
   const [search, setSearch] = useState(() => consumePrefillSearch("vehicules"));
   const [selectedVehicule, setSelectedVehicule] = useState<Vehicule | null>(null);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Vehicule | null>(null);
 
   // Queries & Mutations
   const { data: vehicules = [], isLoading } = useVehicules();
   const { data: clients = [] } = useClients();
-  const createMutation = useCreateVehicule();
   const updateMutation = useUpdateVehicule();
   const deleteMutation = useDeleteVehicule();
   const { data: vehiculePolices = [] } = usePolices(
@@ -137,12 +131,6 @@ export function VehiculesPage() {
   }, [vehicules, search, clientNameMap]);
 
   // Handlers
-  const handleCreate = (data: VehiculeCreate) => {
-    createMutation.mutate(data, {
-      onSuccess: () => setIsCreateOpen(false),
-    });
-  };
-
   const handleUpdate = (data: VehiculeCreate) => {
     if (!selectedVehicule) return;
     updateMutation.mutate(
@@ -159,13 +147,7 @@ export function VehiculesPage() {
   return (
     <>
       <Header title={t("vehicules.title")}>
-        <button
-          type="button"
-          onClick={() => setIsCreateOpen(true)}
-          className="rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#8b7335]"
-        >
-          + {t("common.create")}
-        </button>
+        <NouveauDossierButton />
       </Header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -287,15 +269,6 @@ export function VehiculesPage() {
           </div>
         )}
       </div>
-
-      {/* Modal création */}
-      <Dialog open={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Nouveau véhicule">
-        <VehiculeForm
-          onSubmit={handleCreate}
-          onCancel={() => setIsCreateOpen(false)}
-          isSubmitting={createMutation.isPending}
-        />
-      </Dialog>
 
       {/* Modal édition */}
       <Dialog open={isEditOpen} onClose={() => setIsEditOpen(false)} title="Modifier le véhicule">

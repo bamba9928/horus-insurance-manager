@@ -5,9 +5,10 @@
 
 import { useNavigate } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DataTable } from "../components/data-table/DataTable";
+import { NouveauDossierButton } from "../components/forms/NouveauDossierButton";
 import { Header } from "../components/layout";
 import {
   useDashboardKPI,
@@ -50,14 +51,7 @@ function policeBadge(statut: string | null) {
 
 type QuickAction = {
   label: string;
-  to:
-    | "/clients"
-    | "/vehicules"
-    | "/polices"
-    | "/paiements"
-    | "/echeances"
-    | "/verification"
-    | "/parametres";
+  to: "/clients" | "/vehicules" | "/polices" | "/paiements" | "/echeances" | "/verification";
   tone: "bronze" | "blue" | "green" | "orange" | "slate";
   icon: React.ReactNode;
 };
@@ -135,26 +129,19 @@ export function DashboardPage() {
         </svg>
       ),
     },
-    {
-      label: "Nouvel Assureur",
-      to: "/parametres",
-      tone: "slate",
-      icon: (
-        <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
-          <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v2.1a5.5 5.5 0 00-1.5-.5V4a.5.5 0 00-.5-.5H7a.5.5 0 00-.5.5v12c0 .28.22.5.5.5h2.8c.16.54.4 1.05.71 1.5H7a2 2 0 01-2-2V4zm8.5 4a4 4 0 100 8 4 4 0 000-8zm0 1.5c.41 0 .75.34.75.75v1.5h1.5a.75.75 0 010 1.5h-1.5v1.5a.75.75 0 01-1.5 0v-1.5h-1.5a.75.75 0 010-1.5h1.5v-1.5c0-.41.34-.75.75-.75z" />
-        </svg>
-      ),
-    },
   ];
 
-  const openModule = (
-    target: "clients" | "vehicules" | "polices" | "paiements",
-    to: "/clients" | "/vehicules" | "/polices" | "/paiements",
-    value: string,
-  ) => {
-    setPrefillSearch(target, value);
-    navigate({ to });
-  };
+  const openModule = useCallback(
+    (
+      target: "clients" | "vehicules" | "polices" | "paiements",
+      to: "/clients" | "/vehicules" | "/polices" | "/paiements",
+      value: string,
+    ) => {
+      setPrefillSearch(target, value);
+      navigate({ to });
+    },
+    [navigate],
+  );
 
   const filteredRecapRows = useMemo(() => {
     if (!recapSearch.trim()) return recapRows;
@@ -322,7 +309,7 @@ export function DashboardPage() {
         ),
       },
     ],
-    [navigate],
+    [openModule],
   );
 
   return (
@@ -330,6 +317,7 @@ export function DashboardPage() {
       <Header title="">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 py-0.5">
+            <NouveauDossierButton className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#614e1a] px-2.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#8b7335] focus:outline-none focus:ring-2 focus:ring-[#614e1a]/40" />
             {quickActions.map((action) => (
               <button
                 key={action.to}

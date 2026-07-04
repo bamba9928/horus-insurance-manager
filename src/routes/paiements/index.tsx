@@ -7,17 +7,14 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DataTable } from "../../components/data-table/DataTable";
+import { EncaissementDialog } from "../../components/forms/EncaissementDialog";
+import { NouveauDossierButton } from "../../components/forms/NouveauDossierButton";
 import { PaiementForm } from "../../components/forms/PaiementForm";
 import { Header } from "../../components/layout";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Dialog } from "../../components/ui/Dialog";
 import { useClients } from "../../hooks/useClients";
-import {
-  useCreatePaiement,
-  useDeletePaiement,
-  usePaiements,
-  useUpdatePaiement,
-} from "../../hooks/usePaiements";
+import { useDeletePaiement, usePaiements, useUpdatePaiement } from "../../hooks/usePaiements";
 import { usePolices } from "../../hooks/usePolices";
 import { useVehicules } from "../../hooks/useVehicules";
 import { formatFCFA } from "../../lib/date-utils";
@@ -46,16 +43,15 @@ export function PaiementsPage() {
   const [search, setSearch] = useState(() => consumePrefillSearch("paiements"));
   const [filterStatut, setFilterStatut] = useState<string>("");
   const [selectedPaiement, setSelectedPaiement] = useState<Paiement | null>(null);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Paiement | null>(null);
+  const [encaisserTarget, setEncaisserTarget] = useState<Paiement | null>(null);
 
   // Queries & Mutations
   const { data: paiements = [], isLoading } = usePaiements();
   const { data: polices = [] } = usePolices();
   const { data: vehicules = [] } = useVehicules();
   const { data: clients = [] } = useClients();
-  const createMutation = useCreatePaiement();
   const updateMutation = useUpdatePaiement();
   const deleteMutation = useDeletePaiement();
 
@@ -205,43 +201,53 @@ export function PaiementsPage() {
         id: "actions",
         header: "Actions",
         enableSorting: false,
-        cell: ({ row }) => (
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedPaiement(row.original);
-                setIsEditOpen(true);
-              }}
-              className="rounded px-2 py-1 text-xs text-[#614e1a] hover:bg-[#614e1a]/10"
-            >
-              {t("common.edit")}
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setDeleteTarget(row.original);
-              }}
-              className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-            >
-              {t("common.delete")}
-            </button>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const p = row.original;
+          const reste = p.reste ?? p.montant_du - p.paye - p.avance;
+          return (
+            <div className="flex gap-2">
+              {reste > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEncaisserTarget(p);
+                  }}
+                  className="rounded px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-50"
+                >
+                  {t("encaissement.bouton")}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedPaiement(p);
+                  setIsEditOpen(true);
+                }}
+                className="rounded px-2 py-1 text-xs text-[#614e1a] hover:bg-[#614e1a]/10"
+              >
+                {t("common.edit")}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteTarget(p);
+                }}
+                className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+              >
+                {t("common.delete")}
+              </button>
+            </div>
+          );
+        },
       },
     ],
     [t, policeMap, getClientName],
   );
 
   // Handlers
-  const handleCreate = (data: PaiementCreate) => {
-    createMutation.mutate(data, {
-      onSuccess: () => setIsCreateOpen(false),
-    });
-  };
-
   const handleUpdate = (data: PaiementCreate) => {
     if (!selectedPaiement) return;
     updateMutation.mutate(
@@ -258,13 +264,7 @@ export function PaiementsPage() {
   return (
     <>
       <Header title={t("paiements.title")}>
-        <button
-          type="button"
-          onClick={() => setIsCreateOpen(true)}
-          className="rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#8b7335]"
-        >
-          + {t("common.create")}
-        </button>
+        <NouveauDossierButton />
       </Header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -315,19 +315,11 @@ export function PaiementsPage() {
             onClose={() => setSelectedPaiement(null)}
             onEdit={() => setIsEditOpen(true)}
             onDelete={() => setDeleteTarget(selectedPaiement)}
+            onEncaisser={() => setEncaisserTarget(selectedPaiement)}
             t={t}
           />
         )}
       </div>
-
-      {/* Modal création */}
-      <Dialog open={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Nouveau paiement">
-        <PaiementForm
-          onSubmit={handleCreate}
-          onCancel={() => setIsCreateOpen(false)}
-          isSubmitting={createMutation.isPending}
-        />
-      </Dialog>
 
       {/* Modal édition */}
       <Dialog open={isEditOpen} onClose={() => setIsEditOpen(false)} title="Modifier le paiement">
@@ -351,6 +343,9 @@ export function PaiementsPage() {
         confirmLabel={t("common.delete")}
         variant="danger"
       />
+
+      {/* Dialog encaissement */}
+      <EncaissementDialog paiement={encaisserTarget} onClose={() => setEncaisserTarget(null)} />
     </>
   );
 }
@@ -365,6 +360,7 @@ interface PaiementDetailPanelProps {
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onEncaisser: () => void;
   t: (key: string) => string;
 }
 
@@ -376,6 +372,7 @@ function PaiementDetailPanel({
   onClose,
   onEdit,
   onDelete,
+  onEncaisser,
   t,
 }: PaiementDetailPanelProps) {
   const pol = policeMap.get(paiement.police_id);
@@ -447,6 +444,15 @@ function PaiementDetailPanel({
       </div>
 
       <div className="mt-6 flex gap-2">
+        {reste > 0 && (
+          <button
+            type="button"
+            onClick={onEncaisser}
+            className="flex-1 rounded-lg bg-green-700 px-3 py-2 text-sm font-medium text-white hover:bg-green-800"
+          >
+            {t("encaissement.bouton")}
+          </button>
+        )}
         <button
           type="button"
           onClick={onEdit}

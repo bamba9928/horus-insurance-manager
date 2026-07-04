@@ -6,6 +6,7 @@
 
 export * from "./assureur";
 export * from "./client";
+export * from "./dossier";
 export * from "./paiement";
 export * from "./police";
 export * from "./vehicule";

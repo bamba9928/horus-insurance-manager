@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { useClients } from "../../hooks/useClients";
 import { useVehicules } from "../../hooks/useVehicules";
 import { REFERENTIEL_MARQUES } from "../../lib/referentiel-marques";
+import { normalizeBrand, normalizeText, uniqueSorted } from "../../lib/utils";
 import type { Vehicule, VehiculeCreate } from "../../schemas/vehicule";
 import { CATEGORIES_VEHICULE, vehiculeCreateSchema } from "../../schemas/vehicule";
 import { SearchableSelect } from "../ui/SearchableSelect";
@@ -26,18 +27,6 @@ interface VehiculeFormProps {
   onCancel: () => void;
   /** Formulaire en cours de soumission */
   isSubmitting?: boolean;
-}
-
-function normalizeText(value: string | null | undefined): string {
-  return value?.trim().replace(/\s+/g, " ") ?? "";
-}
-
-function normalizeBrand(value: string | null | undefined): string {
-  return normalizeText(value).toUpperCase();
-}
-
-function uniqueSorted(values: string[]): string[] {
-  return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr"));
 }
 
 export function VehiculeForm({

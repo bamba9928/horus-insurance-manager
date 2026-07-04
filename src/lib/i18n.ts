@@ -26,6 +26,7 @@ const resources = {
         paiements: "Paiements",
         echeances: "Échéances",
         parametres: "Paramètres",
+        admin: "Administration",
       },
       common: {
         create: "Créer",
@@ -114,15 +115,48 @@ const resources = {
         echeancesUrgentes: "Échéances",
         parSemaine: "Par semaine",
       },
+      dossier: {
+        title: "Nouveau dossier",
+        bouton: "Nouveau dossier",
+        steps: {
+          client: "Client",
+          vehicule: "Véhicule",
+          police: "Police",
+          paiement: "Paiement",
+        },
+        clientExistant: "Client existant",
+        nouveauClient: "Nouveau client",
+        vehiculeExistant: "Véhicule existant",
+        nouveauVehicule: "Nouveau véhicule",
+        clientRequis: "Veuillez sélectionner un client",
+        vehiculeRequis: "Veuillez sélectionner un véhicule",
+        aucunVehiculeClient: "Aucun véhicule pour ce client",
+        clientDoublon: "Ce client existe déjà ({{nom}}). Utilisez « Client existant ».",
+        telephoneDoublon:
+          "Ce téléphone est déjà enregistré pour {{nom}}. Utilisez « Client existant ».",
+        vehiculeDoublon:
+          "Cette immatriculation existe déjà ({{immatriculation}}). Utilisez « Véhicule existant ».",
+        enregistrerPaiement: "Enregistrer un paiement maintenant",
+        precedent: "Précédent",
+        suivant: "Suivant",
+        enregistrerDossier: "Enregistrer le dossier",
+      },
+      encaissement: {
+        title: "Encaisser un versement",
+        bouton: "Encaisser",
+        montant: "Montant encaissé",
+        resteActuel: "Reste à payer",
+        nouveauReste: "Nouveau reste",
+      },
       tarification: {
         title: "Tarification",
         button: "TARIFICATION",
       },
       parametres: {
         assureurs: {
-          title: "Gestion des assureurs",
+          title: "Gestion des compagnies",
           description: "Ajouter, modifier ou supprimer des compagnies d'assurance.",
-          nouveau: "Nouvel assureur",
+          nouveau: "Ajouter une compagnie",
         },
         backup: {
           title: "Sauvegarde & Restauration",
@@ -173,6 +207,7 @@ const resources = {
         paiements: "Payments",
         echeances: "Deadlines",
         parametres: "Settings",
+        admin: "Administration",
       },
       common: {
         create: "Create",
@@ -261,15 +296,48 @@ const resources = {
         echeancesUrgentes: "Deadlines",
         parSemaine: "Per week",
       },
+      dossier: {
+        title: "New case file",
+        bouton: "New case file",
+        steps: {
+          client: "Client",
+          vehicule: "Vehicle",
+          police: "Policy",
+          paiement: "Payment",
+        },
+        clientExistant: "Existing client",
+        nouveauClient: "New client",
+        vehiculeExistant: "Existing vehicle",
+        nouveauVehicule: "New vehicle",
+        clientRequis: "Please select a client",
+        vehiculeRequis: "Please select a vehicle",
+        aucunVehiculeClient: "No vehicle for this client",
+        clientDoublon: "This client already exists ({{nom}}). Use “Existing client”.",
+        telephoneDoublon:
+          "This phone number is already registered for {{nom}}. Use “Existing client”.",
+        vehiculeDoublon:
+          "This license plate already exists ({{immatriculation}}). Use “Existing vehicle”.",
+        enregistrerPaiement: "Record a payment now",
+        precedent: "Back",
+        suivant: "Next",
+        enregistrerDossier: "Save case file",
+      },
+      encaissement: {
+        title: "Record a payment",
+        bouton: "Collect",
+        montant: "Amount received",
+        resteActuel: "Outstanding balance",
+        nouveauReste: "New balance",
+      },
       tarification: {
         title: "Pricing",
         button: "PRICING",
       },
       parametres: {
         assureurs: {
-          title: "Insurers",
+          title: "Companies",
           description: "Add, edit or remove insurance companies.",
-          nouveau: "New insurer",
+          nouveau: "Add a company",
         },
         backup: {
           title: "Backup & Restore",

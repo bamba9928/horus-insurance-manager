@@ -7,6 +7,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DataTable } from "../../components/data-table/DataTable";
+import { EncaissementDialog } from "../../components/forms/EncaissementDialog";
+import { NouveauDossierButton } from "../../components/forms/NouveauDossierButton";
 import { PoliceForm } from "../../components/forms/PoliceForm";
 import { Header } from "../../components/layout";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
@@ -15,7 +17,6 @@ import { useAssureurs } from "../../hooks/useAssureurs";
 import { useClients } from "../../hooks/useClients";
 import { usePaiements } from "../../hooks/usePaiements";
 import {
-  useCreatePolice,
   useDeletePolice,
   usePolices,
   useRenewPolice,
@@ -24,6 +25,7 @@ import {
 import { useVehicules } from "../../hooks/useVehicules";
 import { calcEcheance, formatDateDisplay, formatFCFA, joursRestants } from "../../lib/date-utils";
 import { consumePrefillSearch } from "../../lib/prefill-search";
+import type { Paiement } from "../../schemas/paiement";
 import { getPaiementStatut } from "../../schemas/paiement";
 import type { Police, PoliceCreate } from "../../schemas/police";
 import { STATUTS_POLICE } from "../../schemas/police";
@@ -59,7 +61,6 @@ export function PolicesPage() {
   const [search, setSearch] = useState(() => consumePrefillSearch("polices"));
   const [filterStatut, setFilterStatut] = useState<string>("");
   const [selectedPolice, setSelectedPolice] = useState<Police | null>(null);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Police | null>(null);
   const [renewTarget, setRenewTarget] = useState<Police | null>(null);
@@ -75,7 +76,6 @@ export function PolicesPage() {
   const { data: vehicules = [] } = useVehicules();
   const { data: clients = [] } = useClients();
   const { data: assureurs = [] } = useAssureurs();
-  const createMutation = useCreatePolice();
   const updateMutation = useUpdatePolice();
   const deleteMutation = useDeletePolice();
   const renewMutation = useRenewPolice();
@@ -225,12 +225,6 @@ export function PolicesPage() {
   }, [polices, search, vehiculeMap, getClientName]);
 
   // Handlers
-  const handleCreate = (data: PoliceCreate) => {
-    createMutation.mutate(data, {
-      onSuccess: () => setIsCreateOpen(false),
-    });
-  };
-
   const handleUpdate = (data: PoliceCreate) => {
     if (!selectedPolice) return;
     updateMutation.mutate(
@@ -254,13 +248,7 @@ export function PolicesPage() {
   return (
     <>
       <Header title={t("polices.title")}>
-        <button
-          type="button"
-          onClick={() => setIsCreateOpen(true)}
-          className="rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#8b7335]"
-        >
-          + {t("common.create")}
-        </button>
+        <NouveauDossierButton />
       </Header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -316,15 +304,6 @@ export function PolicesPage() {
           />
         )}
       </div>
-
-      {/* Modal création */}
-      <Dialog open={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Nouvelle police">
-        <PoliceForm
-          onSubmit={handleCreate}
-          onCancel={() => setIsCreateOpen(false)}
-          isSubmitting={createMutation.isPending}
-        />
-      </Dialog>
 
       {/* Modal édition */}
       <Dialog open={isEditOpen} onClose={() => setIsEditOpen(false)} title="Modifier la police">
@@ -491,6 +470,7 @@ function DetailField({ label, value }: { label: string; value: string | null | u
 /** Sous-composant : liste des paiements d'une police */
 function PolicePaiementsList({ policeId, t }: { policeId: number; t: (key: string) => string }) {
   const { data: paiements = [] } = usePaiements(policeId);
+  const [encaisserTarget, setEncaisserTarget] = useState<Paiement | null>(null);
 
   const statutColors: Record<string, string> = {
     SOLDE: "bg-green-100 text-green-800",
@@ -522,11 +502,22 @@ function PolicePaiementsList({ policeId, t }: { policeId: number; t: (key: strin
                   Payé : {formatFCFA(p.paye)} — Reste : {formatFCFA(reste)}
                   {p.mode && <span className="ml-1">({p.mode.replace("_", " ")})</span>}
                 </p>
+                {reste > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setEncaisserTarget(p)}
+                    className="mt-2 rounded px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-50"
+                  >
+                    {t("encaissement.bouton")}
+                  </button>
+                )}
               </li>
             );
           })}
         </ul>
       )}
+
+      <EncaissementDialog paiement={encaisserTarget} onClose={() => setEncaisserTarget(null)} />
     </div>
   );
 }

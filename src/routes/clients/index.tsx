@@ -8,15 +8,11 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DataTable } from "../../components/data-table/DataTable";
 import { ClientForm } from "../../components/forms/ClientForm";
+import { NouveauDossierButton } from "../../components/forms/NouveauDossierButton";
 import { Header } from "../../components/layout";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Dialog } from "../../components/ui/Dialog";
-import {
-  useClients,
-  useCreateClient,
-  useDeleteClient,
-  useUpdateClient,
-} from "../../hooks/useClients";
+import { useClients, useDeleteClient, useUpdateClient } from "../../hooks/useClients";
 import { useVehicules } from "../../hooks/useVehicules";
 import { consumePrefillSearch } from "../../lib/prefill-search";
 import type { Client, ClientCreate } from "../../schemas/client";
@@ -27,13 +23,11 @@ export function ClientsPage() {
   // State
   const [search, setSearch] = useState(() => consumePrefillSearch("clients"));
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
 
   // Queries & Mutations
   const { data: clients = [], isLoading } = useClients({ search });
-  const createMutation = useCreateClient();
   const updateMutation = useUpdateClient();
   const deleteMutation = useDeleteClient();
   const { data: clientVehicules = [] } = useVehicules(selectedClient?.id ?? undefined);
@@ -100,12 +94,6 @@ export function ClientsPage() {
   );
 
   // Handlers
-  const handleCreate = (data: ClientCreate) => {
-    createMutation.mutate(data, {
-      onSuccess: () => setIsCreateOpen(false),
-    });
-  };
-
   const handleUpdate = (data: ClientCreate) => {
     if (!selectedClient) return;
     updateMutation.mutate(
@@ -122,13 +110,7 @@ export function ClientsPage() {
   return (
     <>
       <Header title={t("clients.title")}>
-        <button
-          type="button"
-          onClick={() => setIsCreateOpen(true)}
-          className="rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#8b7335]"
-        >
-          + {t("common.create")}
-        </button>
+        <NouveauDossierButton />
       </Header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -226,15 +208,6 @@ export function ClientsPage() {
           </div>
         )}
       </div>
-
-      {/* Modal création */}
-      <Dialog open={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Nouveau client">
-        <ClientForm
-          onSubmit={handleCreate}
-          onCancel={() => setIsCreateOpen(false)}
-          isSubmitting={createMutation.isPending}
-        />
-      </Dialog>
 
       {/* Modal édition */}
       <Dialog open={isEditOpen} onClose={() => setIsEditOpen(false)} title="Modifier le client">
