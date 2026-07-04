@@ -342,8 +342,8 @@ export function DashboardPage() {
           </div>
         </div>
       </Header>
-      <div className="overflow-auto p-5">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="overflow-auto p-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <KPICard
             label={t("dashboard.policesActives")}
             value={kpiLoading ? "…" : String(kpi?.policesActives ?? 0)}
@@ -366,10 +366,10 @@ export function DashboardPage() {
           />
         </div>
 
-        <div className="mt-7 grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <section className="rounded-lg border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800">
-            <header className="flex items-center justify-between border-b border-gray-200 px-4 py-4 dark:border-slate-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+            <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-slate-700">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
                 {t("dashboard.echeancesUrgentes")}
               </h3>
               <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">
@@ -396,8 +396,8 @@ export function DashboardPage() {
           </section>
 
           <section className="rounded-lg border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800">
-            <header className="flex items-center justify-between border-b border-gray-200 px-4 py-4 dark:border-slate-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Impayés</h3>
+            <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-slate-700">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">Impayés</h3>
               <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
                 {impayes.length}
               </span>
@@ -420,10 +420,10 @@ export function DashboardPage() {
           </section>
         </div>
 
-        <section className="mt-7 rounded-xl border border-gray-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+        <section className="mt-5 rounded-xl border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
                 Tableau récapitulatif complet
               </h3>
             </div>
@@ -434,7 +434,7 @@ export function DashboardPage() {
                 value={recapSearch}
                 onChange={(e) => setRecapSearch(e.target.value)}
                 placeholder="Rechercher client, véhicule, police, assureur..."
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                className="w-full rounded-lg border border-gray-300 px-4 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
               />
             </div>
           </div>
@@ -494,10 +494,10 @@ const COLOR_MAP = {
 function KPICard({ label, value, color }: KPICardProps) {
   return (
     <div
-      className={`rounded-lg border border-gray-200 border-l-4 bg-white p-4 dark:border-slate-700 dark:bg-slate-800 ${COLOR_MAP[color]}`}
+      className={`rounded-lg border border-gray-200 border-l-4 bg-white p-3.5 dark:border-slate-700 dark:bg-slate-800 ${COLOR_MAP[color]}`}
     >
       <p className="text-sm text-gray-600 dark:text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-slate-100">{value}</p>
+      <p className="mt-1 text-xl font-bold text-gray-900 dark:text-slate-100">{value}</p>
     </div>
   );
 }
@@ -685,14 +685,14 @@ function RecapDetailPanel({
         <button
           type="button"
           onClick={onOpenClient}
-          className="rounded-lg bg-[#614e1a] px-3 py-2 text-sm font-medium text-white hover:bg-[#8b7335]"
+          className="rounded-lg bg-[#614e1a] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#8b7335]"
         >
           Ouvrir client
         </button>
         <button
           type="button"
           onClick={onOpenVehicule}
-          className="rounded-lg border border-blue-300 px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20"
+          className="rounded-lg border border-blue-300 px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20"
         >
           Ouvrir véhicule
         </button>
@@ -700,7 +700,7 @@ function RecapDetailPanel({
           type="button"
           onClick={onOpenPolice}
           disabled={!row.numero_police}
-          className="rounded-lg border border-green-300 px-3 py-2 text-sm text-green-700 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-green-700 dark:text-green-300 dark:hover:bg-green-900/20"
+          className="rounded-lg border border-green-300 px-3 py-1.5 text-sm text-green-700 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-green-700 dark:text-green-300 dark:hover:bg-green-900/20"
         >
           Ouvrir police
         </button>
@@ -708,7 +708,7 @@ function RecapDetailPanel({
           type="button"
           onClick={onOpenPaiements}
           disabled={!row.numero_police || row.paiements_count === 0}
-          className="rounded-lg border border-orange-300 px-3 py-2 text-sm text-orange-700 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-900/20"
+          className="rounded-lg border border-orange-300 px-3 py-1.5 text-sm text-orange-700 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-900/20"
         >
           Ouvrir paiements
         </button>

@@ -136,7 +136,7 @@ export function EcheancesPage() {
             type="button"
             onClick={handleExportPDF}
             disabled={isExporting || filtered.length === 0}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
           >
             {t("common.export")} PDF
           </button>
@@ -144,7 +144,7 @@ export function EcheancesPage() {
             type="button"
             onClick={handleExportXLSX}
             disabled={isExporting || filtered.length === 0}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
           >
             {t("common.export")} XLSX
           </button>
@@ -176,7 +176,7 @@ export function EcheancesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Recherche sur nom client, immatriculation, marque, N° police..."
-            className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
+            className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
           />
         </div>
 

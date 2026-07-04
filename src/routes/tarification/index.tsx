@@ -84,7 +84,7 @@ export function TarificationPage() {
   };
 
   const inputClass =
-    "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none";
+    "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none";
   const labelClass = "block text-sm font-medium text-gray-700";
 
   return (
@@ -222,21 +222,21 @@ export function TarificationPage() {
               <button
                 type="button"
                 onClick={handleCompute}
-                className="rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#8b7335]"
+                className="rounded-lg bg-[#614e1a] px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#8b7335]"
               >
                 Valider le calcul
               </button>
               <button
                 type="button"
                 onClick={handleReset}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 dark:border-slate-600 dark:hover:bg-slate-700"
+                className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50 dark:border-slate-600 dark:hover:bg-slate-700"
               >
                 Réinitialiser
               </button>
             </div>
 
             {error && (
-              <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+              <p className="mt-4 rounded-lg bg-red-50 px-3 py-1.5 text-sm text-red-700">{error}</p>
             )}
           </div>
 

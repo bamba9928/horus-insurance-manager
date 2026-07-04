@@ -138,7 +138,7 @@ export function VerificationPage() {
                 value={immatriculationInput}
                 onChange={(e) => setImmatriculationInput(e.target.value)}
                 placeholder="Ex: AA149JD"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm uppercase focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm uppercase focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
               />
             </div>
 
@@ -161,7 +161,7 @@ export function VerificationPage() {
           </form>
 
           {errorMessage && (
-            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
+            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
               {errorMessage.includes("n'est pas valide")
                 ? "Ce véhicule n'est pas assuré (attestation non valide)."
                 : errorMessage}
@@ -223,7 +223,7 @@ function ReadonlyField({ label, value }: { label: string; value: string }) {
         type="text"
         readOnly
         value={value}
-        className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+        className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-1.5 text-sm text-gray-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
       />
     </div>
   );

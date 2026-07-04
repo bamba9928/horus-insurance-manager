@@ -110,13 +110,13 @@ export function AdminPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 text-left text-xs text-gray-500 dark:border-slate-700 dark:text-slate-400">
-                  <th className="px-4 py-2 font-medium">Identifiant</th>
-                  <th className="px-4 py-2 font-medium">Nom</th>
-                  <th className="px-4 py-2 font-medium">Rôle</th>
-                  <th className="px-4 py-2 font-medium">État</th>
-                  <th className="px-4 py-2 font-medium">Base</th>
-                  <th className="px-4 py-2 font-medium">Dernière connexion</th>
-                  <th className="px-4 py-2 font-medium">Actions</th>
+                  <th className="px-4 py-1.5 font-medium">Identifiant</th>
+                  <th className="px-4 py-1.5 font-medium">Nom</th>
+                  <th className="px-4 py-1.5 font-medium">Rôle</th>
+                  <th className="px-4 py-1.5 font-medium">État</th>
+                  <th className="px-4 py-1.5 font-medium">Base</th>
+                  <th className="px-4 py-1.5 font-medium">Dernière connexion</th>
+                  <th className="px-4 py-1.5 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -160,7 +160,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
   };
 
   const inputClass =
-    "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
+    "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
@@ -223,7 +223,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-medium text-white hover:bg-[#8b7335] disabled:opacity-50"
+          className="rounded-lg bg-[#614e1a] px-4 py-1.5 text-sm font-medium text-white hover:bg-[#8b7335] disabled:opacity-50"
         >
           {submitting ? "Création..." : "Créer le compte"}
         </button>
@@ -279,9 +279,9 @@ function UserRow({
 
   return (
     <tr className="border-b border-gray-100 last:border-0 dark:border-slate-700/60">
-      <td className="px-4 py-2 font-medium text-gray-900 dark:text-slate-100">{user.login}</td>
-      <td className="px-4 py-2 text-gray-700 dark:text-slate-300">{user.nom}</td>
-      <td className="px-4 py-2">
+      <td className="px-4 py-1.5 font-medium text-gray-900 dark:text-slate-100">{user.login}</td>
+      <td className="px-4 py-1.5 text-gray-700 dark:text-slate-300">{user.nom}</td>
+      <td className="px-4 py-1.5">
         <span
           className={`rounded px-2 py-0.5 text-xs font-medium ${
             user.role === "ADMIN"
@@ -292,7 +292,7 @@ function UserRow({
           {user.role === "ADMIN" ? "Admin" : "Utilisateur"}
         </span>
       </td>
-      <td className="px-4 py-2">
+      <td className="px-4 py-1.5">
         <span
           className={`rounded px-2 py-0.5 text-xs font-medium ${
             user.actif ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
@@ -301,13 +301,13 @@ function UserRow({
           {user.actif ? "Actif" : "Suspendu"}
         </span>
       </td>
-      <td className="px-4 py-2 text-gray-500 dark:text-slate-400">
+      <td className="px-4 py-1.5 text-gray-500 dark:text-slate-400">
         {formatSize(user.db_size_bytes)}
       </td>
-      <td className="px-4 py-2 text-gray-500 dark:text-slate-400">
+      <td className="px-4 py-1.5 text-gray-500 dark:text-slate-400">
         {user.last_login_at ? new Date(user.last_login_at).toLocaleString("fr-FR") : "jamais"}
       </td>
-      <td className="px-4 py-2">
+      <td className="px-4 py-1.5">
         <div className="flex gap-2">
           <button
             type="button"

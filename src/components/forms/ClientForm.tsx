@@ -55,7 +55,7 @@ export function ClientForm({ defaultValues, onSubmit, onCancel, isSubmitting }: 
           id="nomPrenom"
           type="text"
           {...register("nomPrenom")}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
+          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
           placeholder="Ex: Mamadou Diallo"
         />
         {errors.nomPrenom && (
@@ -72,7 +72,7 @@ export function ClientForm({ defaultValues, onSubmit, onCancel, isSubmitting }: 
           id="telephone"
           type="tel"
           {...register("telephone")}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
+          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
           placeholder="77 123 45 67"
         />
         {errors.telephone && (
@@ -89,7 +89,7 @@ export function ClientForm({ defaultValues, onSubmit, onCancel, isSubmitting }: 
           id="email"
           type="email"
           {...register("email")}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
+          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
           placeholder="client@example.com"
         />
         {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>}
@@ -104,7 +104,7 @@ export function ClientForm({ defaultValues, onSubmit, onCancel, isSubmitting }: 
           id="adresse"
           type="text"
           {...register("adresse")}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
+          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
           placeholder="Dakar, Sénégal"
         />
         {errors.adresse && <p className="mt-1 text-xs text-red-600">{errors.adresse.message}</p>}
@@ -119,7 +119,7 @@ export function ClientForm({ defaultValues, onSubmit, onCancel, isSubmitting }: 
           id="notes"
           {...register("notes")}
           rows={3}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
+          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
           placeholder="Notes optionnelles..."
         />
       </div>
@@ -129,14 +129,14 @@ export function ClientForm({ defaultValues, onSubmit, onCancel, isSubmitting }: 
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
+          className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50"
         >
           {t("common.cancel")}
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-medium text-white hover:bg-[#8b7335] disabled:opacity-50"
+          className="rounded-lg bg-[#614e1a] px-4 py-1.5 text-sm font-medium text-white hover:bg-[#8b7335] disabled:opacity-50"
         >
           {isSubmitting ? t("common.loading") : t("common.save")}
         </button>

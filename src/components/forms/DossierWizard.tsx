@@ -35,7 +35,7 @@ import { CATEGORIES_VEHICULE } from "../../schemas/vehicule";
 import { SearchableSelect } from "../ui/SearchableSelect";
 
 const inputClass =
-  "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none";
+  "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none";
 
 /** Normalise un téléphone pour comparaison : chiffres uniquement, sans indicatif 221. */
 function normalizePhone(value: string | null | undefined): string {
@@ -48,10 +48,11 @@ function normalizeImmat(value: string): string {
   return value.replace(/\s+/g, "").toUpperCase();
 }
 
-const secondaryButtonClass = "rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50";
+const secondaryButtonClass =
+  "rounded-lg border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50";
 
 const primaryButtonClass =
-  "rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-medium text-white hover:bg-[#8b7335] disabled:opacity-50";
+  "rounded-lg bg-[#614e1a] px-4 py-1.5 text-sm font-medium text-white hover:bg-[#8b7335] disabled:opacity-50";
 
 interface DossierWizardProps {
   /** Callback de soumission du dossier complet */

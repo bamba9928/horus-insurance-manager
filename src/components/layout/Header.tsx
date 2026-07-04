@@ -20,7 +20,7 @@ export function Header({ title, children }: HeaderProps) {
   const isOnTarification = pathname === "/tarification";
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-gray-200/80 bg-white/95 px-5 shadow-[0_1px_0_0_rgba(15,23,42,0.08)] backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/95">
+    <header className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-gray-200/80 bg-white/95 px-4 shadow-[0_1px_0_0_rgba(15,23,42,0.08)] backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/95">
       <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">
         {title?.trim() ? title : ""}
       </h2>

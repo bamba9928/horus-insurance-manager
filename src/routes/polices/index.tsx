@@ -261,12 +261,12 @@ export function PolicesPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={`${t("common.search")}...`}
-              className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
+              className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
             />
             <select
               value={filterStatut}
               onChange={(e) => setFilterStatut(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
               aria-label="Filtrer par statut"
             >
               <option value="">Tous les statuts</option>
@@ -430,7 +430,7 @@ function PoliceDetailPanel({
         <button
           type="button"
           onClick={onEdit}
-          className="flex-1 rounded-lg bg-[#614e1a] px-3 py-2 text-sm font-medium text-white hover:bg-[#8b7335]"
+          className="flex-1 rounded-lg bg-[#614e1a] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#8b7335]"
         >
           {t("common.edit")}
         </button>
@@ -438,7 +438,7 @@ function PoliceDetailPanel({
           <button
             type="button"
             onClick={onRenew}
-            className="rounded-lg border border-blue-300 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50"
+            className="rounded-lg border border-blue-300 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50"
           >
             {t("polices.renouveler")}
           </button>
@@ -446,7 +446,7 @@ function PoliceDetailPanel({
         <button
           type="button"
           onClick={onDelete}
-          className="rounded-lg border border-red-300 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+          className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
         >
           {t("common.delete")}
         </button>
@@ -489,7 +489,7 @@ function PolicePaiementsList({ policeId, t }: { policeId: number; t: (key: strin
             const reste = p.reste ?? p.montant_du - p.paye - p.avance;
             const statut = getPaiementStatut(reste, p.montant_du);
             return (
-              <li key={p.id} className="rounded-lg border border-gray-200 px-3 py-2 text-sm">
+              <li key={p.id} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-gray-900">{formatFCFA(p.montant_du)}</span>
                   <span

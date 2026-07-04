@@ -128,7 +128,7 @@ function AssureursSection() {
             setEditing(null);
             setIsFormOpen(true);
           }}
-          className="rounded-lg bg-[#614e1a] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#8b7335]"
+          className="rounded-lg bg-[#614e1a] px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#8b7335]"
         >
           Ajouter une compagnie
         </button>
@@ -312,7 +312,7 @@ function AssureurForm({ defaultValues, onSubmit, onCancel, isSubmitting }: Assur
   }, [defaultValues, reset]);
 
   const inputClass =
-    "mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
+    "mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
   const labelClass = "block text-sm font-medium text-gray-700 dark:text-slate-300";
 
   return (
@@ -392,14 +392,14 @@ function AssureurForm({ defaultValues, onSubmit, onCancel, isSubmitting }: Assur
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+          className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
         >
           Annuler
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-medium text-white hover:bg-[#8b7335] disabled:opacity-50"
+          className="rounded-lg bg-[#614e1a] px-4 py-1.5 text-sm font-medium text-white hover:bg-[#8b7335] disabled:opacity-50"
         >
           {isSubmitting ? "..." : "Enregistrer"}
         </button>
@@ -481,7 +481,7 @@ function BackupSection() {
           type="button"
           onClick={handleBackup}
           disabled={isBusy}
-          className="rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#8b7335] disabled:opacity-50"
+          className="rounded-lg bg-[#614e1a] px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#8b7335] disabled:opacity-50"
         >
           {isBusy ? "..." : "Sauvegarder maintenant"}
         </button>
@@ -489,7 +489,7 @@ function BackupSection() {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={isBusy}
-          className="rounded-lg border border-gray-300 px-4 py-2 text-sm transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+          className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
         >
           Restaurer depuis un fichier
         </button>
@@ -693,7 +693,7 @@ function ImportReportCard({ report }: { report: ImportReport }) {
   const hasErrors = report.errors.length > 0;
   return (
     <div
-      className={`rounded-lg border px-3 py-2 text-sm ${
+      className={`rounded-lg border px-3 py-1.5 text-sm ${
         hasErrors
           ? "border-orange-200 bg-orange-50 dark:border-orange-800/40 dark:bg-orange-900/20"
           : "border-green-200 bg-green-50 dark:border-green-800/40 dark:bg-green-900/20"
@@ -749,7 +749,7 @@ function AppearanceSection({
   const { theme, setTheme } = useTheme();
 
   const selectClass =
-    "mt-1 block rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
+    "mt-1 block rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">

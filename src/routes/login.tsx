@@ -6,6 +6,9 @@
 import { type FormEvent, useState } from "react";
 import { useAuth } from "../lib/auth";
 
+const LOGO_SRC = "/horus-manager-logo.png";
+const LOGO_SRC_SET = "/horus-manager-logo.png 1x, /horus-manager-logo@2x.png 2x";
+
 export function LoginPage() {
   const { login } = useAuth();
   const [loginName, setLoginName] = useState("");
@@ -30,10 +33,13 @@ export function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo / Titre */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#614e1a] text-2xl font-bold text-white shadow-lg">
-            H
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">HORUS</h1>
+          <img
+            src={LOGO_SRC}
+            srcSet={LOGO_SRC_SET}
+            alt="Horus Assurances"
+            className="mx-auto h-auto w-64 max-w-full object-contain drop-shadow-lg"
+          />
+          <h1 className="sr-only">HORUS</h1>
           <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
             Gestion de courtage en assurance auto
           </p>
@@ -60,7 +66,7 @@ export function LoginPage() {
                 value={loginName}
                 onChange={(e) => setLoginName(e.target.value)}
                 required
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
                 placeholder="votre identifiant"
               />
             </div>
@@ -79,13 +85,13 @@ export function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
                 placeholder="••••••••"
               />
             </div>
 
             {error && (
-              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm text-red-700">
                 {error}
               </p>
             )}

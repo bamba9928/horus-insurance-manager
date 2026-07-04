@@ -38,7 +38,7 @@ export function NouveauDossierButton({ className }: NouveauDossierButtonProps) {
         onClick={handleOpen}
         className={
           className ??
-          "rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#8b7335]"
+          "rounded-lg bg-[#614e1a] px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#8b7335]"
         }
       >
         + {t("dossier.bouton")}

@@ -67,7 +67,7 @@ export function DataTable<TData>({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 font-medium text-gray-700 select-none whitespace-nowrap dark:text-slate-300"
+                    className="px-4 py-2 font-medium text-gray-700 select-none whitespace-nowrap dark:text-slate-300"
                     style={{ cursor: header.column.getCanSort() ? "pointer" : "default" }}
                     onClick={header.column.getToggleSortingHandler()}
                   >
@@ -88,7 +88,7 @@ export function DataTable<TData>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-8 text-center text-gray-500 dark:text-slate-400"
+                  className="px-4 py-6 text-center text-gray-500 dark:text-slate-400"
                 >
                   {t("common.noData")}
                 </td>
@@ -103,7 +103,7 @@ export function DataTable<TData>({
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3">
+                    <td key={cell.id} className="px-4 py-2">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
@@ -116,7 +116,7 @@ export function DataTable<TData>({
 
       {/* Pagination */}
       {table.getPageCount() > 1 && (
-        <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3 dark:border-slate-700">
+        <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2.5 dark:border-slate-700">
           <span className="text-sm text-gray-600 dark:text-slate-400">
             Page {table.getState().pagination.pageIndex + 1} / {table.getPageCount()} (
             {table.getFilteredRowModel().rows.length} résultats)

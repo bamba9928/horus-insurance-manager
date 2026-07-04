@@ -279,12 +279,12 @@ export function PaiementsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Recherche sur N° police, nom client, immatriculation, référence..."
-              className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
+              className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
             />
             <select
               value={filterStatut}
               onChange={(e) => setFilterStatut(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
               aria-label="Filtrer par statut de paiement"
             >
               <option value="">Tous les statuts</option>
@@ -448,7 +448,7 @@ function PaiementDetailPanel({
           <button
             type="button"
             onClick={onEncaisser}
-            className="flex-1 rounded-lg bg-green-700 px-3 py-2 text-sm font-medium text-white hover:bg-green-800"
+            className="flex-1 rounded-lg bg-green-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-800"
           >
             {t("encaissement.bouton")}
           </button>
@@ -456,14 +456,14 @@ function PaiementDetailPanel({
         <button
           type="button"
           onClick={onEdit}
-          className="flex-1 rounded-lg bg-[#614e1a] px-3 py-2 text-sm font-medium text-white hover:bg-[#8b7335]"
+          className="flex-1 rounded-lg bg-[#614e1a] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#8b7335]"
         >
           {t("common.edit")}
         </button>
         <button
           type="button"
           onClick={onDelete}
-          className="rounded-lg border border-red-300 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+          className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
         >
           {t("common.delete")}
         </button>

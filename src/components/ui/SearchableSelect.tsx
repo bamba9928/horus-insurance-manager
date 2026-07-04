@@ -154,7 +154,7 @@ export function SearchableSelect({
         aria-expanded={open}
         aria-controls={listId}
         className={cn(
-          "mt-1 flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-left text-sm text-gray-900 focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100",
+          "mt-1 flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-left text-sm text-gray-900 focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100",
           className,
         )}
       >
@@ -206,7 +206,7 @@ export function SearchableSelect({
               </div>
             )}
             {visibleOptions.length === 0 && (
-              <div className="px-3 py-2 text-center text-xs text-gray-500 dark:text-slate-400">
+              <div className="px-3 py-1.5 text-center text-xs text-gray-500 dark:text-slate-400">
                 {emptyText}
               </div>
             )}

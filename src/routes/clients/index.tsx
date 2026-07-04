@@ -123,7 +123,7 @@ export function ClientsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={`${t("common.search")}...`}
-              className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
+              className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none"
             />
           </div>
 
@@ -165,14 +165,14 @@ export function ClientsPage() {
               <button
                 type="button"
                 onClick={() => setIsEditOpen(true)}
-                className="flex-1 rounded-lg bg-[#614e1a] px-3 py-2 text-sm font-medium text-white hover:bg-[#8b7335]"
+                className="flex-1 rounded-lg bg-[#614e1a] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#8b7335]"
               >
                 {t("common.edit")}
               </button>
               <button
                 type="button"
                 onClick={() => setDeleteTarget(selectedClient)}
-                className="rounded-lg border border-red-300 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
               >
                 {t("common.delete")}
               </button>
@@ -188,7 +188,10 @@ export function ClientsPage() {
               ) : (
                 <ul className="mt-2 space-y-2">
                   {clientVehicules.map((v) => (
-                    <li key={v.id} className="rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                    <li
+                      key={v.id}
+                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm"
+                    >
                       <span className="font-medium text-gray-900">{v.immatriculation}</span>
                       {v.marque && (
                         <span className="ml-2 text-gray-500">

@@ -17,7 +17,7 @@ import { MODES_PAIEMENT } from "../../schemas/paiement";
 import { Dialog } from "../ui/Dialog";
 
 const inputClass =
-  "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none";
+  "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none";
 
 interface EncaissementDialogProps {
   /** Paiement à compléter (null = dialog fermé) */
@@ -202,14 +202,14 @@ function EncaissementForm({ paiement, onClose }: { paiement: Paiement; onClose: 
         <button
           type="button"
           onClick={onClose}
-          className="rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
+          className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50"
         >
           {t("common.cancel")}
         </button>
         <button
           type="submit"
           disabled={updateMutation.isPending}
-          className="rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-medium text-white hover:bg-[#8b7335] disabled:opacity-50"
+          className="rounded-lg bg-[#614e1a] px-4 py-1.5 text-sm font-medium text-white hover:bg-[#8b7335] disabled:opacity-50"
         >
           {updateMutation.isPending ? t("common.loading") : t("encaissement.bouton")}
         </button>
