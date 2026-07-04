@@ -8,7 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import type { Hono } from "hono";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { buildApp } from "../src/app.js";
 import type { AuthEnv } from "../src/auth/middleware.js";
 import { hashPassword } from "../src/auth/password.js";
@@ -342,6 +342,107 @@ describe("intégrations", () => {
       await call("/api/integrations/overview", { cookie: cookieA })
     ).json()) as Array<{ nom: string }>;
     expect(overview.map((o) => o.nom)).toContain("AXA Test");
+  });
+});
+
+describe("vérification (proxy AAS)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("rejette une immatriculation trop longue sans appeler l'API externe", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const res = await call(`/api/verify/${"A".repeat(30)}`, { cookie: cookieA });
+    expect(res.status).toBe(400);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("relaie une réponse SUCCESS de l'API externe", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              operationStatus: "SUCCESS",
+              operationMessage: "Attestation valide chez PREVOYANCE ASSURANCES",
+              data: {
+                attestationNumber: "SN008FTTA1N",
+                dateVerification: "04-07-2026 17:34",
+                immatriculation: "DK1234AB",
+                dateEffet: "2026-02-01",
+                dateEcheance: "2026-07-31 23:59:59",
+                marque: "RENAULT",
+                modele: "LOGAN",
+              },
+            }),
+            { status: 200 },
+          ),
+      ),
+    );
+
+    const res = await call("/api/verify/DK1234AB", { cookie: cookieA });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { operationStatus: string; data: { marque: string } };
+    expect(body.operationStatus).toBe("SUCCESS");
+    expect(body.data.marque).toBe("RENAULT");
+  });
+
+  it("relaie une réponse ERROR métier (véhicule non assuré) avec 200", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              operationStatus: "ERROR",
+              operationMessage: "L'attestation d'assurance (ZZ0000ZZ) n'est pas valide.",
+              data: null,
+            }),
+            { status: 200 },
+          ),
+      ),
+    );
+
+    const res = await call("/api/verify/ZZ0000ZZ", { cookie: cookieA });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { operationStatus: string; data: null };
+    expect(body.operationStatus).toBe("ERROR");
+    expect(body.data).toBeNull();
+  });
+
+  it("renvoie 502 si l'API externe répond en erreur HTTP", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("service indisponible", { status: 503 })),
+    );
+
+    const res = await call("/api/verify/DK1234AB", { cookie: cookieA });
+    expect(res.status).toBe(502);
+  });
+
+  it("renvoie 502 si l'API externe renvoie une réponse invalide", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ nawak: true }), { status: 200 })),
+    );
+
+    const res = await call("/api/verify/DK1234AB", { cookie: cookieA });
+    expect(res.status).toBe(502);
+  });
+
+  it("renvoie 502 si l'appel réseau échoue", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("ECONNREFUSED");
+      }),
+    );
+
+    const res = await call("/api/verify/DK1234AB", { cookie: cookieA });
+    expect(res.status).toBe(502);
   });
 });
 
