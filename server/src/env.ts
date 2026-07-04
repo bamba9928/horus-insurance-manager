@@ -31,8 +31,11 @@ export function loadEnv(processEnv: NodeJS.ProcessEnv = process.env): ServerEnv 
       processEnv.COOKIE_SECURE != null
         ? processEnv.COOKIE_SECURE === "true"
         : processEnv.NODE_ENV === "production",
-    adminLogin: processEnv.ADMIN_LOGIN ?? "admin",
-    adminPassword: processEnv.ADMIN_PASSWORD,
+    adminLogin: processEnv.ADMIN_LOGIN || "admin",
+    // Une chaîne vide (ex: "ADMIN_PASSWORD=" dans .env, propagée telle quelle
+    // par Docker Compose) doit être traitée comme "absent", pas comme un
+    // mot de passe vide.
+    adminPassword: processEnv.ADMIN_PASSWORD || undefined,
     staticDir: processEnv.STATIC_DIR ? path.resolve(processEnv.STATIC_DIR) : undefined,
   };
 }
