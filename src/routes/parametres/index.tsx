@@ -114,7 +114,7 @@ function AssureursSection() {
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
             Gestion des compagnies
@@ -129,7 +129,7 @@ function AssureursSection() {
             setEditing(null);
             setIsFormOpen(true);
           }}
-          className="rounded-lg bg-[#614e1a] px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#8b7335]"
+          className="w-full shrink-0 whitespace-nowrap rounded-lg bg-[#614e1a] px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#8b7335] sm:w-auto"
         >
           Ajouter une compagnie
         </button>
