@@ -11,6 +11,7 @@ import { NouveauDossierButton } from "../../components/forms/NouveauDossierButto
 import { VehiculeForm } from "../../components/forms/VehiculeForm";
 import { Header } from "../../components/layout";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { DetailField } from "../../components/ui/DetailField";
 import { Dialog } from "../../components/ui/Dialog";
 import { Spinner } from "../../components/ui/Spinner";
 import { useClients } from "../../hooks/useClients";
@@ -185,14 +186,14 @@ export function VehiculesPage() {
         {/* Panneau détail (maître-détail) */}
         {selectedVehicule && !isEditOpen && (
           <div className="w-full overflow-auto border-t border-gray-200 bg-white p-4 sm:w-96 sm:shrink-0 sm:border-t-0 sm:border-l">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">
+            <div className="relative">
+              <h3 className="text-center text-lg font-semibold text-gray-900">
                 {selectedVehicule.immatriculation}
               </h3>
               <button
                 type="button"
                 onClick={() => setSelectedVehicule(null)}
-                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100"
+                className="absolute top-0 right-0 rounded-lg p-1 text-gray-400 hover:bg-gray-100"
               >
                 &times;
               </button>
@@ -301,14 +302,5 @@ export function VehiculesPage() {
         variant="danger"
       />
     </>
-  );
-}
-
-function DetailField({ label, value }: { label: string; value: string | null | undefined }) {
-  return (
-    <div>
-      <p className="text-xs font-medium text-gray-500">{label}</p>
-      <p className="text-sm text-gray-900">{value || "—"}</p>
-    </div>
   );
 }

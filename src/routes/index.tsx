@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { DataTable } from "../components/data-table/DataTable";
 import { NouveauDossierButton } from "../components/forms/NouveauDossierButton";
 import { Header } from "../components/layout";
+import { DetailField } from "../components/ui/DetailField";
 import { Spinner } from "../components/ui/Spinner";
 import {
   useDashboardKPI,
@@ -603,8 +604,8 @@ function RecapDetailPanel({
 
   return (
     <aside className="w-full shrink-0 rounded-lg border border-gray-200 bg-gray-50 p-4 xl:w-80 dark:border-slate-700 dark:bg-slate-900/60">
-      <div className="flex items-start justify-between gap-3">
-        <div>
+      <div className="relative">
+        <div className="text-center">
           <h4 className="text-base font-semibold text-gray-900 dark:text-slate-100">
             {row.nom_prenom}
           </h4>
@@ -613,13 +614,13 @@ function RecapDetailPanel({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-lg px-2 py-1 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          className="absolute top-0 right-0 rounded-lg px-2 py-1 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
         >
           ×
         </button>
       </div>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 space-y-3 text-center">
         <DetailField label="Téléphone" value={row.telephone} />
         <DetailField
           label="Véhicule"
@@ -650,7 +651,7 @@ function RecapDetailPanel({
 
         <div>
           <p className="text-xs font-medium text-gray-500 dark:text-slate-400">Paiements</p>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
             {paiementStatut ? (
               <span
                 className={`rounded px-2 py-0.5 text-xs font-medium ${paiementBadge(paiementStatut)}`}
@@ -711,14 +712,5 @@ function RecapDetailPanel({
         </button>
       </div>
     </aside>
-  );
-}
-
-function DetailField({ label, value }: { label: string; value: string | null | undefined }) {
-  return (
-    <div>
-      <p className="text-xs font-medium text-gray-500 dark:text-slate-400">{label}</p>
-      <p className="text-sm text-gray-900 dark:text-slate-100">{value || "—"}</p>
-    </div>
   );
 }
