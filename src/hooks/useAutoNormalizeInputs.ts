@@ -31,6 +31,15 @@ function normalizedValue(el: HTMLInputElement): string | null {
 
 export function useAutoNormalizeInputs(): void {
   useEffect(() => {
+    // Setter natif : écrit la valeur SANS passer par le setter patché par React,
+    // donc sans mettre à jour son value-tracker. Ainsi React détecte toujours un
+    // changement et déclenche onChange (indispensable pour les inputs contrôlés
+    // comme les barres de recherche ; sinon leur state ne se met jamais à jour).
+    const nativeSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype,
+      "value",
+    )?.set;
+
     const handler = (e: Event) => {
       const el = e.target;
       // Exclut <textarea> (les notes gardent leur casse) et tout non-input.
@@ -41,7 +50,8 @@ export function useAutoNormalizeInputs(): void {
 
       const caret = el.selectionStart ?? next.length;
       const removed = Math.max(0, el.value.length - next.length);
-      el.value = next;
+      if (nativeSetter) nativeSetter.call(el, next);
+      else el.value = next;
 
       // Restaure la position du curseur (décalée du nombre de caractères retirés).
       const pos = Math.max(0, caret - removed);

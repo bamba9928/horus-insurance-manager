@@ -68,7 +68,9 @@ export function EcheancesPage() {
         accessorKey: "nom_prenom",
         header: "Client",
         cell: ({ getValue }) => (
-          <span className="font-medium text-gray-900">{getValue<string>()}</span>
+          <span className="font-medium text-gray-900 dark:text-slate-100">
+            {getValue<string>()}
+          </span>
         ),
       },
       {

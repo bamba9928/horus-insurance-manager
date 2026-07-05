@@ -138,7 +138,11 @@ export function PaiementsPage() {
         header: "Police",
         cell: ({ getValue }) => {
           const pol = policeMap.get(getValue<number>());
-          return <span className="font-medium text-gray-900">{pol?.numero ?? "—"}</span>;
+          return (
+            <span className="font-medium text-gray-900 dark:text-slate-100">
+              {pol?.numero ?? "—"}
+            </span>
+          );
         },
       },
       {

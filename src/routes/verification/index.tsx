@@ -1,7 +1,23 @@
 import { useState } from "react";
 import { Header } from "../../components/layout";
+import { Spinner } from "../../components/ui/Spinner";
 import { formatDateDisplay } from "../../lib/date-utils";
 import { openExternalUrl, type VerificationData, verifyContract } from "../../lib/ipc";
+
+/** Longueur maximale de l'immatriculation saisie. */
+const IMMAT_MAX_LENGTH = 20;
+
+/**
+ * Normalise la saisie de l'immatriculation : ne conserve que A-Z, 0-9 et le
+ * tiret. Espaces et tout autre caractère sont retirés à la frappe, et la
+ * longueur est plafonnée à 20 caractères.
+ */
+function normalizeImmatInput(value: string): string {
+  return value
+    .toUpperCase()
+    .replace(/[^A-Z0-9-]/g, "")
+    .slice(0, IMMAT_MAX_LENGTH);
+}
 
 function normalizePlate(value: string): string {
   return value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
@@ -136,8 +152,9 @@ export function VerificationPage() {
                 id="immatriculation"
                 type="text"
                 value={immatriculationInput}
-                onChange={(e) => setImmatriculationInput(e.target.value)}
-                placeholder="Ex: AA149JD"
+                onChange={(e) => setImmatriculationInput(normalizeImmatInput(e.target.value))}
+                maxLength={IMMAT_MAX_LENGTH}
+                placeholder="Ex: AA-149-JD"
                 className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm uppercase focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
               />
             </div>
@@ -159,6 +176,10 @@ export function VerificationPage() {
               </button>
             </div>
           </form>
+
+          {isLoading && (
+            <Spinner logoWidth={0} size={28} className="py-6" label="Vérification en cours..." />
+          )}
 
           {errorMessage && (
             <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">

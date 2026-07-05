@@ -125,7 +125,9 @@ export function PolicesPage() {
         accessorKey: "numero_police",
         header: t("polices.numero"),
         cell: ({ getValue }) => (
-          <span className="font-medium text-gray-900">{getValue<string | null>() ?? "—"}</span>
+          <span className="font-medium text-gray-900 dark:text-slate-100">
+            {getValue<string | null>() ?? "—"}
+          </span>
         ),
       },
       {
