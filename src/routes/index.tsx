@@ -323,7 +323,7 @@ export function DashboardPage() {
                 key={action.to}
                 type="button"
                 onClick={() => navigate({ to: action.to })}
-                className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg transition-colors ${
+                className={`hidden h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg transition-colors sm:inline-flex ${
                   action.tone === "bronze"
                     ? "bg-[#614e1a] px-2.5 text-xs font-semibold text-white shadow-sm hover:bg-[#8b7335] focus:outline-none focus:ring-2 focus:ring-[#614e1a]/40"
                     : action.tone === "blue"
