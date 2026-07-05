@@ -45,6 +45,8 @@ describe("vehiculeCreateSchema", () => {
     const result = vehiculeCreateSchema.safeParse({
       clientId: 1,
       immatriculation: "DK 1234 AB",
+      genre: "CAT_01",
+      typeVehicule: "Véhicule particulier",
     });
     expect(result.success).toBe(true);
   });
@@ -53,6 +55,8 @@ describe("vehiculeCreateSchema", () => {
     const result = vehiculeCreateSchema.safeParse({
       clientId: 1,
       immatriculation: "123-INVALID",
+      genre: "CAT_01",
+      typeVehicule: "Véhicule particulier",
     });
     expect(result.success).toBe(false);
   });
@@ -61,10 +65,20 @@ describe("vehiculeCreateSchema", () => {
     const result = vehiculeCreateSchema.safeParse({
       clientId: 1,
       immatriculation: "dk 1234 ab",
+      genre: "CAT_01",
+      typeVehicule: "Véhicule particulier",
     });
     if (result.success) {
       expect(result.data.immatriculation).toBe("DK 1234 AB");
     }
+  });
+
+  it("rejette une catégorie ou un genre manquant", () => {
+    const result = vehiculeCreateSchema.safeParse({
+      clientId: 1,
+      immatriculation: "DK 1234 AB",
+    });
+    expect(result.success).toBe(false);
   });
 });
 
@@ -86,6 +100,7 @@ describe("policeCreateSchema", () => {
   it("accepte une police valide", () => {
     const result = policeCreateSchema.safeParse({
       vehiculeId: 1,
+      assureurId: 1,
       typeCarte: "VERTE",
       dateEffet: "2025-01-15",
       dureeMois: 12,
@@ -96,6 +111,7 @@ describe("policeCreateSchema", () => {
   it("rejette un type de carte invalide", () => {
     const result = policeCreateSchema.safeParse({
       vehiculeId: 1,
+      assureurId: 1,
       typeCarte: "BLEUE",
       dateEffet: "2025-01-15",
       dureeMois: 12,
@@ -106,9 +122,20 @@ describe("policeCreateSchema", () => {
   it("rejette une durée non autorisée", () => {
     const result = policeCreateSchema.safeParse({
       vehiculeId: 1,
+      assureurId: 1,
       typeCarte: "VERTE",
       dateEffet: "2025-01-15",
       dureeMois: 5,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejette un assureur manquant", () => {
+    const result = policeCreateSchema.safeParse({
+      vehiculeId: 1,
+      typeCarte: "VERTE",
+      dateEffet: "2025-01-15",
+      dureeMois: 12,
     });
     expect(result.success).toBe(false);
   });

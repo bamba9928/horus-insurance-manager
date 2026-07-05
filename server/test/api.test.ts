@@ -72,6 +72,16 @@ async function call(route: string, opts: CallOptions): Promise<Response> {
   });
 }
 
+async function createTestAssureur(cookie: string, nom: string): Promise<number> {
+  const res = await call("/api/assureurs", {
+    method: "POST",
+    cookie,
+    body: { nom, integrationType: "MANUAL" },
+  });
+  if (res.status !== 201) throw new Error(`Création assureur échouée : ${res.status}`);
+  return ((await res.json()) as { id: number }).id;
+}
+
 let cookieA = "";
 let cookieB = "";
 
@@ -191,13 +201,22 @@ describe("isolation entre tenants", () => {
 
 describe("dossier complet + dashboard", () => {
   it("enregistre un dossier et le retrouve dans le récap", async () => {
+    const assureurId = await createTestAssureur(cookieB, "Compagnie Dossier Test");
     const res = await call("/api/dossiers", {
       method: "POST",
       cookie: cookieB,
       body: {
         client: { mode: "nouveau", data: { nomPrenom: "Dossier Test" } },
-        vehicule: { mode: "nouveau", data: { immatriculation: "DK 4321 ZZ", marque: "TOYOTA" } },
-        police: { typeCarte: "VERTE", dateEffet: "2026-01-15", dureeMois: 12 },
+        vehicule: {
+          mode: "nouveau",
+          data: {
+            immatriculation: "DK 4321 ZZ",
+            marque: "TOYOTA",
+            genre: "CAT_01",
+            typeVehicule: "Véhicule particulier",
+          },
+        },
+        police: { assureurId, typeCarte: "VERTE", dateEffet: "2026-01-15", dureeMois: 12 },
         paiement: { montantDu: 100000, paye: 40000, avance: 0 },
       },
     });
@@ -235,14 +254,22 @@ describe("dossier complet + dashboard", () => {
   });
 
   it("rollback intégral si le dossier est invalide (aucune ligne orpheline)", async () => {
+    const assureurId = await createTestAssureur(cookieA, "Compagnie Rollback");
     const before = (await (await call("/api/clients", { cookie: cookieA })).json()) as unknown[];
     const res = await call("/api/dossiers", {
       method: "POST",
       cookie: cookieA,
       body: {
         client: { mode: "nouveau", data: { nomPrenom: "Ne doit pas persister" } },
-        vehicule: { mode: "nouveau", data: { immatriculation: "INVALIDE!!!" } },
-        police: { typeCarte: "VERTE", dateEffet: "2026-01-15", dureeMois: 12 },
+        vehicule: {
+          mode: "nouveau",
+          data: {
+            immatriculation: "INVALIDE!!!",
+            genre: "CAT_01",
+            typeVehicule: "Véhicule particulier",
+          },
+        },
+        police: { assureurId, typeCarte: "VERTE", dateEffet: "2026-01-15", dureeMois: 12 },
       },
     });
     expect(res.status).toBe(400); // immatriculation invalide → rejet à la validation
@@ -253,13 +280,21 @@ describe("dossier complet + dashboard", () => {
 
 describe("renouvellement de police", () => {
   it("crée une nouvelle police et marque l'ancienne RENOUVELÉE", async () => {
+    const assureurId = await createTestAssureur(cookieA, "Compagnie Renouvellement");
     const dossier = await call("/api/dossiers", {
       method: "POST",
       cookie: cookieA,
       body: {
         client: { mode: "nouveau", data: { nomPrenom: "Renouvellement" } },
-        vehicule: { mode: "nouveau", data: { immatriculation: "DK 9999 RR" } },
-        police: { typeCarte: "VERTE", dateEffet: "2025-01-01", dureeMois: 12 },
+        vehicule: {
+          mode: "nouveau",
+          data: {
+            immatriculation: "DK 9999 RR",
+            genre: "CAT_01",
+            typeVehicule: "Véhicule particulier",
+          },
+        },
+        police: { assureurId, typeCarte: "VERTE", dateEffet: "2025-01-01", dureeMois: 12 },
       },
     });
     const { policeId } = (await dossier.json()) as { policeId: number };
@@ -458,14 +493,24 @@ describe("contraintes", () => {
     const first = await call("/api/vehicules", {
       method: "POST",
       cookie: cookieB,
-      body: { clientId, immatriculation: "DK 1111 AA" },
+      body: {
+        clientId,
+        immatriculation: "DK 1111 AA",
+        genre: "CAT_01",
+        typeVehicule: "Véhicule particulier",
+      },
     });
     expect(first.status).toBe(201);
 
     const dup = await call("/api/vehicules", {
       method: "POST",
       cookie: cookieB,
-      body: { clientId, immatriculation: "DK 1111 AA" },
+      body: {
+        clientId,
+        immatriculation: "DK 1111 AA",
+        genre: "CAT_01",
+        typeVehicule: "Véhicule particulier",
+      },
     });
     expect(dup.status).toBe(409);
   });

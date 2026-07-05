@@ -159,7 +159,7 @@ export function VehiculeForm({
       {/* Catégorie */}
       <div>
         <label htmlFor="genre" className="block text-sm font-medium text-gray-700">
-          {t("vehicules.categorie")}
+          {t("vehicules.categorie")} *
         </label>
         <Controller
           name="genre"
@@ -171,7 +171,7 @@ export function VehiculeForm({
               onChange={(v) => {
                 const nextCategorie = v == null ? undefined : (v as VehiculeCreate["genre"]);
                 if (field.value !== nextCategorie) {
-                  setValue("typeVehicule", undefined, {
+                  setValue("typeVehicule", "", {
                     shouldDirty: true,
                     shouldValidate: true,
                   });
@@ -183,6 +183,34 @@ export function VehiculeForm({
             />
           )}
         />
+        {errors.genre && <p className="mt-1 text-xs text-red-600">{errors.genre.message}</p>}
+      </div>
+
+      {/* Genre */}
+      <div>
+        <label htmlFor="typeVehicule" className="block text-sm font-medium text-gray-700">
+          {t("vehicules.typeVehicule")} *
+        </label>
+        <Controller
+          name="typeVehicule"
+          control={control}
+          render={({ field }) => (
+            <SearchableSelect
+              id="typeVehicule"
+              value={field.value ?? null}
+              onChange={(v) => field.onChange(v == null ? undefined : String(v))}
+              options={genreOptions}
+              placeholder={
+                selectedCategorie ? t("vehicules.selectGenre") : t("vehicules.selectCategorieFirst")
+              }
+              emptyText={t("vehicules.noGenre")}
+              disabled={!selectedCategorie}
+            />
+          )}
+        />
+        {errors.typeVehicule && (
+          <p className="mt-1 text-xs text-red-600">{errors.typeVehicule.message}</p>
+        )}
       </div>
 
       {/* Immatriculation */}
@@ -249,30 +277,6 @@ export function VehiculeForm({
             )}
           />
         </div>
-      </div>
-
-      {/* Type véhicule */}
-      <div>
-        <label htmlFor="typeVehicule" className="block text-sm font-medium text-gray-700">
-          {t("vehicules.typeVehicule")}
-        </label>
-        <Controller
-          name="typeVehicule"
-          control={control}
-          render={({ field }) => (
-            <SearchableSelect
-              id="typeVehicule"
-              value={field.value ?? null}
-              onChange={(v) => field.onChange(v == null ? undefined : String(v))}
-              options={genreOptions}
-              placeholder={
-                selectedCategorie ? t("vehicules.selectGenre") : t("vehicules.selectCategorieFirst")
-              }
-              emptyText={t("vehicules.noGenre")}
-              disabled={!selectedCategorie}
-            />
-          )}
-        />
       </div>
 
       {/* Puissance + Places (2 colonnes) */}

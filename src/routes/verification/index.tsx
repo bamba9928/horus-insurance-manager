@@ -23,13 +23,6 @@ function normalizePlate(value: string): string {
   return value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 }
 
-function toFriendlyPlate(value: string): string {
-  const normalized = normalizePlate(value);
-  if (normalized.length <= 2) return normalized;
-  if (normalized.length <= 5) return `${normalized.slice(0, 2)}-${normalized.slice(2)}`;
-  return `${normalized.slice(0, 2)}-${normalized.slice(2, normalized.length - 2)}-${normalized.slice(-2)}`;
-}
-
 function buildAttestationUrl(attestationNumber: string): string {
   return `https://aas.diotali.com/#/attestation/${attestationNumber}`;
 }
@@ -118,14 +111,11 @@ export function VerificationPage() {
       }
 
       setErrorMessage(
-        payload.operationMessage ||
-          `Ce véhicule (${toFriendlyPlate(normalizedPlate)}) n'est pas assuré.`,
+        payload.operationMessage || `Ce véhicule (${normalizedPlate}) n'est pas assuré.`,
       );
     } catch (_error) {
       setErrorMessage(
-        `La vérification a échoué. Vérifiez la connexion puis réessayez pour le véhicule ${toFriendlyPlate(
-          normalizedPlate,
-        )}.`,
+        `La vérification a échoué. Vérifiez la connexion puis réessayez pour le véhicule ${normalizedPlate}.`,
       );
     } finally {
       setIsLoading(false);
@@ -200,7 +190,7 @@ export function VerificationPage() {
               <ReadonlyField label="N° Attestation" value={result.attestationNumber} />
               <ReadonlyField
                 label="Immatriculation"
-                value={toFriendlyPlate(result.immatriculation)}
+                value={normalizePlate(result.immatriculation)}
               />
               <ReadonlyField label="Compagnie" value={extractCompagnie(successMessage)} />
               <ReadonlyField label="Date d'effet" value={formatApiDate(result.dateEffet)} />

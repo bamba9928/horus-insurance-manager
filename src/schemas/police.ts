@@ -19,12 +19,12 @@ export const STATUTS_INTEGRATION_POLICE = ["LOCAL", "PENDING", "SYNCED", "ERROR"
 /** Schéma de création d'une police */
 export const policeCreateSchema = z.object({
   vehiculeId: z.number().int().positive("Véhicule requis"),
-  assureurId: z.number().int().positive().optional(),
+  assureurId: z.number("Assureur requis").int().positive("Assureur requis"),
   numeroPolice: z.string().max(100).optional(),
   typeCarte: z.enum(TYPES_CARTE),
   dateEffet: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format date invalide (YYYY-MM-DD)"),
   dureeMois: z
-    .number()
+    .number("Durée requise")
     .int()
     .refine(
       (v): v is 1 | 3 | 6 | 9 | 12 | 24 => ([1, 3, 6, 9, 12, 24] as number[]).includes(v),

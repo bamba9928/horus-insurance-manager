@@ -143,8 +143,8 @@ export const vehiculeCreateSchema = z.object({
     .transform((v) => v.toUpperCase().replace(/\s+/g, " ").trim()),
   marque: z.string().max(100).optional(),
   modele: z.string().max(100).optional(),
-  genre: z.enum(GENRES_VEHICULE).optional(),
-  typeVehicule: z.string().max(100).optional(),
+  genre: z.enum(GENRES_VEHICULE, "Catégorie requise"),
+  typeVehicule: z.string("Genre requis").min(1, "Genre requis").max(100),
   puissance: z.number().int().min(1).max(1000).optional(),
   places: z.number().int().min(1).max(100).optional(),
 });

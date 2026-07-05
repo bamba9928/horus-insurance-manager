@@ -33,6 +33,7 @@ import { getPaiementStatut, MODES_PAIEMENT } from "../../schemas/paiement";
 import { DUREES_MOIS } from "../../schemas/police";
 import { CATEGORIES_VEHICULE, getSousCategoriesByCategorie } from "../../schemas/vehicule";
 import { SearchableSelect } from "../ui/SearchableSelect";
+import { AssureurQuickCreatePanel } from "./AssureurQuickCreatePanel";
 
 const inputClass =
   "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none";
@@ -576,7 +577,7 @@ function VehiculeStep({
         <>
           <div>
             <label htmlFor="genre" className="block text-sm font-medium text-gray-700">
-              {t("vehicules.categorie")}
+              {t("vehicules.categorie")} *
             </label>
             <Controller
               name="genre"
@@ -588,7 +589,7 @@ function VehiculeStep({
                   onChange={(v) => {
                     const nextCategorie = v == null ? undefined : (v as DossierVehicule["genre"]);
                     if (field.value !== nextCategorie) {
-                      setValue("typeVehicule", undefined, {
+                      setValue("typeVehicule", "", {
                         shouldDirty: true,
                         shouldValidate: true,
                       });
@@ -600,6 +601,35 @@ function VehiculeStep({
                 />
               )}
             />
+            {errors.genre && <p className="mt-1 text-xs text-red-600">{errors.genre.message}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="typeVehicule" className="block text-sm font-medium text-gray-700">
+              {t("vehicules.typeVehicule")} *
+            </label>
+            <Controller
+              name="typeVehicule"
+              control={control}
+              render={({ field }) => (
+                <SearchableSelect
+                  id="typeVehicule"
+                  value={field.value ?? null}
+                  onChange={(v) => field.onChange(v == null ? undefined : String(v))}
+                  options={genreOptions}
+                  placeholder={
+                    selectedCategorie
+                      ? t("vehicules.selectGenre")
+                      : t("vehicules.selectCategorieFirst")
+                  }
+                  emptyText={t("vehicules.noGenre")}
+                  disabled={!selectedCategorie}
+                />
+              )}
+            />
+            {errors.typeVehicule && (
+              <p className="mt-1 text-xs text-red-600">{errors.typeVehicule.message}</p>
+            )}
           </div>
 
           <div>
@@ -672,31 +702,6 @@ function VehiculeStep({
             </div>
           </div>
 
-          <div>
-            <label htmlFor="typeVehicule" className="block text-sm font-medium text-gray-700">
-              {t("vehicules.typeVehicule")}
-            </label>
-            <Controller
-              name="typeVehicule"
-              control={control}
-              render={({ field }) => (
-                <SearchableSelect
-                  id="typeVehicule"
-                  value={field.value ?? null}
-                  onChange={(v) => field.onChange(v == null ? undefined : String(v))}
-                  options={genreOptions}
-                  placeholder={
-                    selectedCategorie
-                      ? t("vehicules.selectGenre")
-                      : t("vehicules.selectCategorieFirst")
-                  }
-                  emptyText={t("vehicules.noGenre")}
-                  disabled={!selectedCategorie}
-                />
-              )}
-            />
-          </div>
-
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="puissance" className="block text-sm font-medium text-gray-700">
@@ -756,8 +761,8 @@ function VehiculeStep({
 
 // ============ Étape 3 : Police ============
 
-/** Type formulaire — dureeMois est `number` ici ; le refine Zod valide */
-type PoliceStepValues = Omit<DossierPolice, "dureeMois"> & { dureeMois: number };
+/** Type formulaire — dureeMois est optionnel tant que l'utilisateur n'a pas choisi. */
+type PoliceStepValues = Omit<DossierPolice, "dureeMois"> & { dureeMois?: number };
 
 function PoliceStep({
   initial,
@@ -770,17 +775,18 @@ function PoliceStep({
 }) {
   const { t } = useTranslation();
   const { data: assureurs = [] } = useAssureurs();
+  const [showAssureurCreate, setShowAssureurCreate] = useState(false);
 
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<PoliceStepValues>({
     resolver: zodResolver(dossierPoliceSchema) as never,
     defaultValues: initial ?? {
       typeCarte: "VERTE" as const,
-      dureeMois: 12,
       dateEffet: new Date().toISOString().slice(0, 10),
     },
   });
@@ -840,9 +846,12 @@ function PoliceStep({
           </label>
           <select
             id="dureeMois"
-            {...register("dureeMois", { valueAsNumber: true })}
+            {...register("dureeMois", {
+              setValueAs: (value) => (value === "" ? undefined : Number(value)),
+            })}
             className={inputClass}
           >
+            <option value="">— Sélectionner une durée —</option>
             {DUREES_MOIS.map((d) => (
               <option key={d} value={d}>
                 {d} mois
@@ -890,9 +899,18 @@ function PoliceStep({
       )}
 
       <div>
-        <label htmlFor="assureurId" className="block text-sm font-medium text-gray-700">
-          {t("polices.assureur")}
-        </label>
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor="assureurId" className="block text-sm font-medium text-gray-700">
+            {t("polices.assureur")} *
+          </label>
+          <button
+            type="button"
+            onClick={() => setShowAssureurCreate((value) => !value)}
+            className="text-xs font-medium text-[#614e1a] hover:underline"
+          >
+            Ajouter une compagnie
+          </button>
+        </div>
         <Controller
           name="assureurId"
           control={control}
@@ -902,10 +920,24 @@ function PoliceStep({
               value={field.value ?? null}
               onChange={(v) => field.onChange(v == null ? undefined : Number(v))}
               options={assureurs.map((a) => ({ value: a.id, label: a.nom }))}
-              placeholder="— Aucun assureur —"
+              placeholder="— Sélectionner un assureur —"
+              allowClear={false}
             />
           )}
         />
+        {errors.assureurId && (
+          <p className="mt-1 text-xs text-red-600">{errors.assureurId.message}</p>
+        )}
+        {showAssureurCreate && (
+          <AssureurQuickCreatePanel
+            assureurs={assureurs}
+            onCancel={() => setShowAssureurCreate(false)}
+            onCreated={(id) => {
+              setValue("assureurId", id, { shouldDirty: true, shouldValidate: true });
+              setShowAssureurCreate(false);
+            }}
+          />
+        )}
       </div>
 
       <div>

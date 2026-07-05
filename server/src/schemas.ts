@@ -34,8 +34,8 @@ export const vehiculeCreateSchema = z.object({
     .transform((v) => v.toUpperCase().replace(/\s+/g, " ").trim()),
   marque: z.string().max(100).optional(),
   modele: z.string().max(100).optional(),
-  genre: z.string().max(50).optional(),
-  typeVehicule: z.string().max(100).optional(),
+  genre: z.string().min(1).max(50),
+  typeVehicule: z.string().min(1).max(100),
   puissance: z.number().int().min(1).max(1000).optional(),
   places: z.number().int().min(1).max(100).optional(),
 });
@@ -73,7 +73,7 @@ const STATUTS_INTEGRATION = ["LOCAL", "PENDING", "SYNCED", "ERROR"] as const;
 
 export const policeCreateSchema = z.object({
   vehiculeId: z.number().int().positive(),
-  assureurId: z.number().int().positive().optional(),
+  assureurId: z.number().int().positive(),
   numeroPolice: z.string().max(100).optional(),
   typeCarte: z.enum(TYPES_CARTE),
   dateEffet: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),

@@ -4,6 +4,7 @@
  */
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAssureurs } from "../../hooks/useAssureurs";
@@ -12,9 +13,10 @@ import { calcEcheance, formatDateDisplay, joursRestants } from "../../lib/date-u
 import type { Police, PoliceCreate } from "../../schemas/police";
 import { DUREES_MOIS, policeCreateSchema } from "../../schemas/police";
 import { SearchableSelect } from "../ui/SearchableSelect";
+import { AssureurQuickCreatePanel } from "./AssureurQuickCreatePanel";
 
-/** Form-level type — dureeMois is `number` here; Zod refine handles the validation */
-type PoliceFormValues = Omit<PoliceCreate, "dureeMois"> & { dureeMois: number };
+/** Form-level type — dureeMois is optional until the user selects a duration. */
+type PoliceFormValues = Omit<PoliceCreate, "dureeMois"> & { dureeMois?: number };
 
 interface PoliceFormProps {
   /** Police existante pour le mode édition */
@@ -39,11 +41,13 @@ export function PoliceForm({
   const { t } = useTranslation();
   const { data: vehicules = [] } = useVehicules();
   const { data: assureurs = [] } = useAssureurs();
+  const [showAssureurCreate, setShowAssureurCreate] = useState(false);
 
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<PoliceFormValues>({
     resolver: zodResolver(policeCreateSchema) as never,
@@ -66,7 +70,6 @@ export function PoliceForm({
       : {
           defaultValues: {
             typeCarte: "VERTE" as const,
-            dureeMois: 12 as const,
             dateEffet: new Date().toISOString().slice(0, 10),
             ...(preselectedVehiculeId != null ? { vehiculeId: preselectedVehiculeId } : {}),
           },
@@ -164,9 +167,12 @@ export function PoliceForm({
           </label>
           <select
             id="dureeMois"
-            {...register("dureeMois", { valueAsNumber: true })}
+            {...register("dureeMois", {
+              setValueAs: (value) => (value === "" ? undefined : Number(value)),
+            })}
             className={inputClass}
           >
+            <option value="">— Sélectionner une durée —</option>
             {DUREES_MOIS.map((d) => (
               <option key={d} value={d}>
                 {d} mois
@@ -214,9 +220,18 @@ export function PoliceForm({
 
       {/* Assureur */}
       <div>
-        <label htmlFor="assureurId" className="block text-sm font-medium text-gray-700">
-          {t("polices.assureur")}
-        </label>
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor="assureurId" className="block text-sm font-medium text-gray-700">
+            {t("polices.assureur")} *
+          </label>
+          <button
+            type="button"
+            onClick={() => setShowAssureurCreate((value) => !value)}
+            className="text-xs font-medium text-[#614e1a] hover:underline"
+          >
+            Ajouter une compagnie
+          </button>
+        </div>
         <Controller
           name="assureurId"
           control={control}
@@ -226,10 +241,24 @@ export function PoliceForm({
               value={field.value ?? null}
               onChange={(v) => field.onChange(v == null ? undefined : Number(v))}
               options={assureurs.map((a) => ({ value: a.id, label: a.nom }))}
-              placeholder="— Aucun assureur —"
+              placeholder="— Sélectionner un assureur —"
+              allowClear={false}
             />
           )}
         />
+        {errors.assureurId && (
+          <p className="mt-1 text-xs text-red-600">{errors.assureurId.message}</p>
+        )}
+        {showAssureurCreate && (
+          <AssureurQuickCreatePanel
+            assureurs={assureurs}
+            onCancel={() => setShowAssureurCreate(false)}
+            onCreated={(id) => {
+              setValue("assureurId", id, { shouldDirty: true, shouldValidate: true });
+              setShowAssureurCreate(false);
+            }}
+          />
+        )}
       </div>
 
       {/* Appréciation */}

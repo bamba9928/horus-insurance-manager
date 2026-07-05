@@ -182,15 +182,23 @@ export async function importVehiculesCSV(file: File): Promise<ImportReport> {
       }
       const puissance = toInt(getField(r, "puissance", "cv"));
       const places = toInt(getField(r, "places"));
+      const genre = getField(r, "genre", "categorie", "catégorie");
+      if (!genre) {
+        report.errors.push({ row: i + 2, message: "genre/categorie manquant" });
+        continue;
+      }
+      const typeVehicule = getField(r, "type_vehicule", "type", "sous_categorie", "genre_detail");
+      if (!typeVehicule) {
+        report.errors.push({ row: i + 2, message: "type_vehicule/genre manquant" });
+        continue;
+      }
       await createVehicule({
         clientId,
         immatriculation: immat,
         ...(getField(r, "marque") ? { marque: getField(r, "marque")! } : {}),
         ...(getField(r, "modele") ? { modele: getField(r, "modele")! } : {}),
-        ...(getField(r, "genre") ? { genre: getField(r, "genre") as never } : {}),
-        ...(getField(r, "type_vehicule", "type")
-          ? { typeVehicule: getField(r, "type_vehicule", "type")! }
-          : {}),
+        genre: genre as never,
+        typeVehicule,
         ...(puissance !== undefined ? { puissance } : {}),
         ...(places !== undefined ? { places } : {}),
       });
@@ -252,33 +260,35 @@ export async function importPolicesCSV(file: File): Promise<ImportReport> {
         report.errors.push({ row: i + 2, message: "date_effet manquante ou invalide" });
         continue;
       }
-      const dureeMois = toInt(getField(r, "duree_mois", "duree", "dureemois")) ?? 12;
-      if (![1, 3, 6, 9, 12, 24].includes(dureeMois)) {
+      const dureeMois = toInt(getField(r, "duree_mois", "duree", "dureemois"));
+      if (dureeMois === undefined || ![1, 3, 6, 9, 12, 24].includes(dureeMois)) {
         report.errors.push({
           row: i + 2,
-          message: `duree_mois invalide : ${dureeMois}`,
+          message:
+            dureeMois === undefined ? "duree_mois manquante" : `duree_mois invalide : ${dureeMois}`,
         });
         continue;
       }
 
-      // Assureur : optionnel, création à la volée si seul le nom est fourni
-      let assureurId: number | undefined;
+      // Assureur requis : création à la volée si seul le nom est fourni.
       const assureurNom = getField(r, "assureur", "assureur_nom", "compagnie");
-      if (assureurNom) {
-        assureurId = assureurIdByName.get(assureurNom.toLowerCase());
-        if (!assureurId) {
-          assureurId = await createAssureur({ nom: assureurNom });
-          assureurIdByName.set(assureurNom.toLowerCase(), assureurId);
-        }
+      if (!assureurNom) {
+        report.errors.push({ row: i + 2, message: "assureur manquant" });
+        continue;
+      }
+      let assureurId = assureurIdByName.get(assureurNom.toLowerCase());
+      if (!assureurId) {
+        assureurId = await createAssureur({ nom: assureurNom });
+        assureurIdByName.set(assureurNom.toLowerCase(), assureurId);
       }
 
       await createPolice({
         vehiculeId,
+        assureurId,
         typeCarte: typeCarte as "VERTE" | "JAUNE",
         dateEffet,
         dureeMois: dureeMois as 1 | 3 | 6 | 9 | 12 | 24,
         ...(numero ? { numeroPolice: numero } : {}),
-        ...(assureurId !== undefined ? { assureurId } : {}),
         ...(getField(r, "appreciation") ? { appreciation: getField(r, "appreciation")! } : {}),
       });
       if (numero) existingNumeros.add(numero.toLowerCase());

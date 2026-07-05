@@ -6,7 +6,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createAssureur, deleteAssureur, listAssureurs, updateAssureur } from "../lib/ipc";
-import type { AssureurCreate, AssureurUpdate } from "../schemas/assureur";
+import type { Assureur, AssureurCreate, AssureurUpdate } from "../schemas/assureur";
 
 const ASSUREURS_KEY = ["assureurs"] as const;
 const INTEGRATIONS_KEY = ["integrations"] as const;
@@ -24,7 +24,28 @@ export function useCreateAssureur() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: AssureurCreate) => createAssureur(data),
-    onSuccess: () => {
+    onSuccess: (id, data) => {
+      if (id > 0) {
+        qc.setQueryData<Assureur[]>([...ASSUREURS_KEY], (current) => {
+          const created: Assureur = {
+            id,
+            nom: data.nom,
+            contact: data.contact ?? null,
+            adresse: data.adresse ?? null,
+            code: data.code ?? null,
+            integration_type: data.integrationType ?? "MANUAL",
+            api_base_url: data.apiBaseUrl ?? null,
+            portal_url: data.portalUrl ?? null,
+            technical_contact: data.technicalContact ?? null,
+            integration_enabled: data.integrationEnabled ? 1 : 0,
+            last_connection_status: null,
+            last_connection_at: null,
+          };
+          return [...(current ?? []), created].sort((a, b) =>
+            a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" }),
+          );
+        });
+      }
       void qc.invalidateQueries({ queryKey: [...ASSUREURS_KEY] });
       void qc.invalidateQueries({ queryKey: [...INTEGRATIONS_KEY] });
     },

@@ -25,7 +25,7 @@ export function TarificationPage() {
   const [puissance, setPuissance] = useState<string>("");
   const [places, setPlaces] = useState<string>("");
   const [cylindree, setCylindree] = useState<Cylindree | null>(null);
-  const [dureeMois, setDureeMois] = useState<string>("12");
+  const [dureeMois, setDureeMois] = useState<string>("");
   const [frais, setFrais] = useState<string>("3000");
   const [bonusPct, setBonusPct] = useState<string>("20");
 
@@ -52,6 +52,10 @@ export function TarificationPage() {
       setError("Sélectionnez une catégorie.");
       return;
     }
+    if (!dureeMois) {
+      setError("Sélectionnez une durée.");
+      return;
+    }
     const duree = Number(dureeMois);
     const fraisN = Number(frais);
     const bonus = Number(bonusPct) / 100;
@@ -76,7 +80,7 @@ export function TarificationPage() {
     setPuissance("");
     setPlaces("");
     setCylindree(null);
-    setDureeMois("12");
+    setDureeMois("");
     setFrais("3000");
     setBonusPct("20");
     setResult(null);
@@ -183,6 +187,7 @@ export function TarificationPage() {
                   value={dureeMois}
                   onChange={(e) => setDureeMois(e.target.value)}
                   className={inputClass}
+                  placeholder="12"
                 />
               </div>
               <div>
