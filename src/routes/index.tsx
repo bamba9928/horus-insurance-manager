@@ -315,9 +315,9 @@ export function DashboardPage() {
   return (
     <>
       <Header title={t("nav.dashboard")}>
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5 py-0.5">
-            <NouveauDossierButton className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#614e1a] px-2.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#8b7335] focus:outline-none focus:ring-2 focus:ring-[#614e1a]/40" />
+        <div className="min-w-0 flex-1 sm:flex-none">
+          <div className="flex w-full items-center gap-1.5 py-0.5">
+            <NouveauDossierButton className="inline-flex h-10 min-w-[8.75rem] w-full shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#614e1a] px-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#8b7335] focus:outline-none focus:ring-2 focus:ring-[#614e1a]/40 sm:h-8 sm:min-w-0 sm:w-auto sm:px-2.5 sm:text-xs" />
             {quickActions.map((action) => (
               <button
                 key={action.to}

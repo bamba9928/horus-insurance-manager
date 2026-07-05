@@ -24,12 +24,12 @@ export function Header({ title, children }: HeaderProps) {
       <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">
         {title?.trim() ? title : ""}
       </h2>
-      <div className="no-scrollbar flex min-w-0 items-center gap-2.5 overflow-x-auto pb-0.5 sm:overflow-visible sm:pb-0">
+      <div className="no-scrollbar flex w-full min-w-0 items-center gap-2 overflow-x-auto pb-0.5 sm:w-auto sm:gap-2.5 sm:overflow-visible sm:pb-0">
         {children}
         {!isOnTarification && (
           <Link
             to="/tarification"
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#614e1a] px-3 text-xs font-semibold tracking-wide text-white shadow-sm transition-colors hover:bg-[#8b7335] focus:outline-none focus:ring-2 focus:ring-[#614e1a]/40"
+            className="inline-flex h-10 min-w-[8.75rem] flex-1 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#614e1a] px-3 text-sm font-semibold tracking-wide text-white shadow-sm transition-colors hover:bg-[#8b7335] focus:outline-none focus:ring-2 focus:ring-[#614e1a]/40 sm:h-8 sm:min-w-0 sm:flex-none sm:text-xs"
             aria-label={t("tarification.button")}
           >
             <svg

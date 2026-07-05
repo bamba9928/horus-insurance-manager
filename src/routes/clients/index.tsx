@@ -110,7 +110,9 @@ export function ClientsPage() {
   return (
     <>
       <Header title={t("clients.title")}>
-        <NouveauDossierButton />
+        <div className="min-w-0 flex-1 sm:flex-none">
+          <NouveauDossierButton className="inline-flex h-10 w-full min-w-[8.75rem] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#614e1a] px-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#8b7335] focus:outline-none focus:ring-2 focus:ring-[#614e1a]/40 sm:h-8 sm:w-auto sm:min-w-0 sm:px-2.5 sm:text-xs" />
+        </div>
       </Header>
 
       <div className="flex flex-1 overflow-hidden">
