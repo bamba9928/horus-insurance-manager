@@ -103,7 +103,7 @@ export function DataTable<TData>({
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-2">
+                    <td key={cell.id} className="px-4 py-2 whitespace-nowrap">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}

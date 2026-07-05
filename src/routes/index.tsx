@@ -261,7 +261,7 @@ export function DashboardPage() {
         header: "Actions",
         enableSorting: false,
         cell: ({ row }) => (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-nowrap gap-1">
             <button
               type="button"
               onClick={(e) => {

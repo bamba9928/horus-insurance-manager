@@ -22,18 +22,49 @@ import {
   listUsers,
   recordSecurityEvent,
   setUserActive,
+  toSafeUser,
   updateUserPassword,
 } from "../db/adminDb.js";
 import { provisionTenantDb, tenantDbPath } from "../db/tenants.js";
 
-const createUserSchema = z.object({
-  login: z
-    .string()
-    .regex(/^[a-zA-Z0-9._-]{3,50}$/, "Login invalide (3-50 caractères, lettres/chiffres/._-)"),
-  nom: z.string().min(2).max(200),
-  password: z.string().min(8, "8 caractères minimum").max(200),
-  role: z.enum(["ADMIN", "USER"]).optional().default("USER"),
-});
+function optionalText(max: number) {
+  return z
+    .preprocess((value) => {
+      if (typeof value !== "string") return value;
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    }, z.string().max(max).optional())
+    .transform((value) => value ?? null);
+}
+
+const optionalEmail = z
+  .preprocess((value) => {
+    if (typeof value !== "string") return value;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }, z.string().email("Email invalide").max(200).optional())
+  .transform((value) => value ?? null);
+
+const createUserSchema = z
+  .object({
+    login: z
+      .string()
+      .trim()
+      .regex(/^[a-zA-Z0-9._-]{3,50}$/, "Login invalide (3-50 caractères, lettres/chiffres/._-)"),
+    nom: z.string().trim().min(2).max(200),
+    prenom: optionalText(200),
+    adresse: optionalText(500),
+    telephone1: optionalText(50),
+    telephone2: optionalText(50),
+    email: optionalEmail,
+    password: z.string().min(8, "8 caractères minimum").max(200),
+    passwordConfirm: z.string().max(200).optional(),
+    role: z.enum(["ADMIN", "USER"]).optional().default("USER"),
+  })
+  .refine((data) => data.passwordConfirm == null || data.password === data.passwordConfirm, {
+    message: "La confirmation du mot de passe ne correspond pas",
+    path: ["passwordConfirm"],
+  });
 
 const passwordSchema = z.object({
   password: z.string().min(8, "8 caractères minimum").max(200),
@@ -131,6 +162,11 @@ export function adminRoutes(ctx: AppContext): Hono<AuthEnv> {
       userId = createUser(ctx.adminDb, {
         login: parsed.data.login,
         nom: parsed.data.nom,
+        prenom: parsed.data.prenom,
+        adresse: parsed.data.adresse,
+        telephone1: parsed.data.telephone1,
+        telephone2: parsed.data.telephone2,
+        email: parsed.data.email,
         passwordHash,
         role: parsed.data.role,
       });
@@ -157,10 +193,7 @@ export function adminRoutes(ctx: AppContext): Hono<AuthEnv> {
     });
 
     const user = findUserById(ctx.adminDb, userId);
-    return c.json(
-      { user: user ? { id: user.id, login: user.login, nom: user.nom, role: user.role } : null },
-      201,
-    );
+    return c.json({ user: user ? toSafeUser(user) : null }, 201);
   });
 
   /** Réinitialise le mot de passe d'un compte (détruit ses sessions). */

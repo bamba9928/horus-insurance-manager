@@ -147,15 +147,39 @@ describe("authentification", () => {
     const res = await api("/api/profile", {
       method: "PATCH",
       cookie: adminCookie,
-      body: { nom: "Admin Principal" },
+      body: {
+        nom: "Principal",
+        prenom: "Admin",
+        adresse: "Plateau, Dakar",
+        telephone1: "771112233",
+        telephone2: "781112233",
+        email: "admin.principal@example.com",
+      },
     });
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { user: { nom: string } };
-    expect(body.user.nom).toBe("Admin Principal");
+    const body = (await res.json()) as {
+      user: {
+        nom: string;
+        prenom: string | null;
+        adresse: string | null;
+        telephone1: string | null;
+        telephone2: string | null;
+        email: string | null;
+      };
+    };
+    expect(body.user).toMatchObject({
+      nom: "Principal",
+      prenom: "Admin",
+      adresse: "Plateau, Dakar",
+      telephone1: "771112233",
+      telephone2: "781112233",
+      email: "admin.principal@example.com",
+    });
 
     const meRes = await api("/api/me", { cookie: adminCookie });
-    const me = (await meRes.json()) as { user: { nom: string } };
-    expect(me.user.nom).toBe("Admin Principal");
+    const me = (await meRes.json()) as { user: { nom: string; email: string | null } };
+    expect(me.user.nom).toBe("Principal");
+    expect(me.user.email).toBe("admin.principal@example.com");
   });
 });
 
@@ -164,11 +188,25 @@ describe("administration des comptes", () => {
     const res = await api("/api/admin/users", {
       method: "POST",
       cookie: adminCookie,
-      body: { login: "agent1", nom: "Agent Un", password: AGENT_PASSWORD },
+      body: {
+        login: "agent1",
+        nom: "Un",
+        prenom: "Agent",
+        adresse: "Parcelles Assainies, Dakar",
+        telephone1: "770000001",
+        telephone2: "780000001",
+        email: "agent.un@example.com",
+        password: AGENT_PASSWORD,
+        passwordConfirm: AGENT_PASSWORD,
+      },
     });
     expect(res.status).toBe(201);
-    const body = (await res.json()) as { user: { id: number; role: string } };
+    const body = (await res.json()) as {
+      user: { id: number; role: string; prenom: string | null; email: string | null };
+    };
     expect(body.user.role).toBe("USER");
+    expect(body.user.prenom).toBe("Agent");
+    expect(body.user.email).toBe("agent.un@example.com");
     agentId = body.user.id;
 
     // Le fichier SQLite du tenant existe avec le schéma métier complet
@@ -216,6 +254,20 @@ describe("administration des comptes", () => {
       body: { login: "agent1", nom: "Doublon", password: "unmotdepasse" },
     });
     expect(res.status).toBe(409);
+  });
+
+  it("refuse une confirmation de mot de passe différente", async () => {
+    const res = await api("/api/admin/users", {
+      method: "POST",
+      cookie: adminCookie,
+      body: {
+        login: "mismatch",
+        nom: "Mismatch",
+        password: "password-123",
+        passwordConfirm: "password-456",
+      },
+    });
+    expect(res.status).toBe(400);
   });
 
   it("renvoie 409 (pas 500) sur une création concurrente du même login", async () => {
@@ -268,6 +320,9 @@ describe("administration des comptes", () => {
       expect(user).not.toHaveProperty("password_hash");
     }
     const agent = body.users.find((u) => u.login === "agent1");
+    expect(agent?.prenom).toBe("Agent");
+    expect(agent?.email).toBe("agent.un@example.com");
+    expect(agent?.telephone1).toBe("770000001");
     expect(Number(agent?.clients_count ?? 0)).toBeGreaterThanOrEqual(1);
     expect(Number(agent?.vehicules_count ?? 0)).toBeGreaterThanOrEqual(1);
     expect(agent).toHaveProperty("polices_count");

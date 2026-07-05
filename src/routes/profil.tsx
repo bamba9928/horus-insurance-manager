@@ -4,7 +4,7 @@
  */
 
 import { Link } from "@tanstack/react-router";
-import { type FormEvent, useEffect, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useState } from "react";
 import { Header } from "../components/layout";
 import { type AuthUser, isWebMode, useAuth } from "../lib/auth";
 import { csrfHeaders } from "../lib/csrf";
@@ -36,9 +36,29 @@ function roleLabel(role: AuthUser["role"]): string {
   return role === "ADMIN" ? "Administrateur" : "Utilisateur";
 }
 
+type ProfileFormState = {
+  nom: string;
+  prenom: string;
+  adresse: string;
+  telephone1: string;
+  telephone2: string;
+  email: string;
+};
+
+function profileFormFromUser(user: AuthUser | null | undefined): ProfileFormState {
+  return {
+    nom: user?.nom ?? "",
+    prenom: user?.prenom ?? "",
+    adresse: user?.adresse ?? "",
+    telephone1: user?.telephone1 ?? "",
+    telephone2: user?.telephone2 ?? "",
+    email: user?.email ?? "",
+  };
+}
+
 export function ProfilePage() {
   const { user, refresh } = useAuth();
-  const [nom, setNom] = useState(user?.nom ?? "");
+  const [profileForm, setProfileForm] = useState<ProfileFormState>(() => profileFormFromUser(user));
   const [currentPassword, setCurrentPassword] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -49,8 +69,13 @@ export function ProfilePage() {
   const [submittingPassword, setSubmittingPassword] = useState(false);
 
   useEffect(() => {
-    setNom(user?.nom ?? "");
-  }, [user?.nom]);
+    setProfileForm(profileFormFromUser(user));
+  }, [user]);
+
+  const updateProfileField =
+    (field: keyof ProfileFormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setProfileForm((current) => ({ ...current, [field]: e.target.value }));
+    };
 
   const updateProfile = async (e: FormEvent) => {
     e.preventDefault();
@@ -58,7 +83,14 @@ export function ProfilePage() {
     setProfileMessage(null);
     setSubmittingProfile(true);
     try {
-      await profileFetch<{ user: AuthUser }>("", "PATCH", { nom: nom.trim() });
+      await profileFetch<{ user: AuthUser }>("", "PATCH", {
+        nom: profileForm.nom.trim(),
+        prenom: profileForm.prenom.trim(),
+        adresse: profileForm.adresse.trim(),
+        telephone1: profileForm.telephone1.trim(),
+        telephone2: profileForm.telephone2.trim(),
+        email: profileForm.email.trim(),
+      });
       await refresh();
       setProfileMessage("Profil mis à jour.");
     } catch (err) {
@@ -116,6 +148,8 @@ export function ProfilePage() {
 
   const inputClass =
     "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
+  const labelClass = "block text-xs font-medium text-gray-600 dark:text-slate-400";
+  const fullName = [user.prenom, user.nom].filter(Boolean).join(" ") || user.nom;
 
   return (
     <>
@@ -128,8 +162,11 @@ export function ProfilePage() {
                 Mon compte
               </h3>
               <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
-                {user.login} · {roleLabel(user.role)}
+                {fullName} · {user.login} · {roleLabel(user.role)}
               </p>
+              {user.email && (
+                <p className="mt-0.5 text-sm text-gray-500 dark:text-slate-500">{user.email}</p>
+              )}
             </div>
             {user.role === "ADMIN" && (
               <Link
@@ -152,35 +189,103 @@ export function ProfilePage() {
           <h3 className="mb-3 text-base font-semibold text-gray-900 dark:text-slate-100">
             Informations du profil
           </h3>
-          <form
-            onSubmit={updateProfile}
-            className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end"
-          >
-            <div>
-              <label
-                htmlFor="profile-name"
-                className="block text-xs font-medium text-gray-600 dark:text-slate-400"
-              >
-                Nom affiché
-              </label>
-              <input
-                id="profile-name"
-                type="text"
-                value={nom}
-                onChange={(e) => setNom(e.target.value)}
-                required
-                minLength={2}
-                maxLength={200}
-                className={inputClass}
-              />
+          <form onSubmit={updateProfile} className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div>
+                <label htmlFor="profile-prenom" className={labelClass}>
+                  Prénom
+                </label>
+                <input
+                  id="profile-prenom"
+                  type="text"
+                  value={profileForm.prenom}
+                  onChange={updateProfileField("prenom")}
+                  maxLength={200}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label htmlFor="profile-nom" className={labelClass}>
+                  Nom
+                </label>
+                <input
+                  id="profile-nom"
+                  type="text"
+                  value={profileForm.nom}
+                  onChange={updateProfileField("nom")}
+                  required
+                  minLength={2}
+                  maxLength={200}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label htmlFor="profile-email" className={labelClass}>
+                  Email
+                </label>
+                <input
+                  id="profile-email"
+                  type="email"
+                  data-no-upper
+                  value={profileForm.email}
+                  onChange={updateProfileField("email")}
+                  maxLength={200}
+                  className={inputClass}
+                />
+              </div>
             </div>
-            <button
-              type="submit"
-              disabled={submittingProfile}
-              className="rounded-lg bg-[#614e1a] px-4 py-1.5 text-sm font-medium text-white hover:bg-[#8b7335] disabled:opacity-50"
-            >
-              {submittingProfile ? "Enregistrement..." : "Enregistrer"}
-            </button>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <label htmlFor="profile-telephone1" className={labelClass}>
+                  Téléphone 1
+                </label>
+                <input
+                  id="profile-telephone1"
+                  type="tel"
+                  value={profileForm.telephone1}
+                  onChange={updateProfileField("telephone1")}
+                  maxLength={50}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label htmlFor="profile-telephone2" className={labelClass}>
+                  Téléphone 2
+                </label>
+                <input
+                  id="profile-telephone2"
+                  type="tel"
+                  value={profileForm.telephone2}
+                  onChange={updateProfileField("telephone2")}
+                  maxLength={50}
+                  className={inputClass}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="profile-adresse" className={labelClass}>
+                  Adresse
+                </label>
+                <textarea
+                  id="profile-adresse"
+                  value={profileForm.adresse}
+                  onChange={updateProfileField("adresse")}
+                  rows={2}
+                  maxLength={500}
+                  className={`${inputClass} resize-y`}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={submittingProfile}
+                className="rounded-lg bg-[#614e1a] px-4 py-1.5 text-sm font-medium text-white hover:bg-[#8b7335] disabled:opacity-50"
+              >
+                {submittingProfile ? "Enregistrement..." : "Enregistrer"}
+              </button>
+            </div>
           </form>
           {profileMessage && <p className="mt-2 text-sm text-green-700">{profileMessage}</p>}
         </section>

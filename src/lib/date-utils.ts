@@ -42,11 +42,11 @@ export function formatDateISO(date: Date): string {
 }
 
 /**
- * Formate une date pour l'affichage utilisateur (ex: "15 janv. 2025").
+ * Formate une date pour l'affichage utilisateur (ex: "15/01/2025").
  */
 export function formatDateDisplay(date: Date | string): string {
   const d = typeof date === "string" ? parseISO(date) : date;
-  return format(d, "dd MMM yyyy", { locale: fr });
+  return format(d, "dd/MM/yyyy");
 }
 
 /**

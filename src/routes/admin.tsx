@@ -4,7 +4,7 @@
  */
 
 import { Navigate } from "@tanstack/react-router";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { type ChangeEvent, type FormEvent, useCallback, useEffect, useState } from "react";
 import { Header } from "../components/layout";
 import { Spinner } from "../components/ui/Spinner";
 import { useAuth } from "../lib/auth";
@@ -16,6 +16,11 @@ interface AdminUser {
   id: number;
   login: string;
   nom: string;
+  prenom: string | null;
+  adresse: string | null;
+  telephone1: string | null;
+  telephone2: string | null;
+  email: string | null;
   role: "ADMIN" | "USER";
   actif: 0 | 1;
   created_at: string;
@@ -106,24 +111,26 @@ export function AdminPage() {
           {loading ? (
             <Spinner logoWidth={0} size={28} className="py-6" />
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 text-left text-xs text-gray-500 dark:border-slate-700 dark:text-slate-400">
-                  <th className="px-4 py-1.5 font-medium">Identifiant</th>
-                  <th className="px-4 py-1.5 font-medium">Nom</th>
-                  <th className="px-4 py-1.5 font-medium">Rôle</th>
-                  <th className="px-4 py-1.5 font-medium">État</th>
-                  <th className="px-4 py-1.5 font-medium">Base / données</th>
-                  <th className="px-4 py-1.5 font-medium">Dernière connexion</th>
-                  <th className="px-4 py-1.5 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <UserRow key={u.id} user={u} currentUserId={user.id} onChanged={reload} />
-                ))}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[980px] text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 text-left text-xs text-gray-500 dark:border-slate-700 dark:text-slate-400">
+                    <th className="px-4 py-1.5 font-medium">Profil</th>
+                    <th className="px-4 py-1.5 font-medium">Coordonnées</th>
+                    <th className="px-4 py-1.5 font-medium">Rôle</th>
+                    <th className="px-4 py-1.5 font-medium">État</th>
+                    <th className="px-4 py-1.5 font-medium">Base / données</th>
+                    <th className="px-4 py-1.5 font-medium">Dernière connexion</th>
+                    <th className="px-4 py-1.5 font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <UserRow key={u.id} user={u} currentUserId={user.id} onChanged={reload} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       </div>
@@ -131,27 +138,69 @@ export function AdminPage() {
   );
 }
 
+type CreateUserFormState = {
+  login: string;
+  nom: string;
+  prenom: string;
+  adresse: string;
+  telephone1: string;
+  telephone2: string;
+  email: string;
+  password: string;
+  passwordConfirm: string;
+  role: AdminUser["role"];
+};
+
+const initialCreateUserForm: CreateUserFormState = {
+  login: "",
+  nom: "",
+  prenom: "",
+  adresse: "",
+  telephone1: "",
+  telephone2: "",
+  email: "",
+  password: "",
+  passwordConfirm: "",
+  role: "USER",
+};
+
 function CreateUserForm({ onCreated }: { onCreated: () => void }) {
-  const [login, setLogin] = useState("");
-  const [nom, setNom] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<AdminUser["role"]>("USER");
+  const [form, setForm] = useState<CreateUserFormState>(initialCreateUserForm);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const updateField =
+    (field: keyof CreateUserFormState) =>
+    (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+      const value = field === "role" ? (e.target.value as AdminUser["role"]) : e.target.value;
+      setForm((current) => ({ ...current, [field]: value }) as CreateUserFormState);
+    };
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setMessage(null);
+    if (form.password !== form.passwordConfirm) {
+      setError("La confirmation du mot de passe ne correspond pas.");
+      return;
+    }
     setSubmitting(true);
     try {
-      await adminFetch("/users", "POST", { login: login.trim(), nom: nom.trim(), password, role });
-      setMessage(`Compte « ${login.trim()} » créé.`);
-      setLogin("");
-      setNom("");
-      setPassword("");
-      setRole("USER");
+      await adminFetch("/users", "POST", {
+        login: form.login.trim(),
+        nom: form.nom.trim(),
+        prenom: form.prenom.trim(),
+        adresse: form.adresse.trim(),
+        telephone1: form.telephone1.trim(),
+        telephone2: form.telephone2.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        passwordConfirm: form.passwordConfirm,
+        role: form.role,
+      });
+      setMessage(`Compte « ${form.login.trim()} » créé.`);
+      setForm(initialCreateUserForm);
       onCreated();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur");
@@ -162,91 +211,210 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
 
   const inputClass =
     "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
+  const labelClass = "block text-xs font-medium text-gray-600 dark:text-slate-400";
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-      <h3 className="mb-3 text-base font-semibold text-gray-900 dark:text-slate-100">
-        Créer un compte
-      </h3>
-      <form onSubmit={onSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-5 sm:items-end">
+      <div className="mb-4 flex flex-col gap-1">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
+          Créer un compte utilisateur
+        </h3>
+        <p className="text-sm text-gray-500 dark:text-slate-400">
+          Renseignez l'identité, les coordonnées et les accès du nouveau profil.
+        </p>
+      </div>
+
+      <form onSubmit={onSubmit} className="space-y-5">
         <div>
-          <label
-            htmlFor="new-login"
-            className="block text-xs font-medium text-gray-600 dark:text-slate-400"
-          >
-            Identifiant
-          </label>
-          <input
-            id="new-login"
-            type="text"
-            data-no-upper
-            value={login}
-            onChange={(e) => setLogin(e.target.value)}
-            required
-            className={inputClass}
-            placeholder="agence.dakar"
-          />
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+            Identité
+          </h4>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <label htmlFor="new-prenom" className={labelClass}>
+                Prénom
+              </label>
+              <input
+                id="new-prenom"
+                type="text"
+                value={form.prenom}
+                onChange={updateField("prenom")}
+                required
+                maxLength={200}
+                className={inputClass}
+                placeholder="Aminata"
+              />
+            </div>
+            <div>
+              <label htmlFor="new-nom" className={labelClass}>
+                Nom
+              </label>
+              <input
+                id="new-nom"
+                type="text"
+                value={form.nom}
+                onChange={updateField("nom")}
+                required
+                minLength={2}
+                maxLength={200}
+                className={inputClass}
+                placeholder="Diop"
+              />
+            </div>
+            <div>
+              <label htmlFor="new-email" className={labelClass}>
+                Email
+              </label>
+              <input
+                id="new-email"
+                type="email"
+                data-no-upper
+                value={form.email}
+                onChange={updateField("email")}
+                required
+                maxLength={200}
+                className={inputClass}
+                placeholder="aminata.diop@example.com"
+              />
+            </div>
+          </div>
         </div>
+
         <div>
-          <label
-            htmlFor="new-nom"
-            className="block text-xs font-medium text-gray-600 dark:text-slate-400"
-          >
-            Nom
-          </label>
-          <input
-            id="new-nom"
-            type="text"
-            value={nom}
-            onChange={(e) => setNom(e.target.value)}
-            required
-            className={inputClass}
-            placeholder="Agence de Dakar"
-          />
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+            Coordonnées
+          </h4>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label htmlFor="new-telephone1" className={labelClass}>
+                Téléphone 1
+              </label>
+              <input
+                id="new-telephone1"
+                type="tel"
+                value={form.telephone1}
+                onChange={updateField("telephone1")}
+                required
+                maxLength={50}
+                className={inputClass}
+                placeholder="771234567"
+              />
+            </div>
+            <div>
+              <label htmlFor="new-telephone2" className={labelClass}>
+                Téléphone 2
+              </label>
+              <input
+                id="new-telephone2"
+                type="tel"
+                value={form.telephone2}
+                onChange={updateField("telephone2")}
+                maxLength={50}
+                className={inputClass}
+                placeholder="optionnel"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="new-adresse" className={labelClass}>
+                Adresse
+              </label>
+              <textarea
+                id="new-adresse"
+                value={form.adresse}
+                onChange={updateField("adresse")}
+                rows={2}
+                required
+                maxLength={500}
+                className={`${inputClass} resize-y`}
+                placeholder="Adresse complète"
+              />
+            </div>
+          </div>
         </div>
+
         <div>
-          <label
-            htmlFor="new-password"
-            className="block text-xs font-medium text-gray-600 dark:text-slate-400"
-          >
-            Mot de passe (8+ car.)
-          </label>
-          <input
-            id="new-password"
-            type="text"
-            data-no-upper
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={8}
-            className={inputClass}
-            placeholder="mot de passe initial"
-          />
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+            Accès
+          </h4>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label htmlFor="new-login" className={labelClass}>
+                Identifiant
+              </label>
+              <input
+                id="new-login"
+                type="text"
+                data-no-upper
+                autoComplete="username"
+                value={form.login}
+                onChange={updateField("login")}
+                required
+                minLength={3}
+                maxLength={50}
+                className={inputClass}
+                placeholder="agence.dakar"
+              />
+            </div>
+            <div>
+              <label htmlFor="new-role" className={labelClass}>
+                Rôle
+              </label>
+              <select
+                id="new-role"
+                value={form.role}
+                onChange={updateField("role")}
+                className={inputClass}
+              >
+                <option value="USER">Utilisateur</option>
+                <option value="ADMIN">Administrateur</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="new-password" className={labelClass}>
+                Mot de passe
+              </label>
+              <input
+                id="new-password"
+                type="password"
+                autoComplete="new-password"
+                value={form.password}
+                onChange={updateField("password")}
+                required
+                minLength={8}
+                maxLength={200}
+                className={inputClass}
+                placeholder="8 caractères minimum"
+              />
+            </div>
+            <div>
+              <label htmlFor="new-password-confirm" className={labelClass}>
+                Confirmation
+              </label>
+              <input
+                id="new-password-confirm"
+                type="password"
+                autoComplete="new-password"
+                value={form.passwordConfirm}
+                onChange={updateField("passwordConfirm")}
+                required
+                minLength={8}
+                maxLength={200}
+                className={inputClass}
+                placeholder="Confirmer le mot de passe"
+              />
+            </div>
+          </div>
         </div>
-        <div>
-          <label
-            htmlFor="new-role"
-            className="block text-xs font-medium text-gray-600 dark:text-slate-400"
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-medium text-white hover:bg-[#8b7335] disabled:opacity-50"
           >
-            Rôle
-          </label>
-          <select
-            id="new-role"
-            value={role}
-            onChange={(e) => setRole(e.target.value as AdminUser["role"])}
-            className={inputClass}
-          >
-            <option value="USER">Utilisateur</option>
-            <option value="ADMIN">Administrateur</option>
-          </select>
+            {submitting ? "Création..." : "Créer le compte"}
+          </button>
         </div>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-lg bg-[#614e1a] px-4 py-1.5 text-sm font-medium text-white hover:bg-[#8b7335] disabled:opacity-50"
-        >
-          {submitting ? "Création..." : "Créer le compte"}
-        </button>
       </form>
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       {message && <p className="mt-2 text-sm text-green-700">{message}</p>}
@@ -301,11 +469,24 @@ function UserRow({
     user.vehicules_count != null &&
     user.polices_count != null &&
     user.paiements_count != null;
+  const fullName = [user.prenom, user.nom].filter(Boolean).join(" ") || user.nom;
+  const phones = [user.telephone1, user.telephone2].filter(Boolean).join(" · ");
 
   return (
     <tr className="border-b border-gray-100 last:border-0 dark:border-slate-700/60">
-      <td className="px-4 py-1.5 font-medium text-gray-900 dark:text-slate-100">{user.login}</td>
-      <td className="px-4 py-1.5 text-gray-700 dark:text-slate-300">{user.nom}</td>
+      <td className="px-4 py-2 align-top">
+        <div className="font-medium text-gray-900 dark:text-slate-100">{fullName}</div>
+        <div className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">{user.login}</div>
+      </td>
+      <td className="px-4 py-2 align-top text-gray-700 dark:text-slate-300">
+        <div>{user.email ?? "—"}</div>
+        {phones && <div className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">{phones}</div>}
+        {user.adresse && (
+          <div className="mt-0.5 max-w-xs text-xs text-gray-500 dark:text-slate-400">
+            {user.adresse}
+          </div>
+        )}
+      </td>
       <td className="px-4 py-1.5">
         <span
           className={`rounded px-2 py-0.5 text-xs font-medium ${

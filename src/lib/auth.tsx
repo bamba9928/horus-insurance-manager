@@ -18,6 +18,11 @@ export interface AuthUser {
   id: number;
   login: string;
   nom: string;
+  prenom: string | null;
+  adresse: string | null;
+  telephone1: string | null;
+  telephone2: string | null;
+  email: string | null;
   role: "ADMIN" | "USER";
 }
 

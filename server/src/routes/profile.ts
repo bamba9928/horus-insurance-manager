@@ -1,6 +1,6 @@
 /**
- * Routes profil utilisateur : lecture, mise à jour du nom et changement
- * du mot de passe par l'utilisateur connecté.
+ * Routes profil utilisateur : lecture, mise à jour des informations du compte
+ * et changement du mot de passe par l'utilisateur connecté.
  *
  * @module routes/profile
  */
@@ -22,8 +22,31 @@ import {
   updateUserProfile,
 } from "../db/adminDb.js";
 
+function optionalText(max: number) {
+  return z
+    .preprocess((value) => {
+      if (typeof value !== "string") return value;
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    }, z.string().max(max).optional())
+    .transform((value) => value ?? null);
+}
+
+const optionalEmail = z
+  .preprocess((value) => {
+    if (typeof value !== "string") return value;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }, z.string().email("Email invalide").max(200).optional())
+  .transform((value) => value ?? null);
+
 const profileSchema = z.object({
   nom: z.string().trim().min(2, "Nom trop court").max(200, "Nom trop long"),
+  prenom: optionalText(200),
+  adresse: optionalText(500),
+  telephone1: optionalText(50),
+  telephone2: optionalText(50),
+  email: optionalEmail,
 });
 
 const passwordSchema = z.object({
@@ -50,7 +73,7 @@ export function profileRoutes(ctx: AppContext): Hono<AuthEnv> {
     }
 
     const user = c.get("user");
-    updateUserProfile(ctx.adminDb, user.id, parsed.data.nom);
+    updateUserProfile(ctx.adminDb, user.id, parsed.data);
     const updated = findUserById(ctx.adminDb, user.id);
     if (!updated) return c.json({ error: "Utilisateur introuvable" }, 404);
 

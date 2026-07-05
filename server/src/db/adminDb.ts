@@ -17,6 +17,11 @@ export interface UserRow {
   id: number;
   login: string;
   nom: string;
+  prenom: string | null;
+  adresse: string | null;
+  telephone1: string | null;
+  telephone2: string | null;
+  email: string | null;
   password_hash: string;
   role: Role;
   actif: 0 | 1;
@@ -29,6 +34,11 @@ export interface SafeUser {
   id: number;
   login: string;
   nom: string;
+  prenom: string | null;
+  adresse: string | null;
+  telephone1: string | null;
+  telephone2: string | null;
+  email: string | null;
   role: Role;
 }
 
@@ -46,7 +56,17 @@ export type SecurityAction =
   | "RESTORE_DATABASE";
 
 export function toSafeUser(row: UserRow): SafeUser {
-  return { id: row.id, login: row.login, nom: row.nom, role: row.role };
+  return {
+    id: row.id,
+    login: row.login,
+    nom: row.nom,
+    prenom: row.prenom,
+    adresse: row.adresse,
+    telephone1: row.telephone1,
+    telephone2: row.telephone2,
+    email: row.email,
+    role: row.role,
+  };
 }
 
 const ADMIN_SCHEMA = `
@@ -54,6 +74,11 @@ CREATE TABLE IF NOT EXISTS users (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   login         TEXT NOT NULL UNIQUE COLLATE NOCASE,
   nom           TEXT NOT NULL,
+  prenom        TEXT,
+  adresse       TEXT,
+  telephone1    TEXT,
+  telephone2    TEXT,
+  email         TEXT,
   password_hash TEXT NOT NULL,
   role          TEXT NOT NULL DEFAULT 'USER' CHECK(role IN ('ADMIN','USER')),
   actif         INTEGER NOT NULL DEFAULT 1 CHECK(actif IN (0,1)),
@@ -87,6 +112,25 @@ CREATE INDEX IF NOT EXISTS idx_security_events_user    ON security_events(user_i
 CREATE INDEX IF NOT EXISTS idx_security_events_action  ON security_events(action);
 `;
 
+const USER_PROFILE_COLUMN_MIGRATIONS = [
+  ["prenom", "ALTER TABLE users ADD COLUMN prenom TEXT"],
+  ["adresse", "ALTER TABLE users ADD COLUMN adresse TEXT"],
+  ["telephone1", "ALTER TABLE users ADD COLUMN telephone1 TEXT"],
+  ["telephone2", "ALTER TABLE users ADD COLUMN telephone2 TEXT"],
+  ["email", "ALTER TABLE users ADD COLUMN email TEXT"],
+] as const;
+
+function ensureUserProfileColumns(db: Database.Database): void {
+  const columns = new Set(
+    (db.prepare("PRAGMA table_info(users)").all() as Array<{ name: string }>).map(
+      (col) => col.name,
+    ),
+  );
+  for (const [name, sql] of USER_PROFILE_COLUMN_MIGRATIONS) {
+    if (!columns.has(name)) db.exec(sql);
+  }
+}
+
 /** Ouvre (et initialise si besoin) la base d'administration. */
 export function openAdminDb(dataDir: string): Database.Database {
   fs.mkdirSync(dataDir, { recursive: true });
@@ -94,6 +138,7 @@ export function openAdminDb(dataDir: string): Database.Database {
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   db.exec(ADMIN_SCHEMA);
+  ensureUserProfileColumns(db);
   return db;
 }
 
@@ -111,18 +156,45 @@ export function findUserById(db: Database.Database, id: number): UserRow | undef
 export function listUsers(db: Database.Database): Omit<UserRow, "password_hash">[] {
   return db
     .prepare(
-      "SELECT id, login, nom, role, actif, created_at, last_login_at FROM users ORDER BY login",
+      `SELECT id, login, nom, prenom, adresse, telephone1, telephone2, email,
+              role, actif, created_at, last_login_at
+       FROM users
+       ORDER BY login`,
     )
     .all() as Omit<UserRow, "password_hash">[];
 }
 
 export function createUser(
   db: Database.Database,
-  data: { login: string; nom: string; passwordHash: string; role: Role },
+  data: {
+    login: string;
+    nom: string;
+    prenom?: string | null;
+    adresse?: string | null;
+    telephone1?: string | null;
+    telephone2?: string | null;
+    email?: string | null;
+    passwordHash: string;
+    role: Role;
+  },
 ): number {
   const result = db
-    .prepare("INSERT INTO users (login, nom, password_hash, role) VALUES (?, ?, ?, ?)")
-    .run(data.login, data.nom, data.passwordHash, data.role);
+    .prepare(
+      `INSERT INTO users (
+        login, nom, prenom, adresse, telephone1, telephone2, email, password_hash, role
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      data.login,
+      data.nom,
+      data.prenom ?? null,
+      data.adresse ?? null,
+      data.telephone1 ?? null,
+      data.telephone2 ?? null,
+      data.email ?? null,
+      data.passwordHash,
+      data.role,
+    );
   return Number(result.lastInsertRowid);
 }
 
@@ -134,8 +206,31 @@ export function updateUserPassword(
   db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(passwordHash, userId);
 }
 
-export function updateUserProfile(db: Database.Database, userId: number, nom: string): void {
-  db.prepare("UPDATE users SET nom = ? WHERE id = ?").run(nom, userId);
+export function updateUserProfile(
+  db: Database.Database,
+  userId: number,
+  data: {
+    nom: string;
+    prenom?: string | null;
+    adresse?: string | null;
+    telephone1?: string | null;
+    telephone2?: string | null;
+    email?: string | null;
+  },
+): void {
+  db.prepare(
+    `UPDATE users
+     SET nom = ?, prenom = ?, adresse = ?, telephone1 = ?, telephone2 = ?, email = ?
+     WHERE id = ?`,
+  ).run(
+    data.nom,
+    data.prenom ?? null,
+    data.adresse ?? null,
+    data.telephone1 ?? null,
+    data.telephone2 ?? null,
+    data.email ?? null,
+    userId,
+  );
 }
 
 export function setUserActive(db: Database.Database, userId: number, actif: boolean): void {
