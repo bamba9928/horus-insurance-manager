@@ -50,6 +50,7 @@ export function VehiculeForm({
     control,
     watch,
     setValue,
+    clearErrors,
     formState: { errors },
   } = useForm<VehiculeCreate>({
     resolver: zodResolver(vehiculeCreateSchema),
@@ -173,10 +174,20 @@ export function VehiculeForm({
                 if (field.value !== nextCategorie) {
                   setValue("typeVehicule", "", {
                     shouldDirty: true,
+                    shouldTouch: true,
                     shouldValidate: true,
                   });
                 }
-                field.onChange(nextCategorie);
+                if (nextCategorie) {
+                  setValue("genre", nextCategorie, {
+                    shouldDirty: true,
+                    shouldTouch: true,
+                    shouldValidate: true,
+                  });
+                  clearErrors("genre");
+                } else {
+                  field.onChange(undefined);
+                }
               }}
               options={CATEGORIES_VEHICULE.map((c) => ({ value: c.value, label: c.label }))}
               placeholder="— Sélectionner une catégorie —"
@@ -198,7 +209,19 @@ export function VehiculeForm({
             <SearchableSelect
               id="typeVehicule"
               value={field.value ?? null}
-              onChange={(v) => field.onChange(v == null ? undefined : String(v))}
+              onChange={(v) => {
+                const nextTypeVehicule = v == null ? undefined : String(v);
+                if (nextTypeVehicule) {
+                  setValue("typeVehicule", nextTypeVehicule, {
+                    shouldDirty: true,
+                    shouldTouch: true,
+                    shouldValidate: true,
+                  });
+                  clearErrors("typeVehicule");
+                } else {
+                  field.onChange(undefined);
+                }
+              }}
               options={genreOptions}
               placeholder={
                 selectedCategorie ? t("vehicules.selectGenre") : t("vehicules.selectCategorieFirst")
