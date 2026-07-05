@@ -119,7 +119,7 @@ function EncaissementForm({ paiement, onClose }: { paiement: Paiement; onClose: 
       </div>
 
       {/* Montant + Date */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="enc-montant" className="block text-sm font-medium text-gray-700">
             {t("encaissement.montant")} *
@@ -145,7 +145,7 @@ function EncaissementForm({ paiement, onClose }: { paiement: Paiement; onClose: 
       </div>
 
       {/* Mode + Référence */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="enc-mode" className="block text-sm font-medium text-gray-700">
             {t("paiements.mode")}

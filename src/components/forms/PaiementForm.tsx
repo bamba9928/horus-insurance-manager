@@ -132,7 +132,7 @@ export function PaiementForm({
       </div>
 
       {/* Montant dû + Payé + Avance (3 colonnes) */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
           <label htmlFor="montantDu" className="block text-sm font-medium text-gray-700">
             {t("paiements.montantDu")} *
@@ -194,7 +194,7 @@ export function PaiementForm({
       </div>
 
       {/* Date de paiement + Mode (2 colonnes) */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="datePaiement" className="block text-sm font-medium text-gray-700">
             Date de paiement

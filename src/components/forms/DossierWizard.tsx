@@ -338,7 +338,7 @@ function ClientStep({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="telephone" className="block text-sm font-medium text-gray-700">
                 {t("clients.telephone")}
@@ -590,7 +590,7 @@ function VehiculeStep({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="marque" className="block text-sm font-medium text-gray-700">
                 {t("vehicules.marque")}
@@ -657,7 +657,7 @@ function VehiculeStep({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="puissance" className="block text-sm font-medium text-gray-700">
                 {t("vehicules.puissance")}
@@ -784,7 +784,7 @@ function PoliceStep({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="dateEffet" className="block text-sm font-medium text-gray-700">
             {t("polices.dateEffet")} *
@@ -959,7 +959,7 @@ function PaiementStep({
 
       {withPaiement && (
         <>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label htmlFor="montantDu" className="block text-sm font-medium text-gray-700">
                 {t("paiements.montantDu")} *
@@ -1019,7 +1019,7 @@ function PaiementStep({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="datePaiement" className="block text-sm font-medium text-gray-700">
                 Date de paiement

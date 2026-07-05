@@ -170,7 +170,7 @@ export function TarificationPage() {
             )}
 
             {/* Durée + réduction */}
-            <div className="mb-4 grid grid-cols-2 gap-4">
+            <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor="tarif-duree" className={labelClass}>
                   Durée (mois) *

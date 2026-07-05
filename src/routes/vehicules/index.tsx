@@ -153,7 +153,7 @@ export function VehiculesPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Liste principale */}
         <div
-          className={`flex-1 overflow-auto p-4 ${selectedVehicule && !isEditOpen ? "w-1/2" : ""}`}
+          className={`flex-1 overflow-auto p-4 ${selectedVehicule && !isEditOpen ? "hidden sm:block" : ""}`}
         >
           {/* Barre de recherche */}
           <div className="mb-4">
@@ -179,7 +179,7 @@ export function VehiculesPage() {
 
         {/* Panneau détail (maître-détail) */}
         {selectedVehicule && !isEditOpen && (
-          <div className="w-96 shrink-0 overflow-auto border-l border-gray-200 bg-white p-4">
+          <div className="w-full overflow-auto border-t border-gray-200 bg-white p-4 sm:w-96 sm:shrink-0 sm:border-t-0 sm:border-l">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">
                 {selectedVehicule.immatriculation}

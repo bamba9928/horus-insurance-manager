@@ -270,7 +270,7 @@ export function PaiementsPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Liste principale */}
         <div
-          className={`flex-1 overflow-auto p-4 ${selectedPaiement && !isEditOpen ? "w-1/2" : ""}`}
+          className={`flex-1 overflow-auto p-4 ${selectedPaiement && !isEditOpen ? "hidden sm:block" : ""}`}
         >
           {/* Barre de recherche + filtres */}
           <div className="mb-4 flex flex-wrap gap-3">
@@ -389,7 +389,7 @@ function PaiementDetailPanel({
   };
 
   return (
-    <div className="w-96 shrink-0 overflow-auto border-l border-gray-200 bg-white p-4">
+    <div className="w-full overflow-auto border-t border-gray-200 bg-white p-4 sm:w-96 sm:shrink-0 sm:border-t-0 sm:border-l">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Détail paiement</h3>
         <button
@@ -410,7 +410,7 @@ function PaiementDetailPanel({
 
       {/* Montants */}
       <div className="mt-4 rounded-lg border border-gray-200 p-4">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <p className="text-xs text-gray-500">{t("paiements.montantDu")}</p>
             <p className="text-lg font-bold text-gray-900">{formatFCFA(paiement.montant_du)}</p>
