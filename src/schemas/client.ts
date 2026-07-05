@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod/v4";
+import { normalizePhone, PHONE_ERROR, PHONE_REGEX } from "../lib/normalize";
 
 /** Schéma de création d'un client */
 export const clientCreateSchema = z.object({
@@ -16,10 +17,10 @@ export const clientCreateSchema = z.object({
   adresse: z.string().max(500).optional(),
   telephone: z
     .string()
-    .regex(
-      /^(\+221)?[\s.-]?\d{2}[\s.-]?\d{3}[\s.-]?\d{2}[\s.-]?\d{2}$/,
-      "Format téléphone invalide (ex: 77 123 45 67)",
-    )
+    // Retire espaces / caractères spéciaux avant validation (robuste aussi
+    // pour les données existantes saisies dans l'ancien format).
+    .transform(normalizePhone)
+    .refine((v) => v === "" || PHONE_REGEX.test(v), PHONE_ERROR)
     .optional(),
   email: z.email("Email invalide").optional(),
   notes: z.string().max(2000).optional(),

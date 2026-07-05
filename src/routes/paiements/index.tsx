@@ -13,6 +13,7 @@ import { PaiementForm } from "../../components/forms/PaiementForm";
 import { Header } from "../../components/layout";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Dialog } from "../../components/ui/Dialog";
+import { Spinner } from "../../components/ui/Spinner";
 import { useClients } from "../../hooks/useClients";
 import { useDeletePaiement, usePaiements, useUpdatePaiement } from "../../hooks/usePaiements";
 import { usePolices } from "../../hooks/usePolices";
@@ -297,7 +298,7 @@ export function PaiementsPage() {
           </div>
 
           {isLoading ? (
-            <p className="text-sm text-gray-500">{t("common.loading")}</p>
+            <Spinner logoWidth={0} size={28} className="py-6" />
           ) : (
             <DataTable
               columns={columns}

@@ -6,6 +6,7 @@
 import { Navigate } from "@tanstack/react-router";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { Header } from "../components/layout";
+import { Spinner } from "../components/ui/Spinner";
 import { useAuth } from "../lib/auth";
 import { csrfHeaders } from "../lib/csrf";
 
@@ -103,7 +104,7 @@ export function AdminPage() {
 
           {error && <p className="px-4 py-3 text-sm text-red-600">{error}</p>}
           {loading ? (
-            <p className="px-4 py-6 text-sm text-gray-500">Chargement...</p>
+            <Spinner logoWidth={0} size={28} className="py-6" />
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -178,6 +179,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
           <input
             id="new-login"
             type="text"
+            data-no-upper
             value={login}
             onChange={(e) => setLogin(e.target.value)}
             required
@@ -212,6 +214,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
           <input
             id="new-password"
             type="text"
+            data-no-upper
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required

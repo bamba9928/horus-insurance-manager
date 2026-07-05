@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { clientCreateSchema } from "../../src/schemas/client";
 import { getPaiementStatut } from "../../src/schemas/paiement";
 import { policeCreateSchema } from "../../src/schemas/police";
-import { vehiculeCreateSchema } from "../../src/schemas/vehicule";
+import { getSousCategoriesByCategorie, vehiculeCreateSchema } from "../../src/schemas/vehicule";
 
 describe("clientCreateSchema", () => {
   it("accepte un client valide minimal", () => {
@@ -65,6 +65,20 @@ describe("vehiculeCreateSchema", () => {
     if (result.success) {
       expect(result.data.immatriculation).toBe("DK 1234 AB");
     }
+  });
+});
+
+describe("getSousCategoriesByCategorie", () => {
+  it("retourne les genres dépendants de la catégorie", () => {
+    expect(getSousCategoriesByCategorie("CAT_02")).toEqual([
+      "Utilitaire carrosserie tourisme",
+      "Utilitaire autre carrosserie jusqu'à 3T500",
+      "Utilitaire autre carrosserie au-delà de 3T500",
+    ]);
+  });
+
+  it("retourne une liste vide pour une catégorie inconnue", () => {
+    expect(getSousCategoriesByCategorie("UNKNOWN")).toEqual([]);
   });
 });
 

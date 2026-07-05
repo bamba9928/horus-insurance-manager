@@ -8,6 +8,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DataTable } from "../../components/data-table/DataTable";
 import { Header } from "../../components/layout";
+import { Spinner } from "../../components/ui/Spinner";
 import { type EcheancePreset, useEcheances } from "../../hooks/useEcheances";
 import { formatDateDisplay } from "../../lib/date-utils";
 import { exportEcheancesToPDF, exportEcheancesToXLSX } from "../../lib/export";
@@ -187,7 +188,7 @@ export function EcheancesPage() {
         </p>
 
         {isLoading ? (
-          <p className="text-sm text-gray-500">{t("common.loading")}</p>
+          <Spinner logoWidth={0} size={28} className="py-6" />
         ) : filtered.length === 0 ? (
           <div className="rounded-lg border border-gray-200 bg-white p-4">
             <p className="text-sm text-gray-500">{t("common.noData")}</p>

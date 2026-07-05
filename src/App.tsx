@@ -1,10 +1,14 @@
 import { RouterProvider } from "@tanstack/react-router";
 import { Spinner } from "./components/ui/Spinner";
+import { useAutoNormalizeInputs } from "./hooks/useAutoNormalizeInputs";
 import { AuthProvider, isWebMode, useAuth } from "./lib/auth";
 import { router } from "./router";
 import { LoginPage } from "./routes/login";
 
 function App() {
+  // Normalisation globale des saisies (MAJUSCULES + téléphone), toutes pages.
+  useAutoNormalizeInputs();
+
   // Mode desktop (Tauri) : pas d'authentification, app directe.
   if (!isWebMode) return <RouterProvider router={router} />;
 

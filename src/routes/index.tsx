@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { DataTable } from "../components/data-table/DataTable";
 import { NouveauDossierButton } from "../components/forms/NouveauDossierButton";
 import { Header } from "../components/layout";
+import { Spinner } from "../components/ui/Spinner";
 import {
   useDashboardKPI,
   useDashboardRecap,
@@ -378,9 +379,7 @@ export function DashboardPage() {
             </header>
             <div className="max-h-96 overflow-auto">
               {echeancesLoading ? (
-                <p className="p-4 text-sm text-gray-500 dark:text-slate-400">
-                  {t("common.loading")}
-                </p>
+                <Spinner logoWidth={0} size={28} className="p-4" />
               ) : echeances.length === 0 ? (
                 <p className="p-4 text-sm text-gray-500 dark:text-slate-400">
                   Aucune échéance dans les 30 jours.
@@ -404,9 +403,7 @@ export function DashboardPage() {
             </header>
             <div className="max-h-96 overflow-auto">
               {impayesLoading ? (
-                <p className="p-4 text-sm text-gray-500 dark:text-slate-400">
-                  {t("common.loading")}
-                </p>
+                <Spinner logoWidth={0} size={28} className="p-4" />
               ) : impayes.length === 0 ? (
                 <p className="p-4 text-sm text-gray-500 dark:text-slate-400">Aucun impayé.</p>
               ) : (
@@ -442,7 +439,7 @@ export function DashboardPage() {
           <div className="mt-4 flex flex-col gap-4 xl:flex-row">
             <div className="min-w-0 flex-1">
               {recapLoading ? (
-                <p className="text-sm text-gray-500 dark:text-slate-400">{t("common.loading")}</p>
+                <Spinner logoWidth={0} size={28} className="py-6" />
               ) : (
                 <DataTable
                   columns={recapColumns}

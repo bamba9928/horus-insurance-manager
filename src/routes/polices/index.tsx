@@ -13,6 +13,7 @@ import { PoliceForm } from "../../components/forms/PoliceForm";
 import { Header } from "../../components/layout";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Dialog } from "../../components/ui/Dialog";
+import { Spinner } from "../../components/ui/Spinner";
 import { useAssureurs } from "../../hooks/useAssureurs";
 import { useClients } from "../../hooks/useClients";
 import { usePaiements } from "../../hooks/usePaiements";
@@ -283,7 +284,7 @@ export function PolicesPage() {
           </div>
 
           {isLoading ? (
-            <p className="text-sm text-gray-500">{t("common.loading")}</p>
+            <Spinner logoWidth={0} size={28} className="py-6" />
           ) : (
             <DataTable
               columns={columns}

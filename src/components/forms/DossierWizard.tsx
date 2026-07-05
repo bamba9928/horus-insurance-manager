@@ -31,7 +31,7 @@ import {
 } from "../../schemas/dossier";
 import { getPaiementStatut, MODES_PAIEMENT } from "../../schemas/paiement";
 import { DUREES_MOIS } from "../../schemas/police";
-import { CATEGORIES_VEHICULE } from "../../schemas/vehicule";
+import { CATEGORIES_VEHICULE, getSousCategoriesByCategorie } from "../../schemas/vehicule";
 import { SearchableSelect } from "../ui/SearchableSelect";
 
 const inputClass =
@@ -456,6 +456,7 @@ function VehiculeStep({
     handleSubmit,
     control,
     watch,
+    setValue,
     setError,
     formState: { errors },
   } = useForm<DossierVehicule>({
@@ -464,6 +465,8 @@ function VehiculeStep({
   });
 
   const selectedMarque = watch("marque");
+  const selectedCategorie = watch("genre");
+  const selectedTypeVehicule = watch("typeVehicule");
 
   const marqueOptions = useMemo(() => {
     const marquesSaisies = vehicules.map((vehicule) => normalizeBrand(vehicule.marque));
@@ -485,6 +488,24 @@ function VehiculeStep({
       label: modele,
     }));
   }, [selectedMarque, vehicules]);
+
+  const genreOptions = useMemo(() => {
+    const options = getSousCategoriesByCategorie(selectedCategorie).map((genre) => ({
+      value: genre,
+      label: genre,
+    }));
+    if (selectedTypeVehicule && !options.some((option) => option.value === selectedTypeVehicule)) {
+      return [
+        {
+          value: selectedTypeVehicule,
+          label: selectedTypeVehicule,
+          sublabel: t("vehicules.existingValue"),
+        },
+        ...options,
+      ];
+    }
+    return options;
+  }, [selectedCategorie, selectedTypeVehicule, t]);
 
   const handleExistingNext = () => {
     if (vehiculeId == null) {
@@ -564,9 +585,16 @@ function VehiculeStep({
                 <SearchableSelect
                   id="genre"
                   value={field.value ?? null}
-                  onChange={(v) =>
-                    field.onChange(v == null ? undefined : (v as DossierVehicule["genre"]))
-                  }
+                  onChange={(v) => {
+                    const nextCategorie = v == null ? undefined : (v as DossierVehicule["genre"]);
+                    if (field.value !== nextCategorie) {
+                      setValue("typeVehicule", undefined, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    }
+                    field.onChange(nextCategorie);
+                  }}
                   options={CATEGORIES_VEHICULE.map((c) => ({ value: c.value, label: c.label }))}
                   placeholder="— Sélectionner une catégorie —"
                 />
@@ -648,12 +676,24 @@ function VehiculeStep({
             <label htmlFor="typeVehicule" className="block text-sm font-medium text-gray-700">
               {t("vehicules.typeVehicule")}
             </label>
-            <input
-              id="typeVehicule"
-              type="text"
-              {...register("typeVehicule")}
-              className={inputClass}
-              placeholder="Berline, SUV, Pick-up..."
+            <Controller
+              name="typeVehicule"
+              control={control}
+              render={({ field }) => (
+                <SearchableSelect
+                  id="typeVehicule"
+                  value={field.value ?? null}
+                  onChange={(v) => field.onChange(v == null ? undefined : String(v))}
+                  options={genreOptions}
+                  placeholder={
+                    selectedCategorie
+                      ? t("vehicules.selectGenre")
+                      : t("vehicules.selectCategorieFirst")
+                  }
+                  emptyText={t("vehicules.noGenre")}
+                  disabled={!selectedCategorie}
+                />
+              )}
             />
           </div>
 

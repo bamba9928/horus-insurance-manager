@@ -13,7 +13,11 @@ import { useVehicules } from "../../hooks/useVehicules";
 import { REFERENTIEL_MARQUES } from "../../lib/referentiel-marques";
 import { normalizeBrand, normalizeText, uniqueSorted } from "../../lib/utils";
 import type { Vehicule, VehiculeCreate } from "../../schemas/vehicule";
-import { CATEGORIES_VEHICULE, vehiculeCreateSchema } from "../../schemas/vehicule";
+import {
+  CATEGORIES_VEHICULE,
+  getSousCategoriesByCategorie,
+  vehiculeCreateSchema,
+} from "../../schemas/vehicule";
 import { SearchableSelect } from "../ui/SearchableSelect";
 
 interface VehiculeFormProps {
@@ -45,6 +49,7 @@ export function VehiculeForm({
     handleSubmit,
     control,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<VehiculeCreate>({
     resolver: zodResolver(vehiculeCreateSchema),
@@ -71,6 +76,8 @@ export function VehiculeForm({
   });
 
   const selectedMarque = watch("marque");
+  const selectedCategorie = watch("genre");
+  const selectedTypeVehicule = watch("typeVehicule");
 
   const marqueOptions = useMemo(() => {
     const marquesSaisies = vehicules.map((vehicule) => normalizeBrand(vehicule.marque));
@@ -92,6 +99,24 @@ export function VehiculeForm({
       label: modele,
     }));
   }, [selectedMarque, vehicules]);
+
+  const genreOptions = useMemo(() => {
+    const options = getSousCategoriesByCategorie(selectedCategorie).map((genre) => ({
+      value: genre,
+      label: genre,
+    }));
+    if (selectedTypeVehicule && !options.some((option) => option.value === selectedTypeVehicule)) {
+      return [
+        {
+          value: selectedTypeVehicule,
+          label: selectedTypeVehicule,
+          sublabel: t("vehicules.existingValue"),
+        },
+        ...options,
+      ];
+    }
+    return options;
+  }, [selectedCategorie, selectedTypeVehicule, t]);
 
   const onFormSubmit = (data: VehiculeCreate) =>
     onSubmit({
@@ -143,9 +168,16 @@ export function VehiculeForm({
             <SearchableSelect
               id="genre"
               value={field.value ?? null}
-              onChange={(v) =>
-                field.onChange(v == null ? undefined : (v as VehiculeCreate["genre"]))
-              }
+              onChange={(v) => {
+                const nextCategorie = v == null ? undefined : (v as VehiculeCreate["genre"]);
+                if (field.value !== nextCategorie) {
+                  setValue("typeVehicule", undefined, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }
+                field.onChange(nextCategorie);
+              }}
               options={CATEGORIES_VEHICULE.map((c) => ({ value: c.value, label: c.label }))}
               placeholder="— Sélectionner une catégorie —"
             />
@@ -224,12 +256,22 @@ export function VehiculeForm({
         <label htmlFor="typeVehicule" className="block text-sm font-medium text-gray-700">
           {t("vehicules.typeVehicule")}
         </label>
-        <input
-          id="typeVehicule"
-          type="text"
-          {...register("typeVehicule")}
-          className={inputClass}
-          placeholder="Berline, SUV, Pick-up..."
+        <Controller
+          name="typeVehicule"
+          control={control}
+          render={({ field }) => (
+            <SearchableSelect
+              id="typeVehicule"
+              value={field.value ?? null}
+              onChange={(v) => field.onChange(v == null ? undefined : String(v))}
+              options={genreOptions}
+              placeholder={
+                selectedCategorie ? t("vehicules.selectGenre") : t("vehicules.selectCategorieFirst")
+              }
+              emptyText={t("vehicules.noGenre")}
+              disabled={!selectedCategorie}
+            />
+          )}
         />
       </div>
 

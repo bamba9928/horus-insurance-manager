@@ -100,6 +100,7 @@ export function LoginPage() {
                 ref={loginInputRef}
                 id="login"
                 type="text"
+                data-no-upper
                 autoComplete="username"
                 value={loginName}
                 onChange={(e) => setLoginName(e.target.value)}
@@ -129,6 +130,7 @@ export function LoginPage() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
+                  data-no-upper
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

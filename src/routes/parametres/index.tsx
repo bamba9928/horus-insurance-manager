@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { Header } from "../../components/layout";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Dialog } from "../../components/ui/Dialog";
+import { Spinner } from "../../components/ui/Spinner";
 import {
   useAssureurs,
   useCreateAssureur,
@@ -148,7 +149,7 @@ function AssureursSection() {
 
       <div className="mt-4">
         {isLoading ? (
-          <p className="text-sm text-gray-500 dark:text-slate-400">Chargement...</p>
+          <Spinner logoWidth={0} size={28} className="py-6" />
         ) : assureurs.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-slate-400">
             Aucune compagnie. Cliquez sur « Ajouter une compagnie ».

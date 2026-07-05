@@ -6,6 +6,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { normalizePhone } from "../../lib/normalize";
 import type { Client, ClientCreate } from "../../schemas/client";
 import { clientCreateSchema } from "../../schemas/client";
 
@@ -34,7 +35,9 @@ export function ClientForm({ defaultValues, onSubmit, onCancel, isSubmitting }: 
           defaultValues: {
             nomPrenom: defaultValues.nom_prenom,
             adresse: defaultValues.adresse ?? undefined,
-            telephone: defaultValues.telephone ?? undefined,
+            telephone: defaultValues.telephone
+              ? normalizePhone(defaultValues.telephone)
+              : undefined,
             email: defaultValues.email ?? undefined,
             notes: defaultValues.notes ?? undefined,
           },

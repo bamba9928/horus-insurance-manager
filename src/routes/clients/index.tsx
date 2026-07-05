@@ -12,6 +12,7 @@ import { NouveauDossierButton } from "../../components/forms/NouveauDossierButto
 import { Header } from "../../components/layout";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Dialog } from "../../components/ui/Dialog";
+import { Spinner } from "../../components/ui/Spinner";
 import { useClients, useDeleteClient, useUpdateClient } from "../../hooks/useClients";
 import { useVehicules } from "../../hooks/useVehicules";
 import { consumePrefillSearch } from "../../lib/prefill-search";
@@ -132,7 +133,7 @@ export function ClientsPage() {
           </div>
 
           {isLoading ? (
-            <p className="text-sm text-gray-500">{t("common.loading")}</p>
+            <Spinner logoWidth={0} size={28} className="py-6" />
           ) : (
             <DataTable
               columns={columns}
