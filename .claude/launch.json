@@ -6,6 +6,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["exec", "vite", "--mode", "web"],
       "port": 1420
+    },
+    {
+      "name": "server-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "server", "run", "dev"],
+      "port": 3000
     }
   ]
 }
