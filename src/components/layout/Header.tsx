@@ -24,7 +24,7 @@ export function Header({ title, children }: HeaderProps) {
       <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">
         {title?.trim() ? title : ""}
       </h2>
-      <div className="flex min-w-0 items-center gap-2.5 overflow-x-auto pb-0.5 sm:overflow-visible sm:pb-0">
+      <div className="no-scrollbar flex min-w-0 items-center gap-2.5 overflow-x-auto pb-0.5 sm:overflow-visible sm:pb-0">
         {children}
         {!isOnTarification && (
           <Link

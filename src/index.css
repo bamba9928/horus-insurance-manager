@@ -72,3 +72,14 @@ body {
 .dark button.border-gray-300:hover {
   background-color: #334155; /* slate-700 */
 }
+
+/* Masque la barre de défilement visible (mobile) tout en gardant le scroll
+ * tactile fonctionnel. Utilisé pour la rangée d'actions du Header. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
