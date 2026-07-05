@@ -286,7 +286,7 @@ export function PaiementsPage() {
             <select
               value={filterStatut}
               onChange={(e) => setFilterStatut(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+              className="rounded-lg border border-[#614e1a] bg-[#614e1a] px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#8b7335] focus:outline-none focus:ring-2 focus:ring-[#614e1a]/40 [&>option]:bg-white [&>option]:font-normal [&>option]:text-gray-900 dark:[&>option]:bg-slate-800 dark:[&>option]:text-slate-100"
               aria-label="Filtrer par statut de paiement"
             >
               <option value="">Tous les statuts</option>

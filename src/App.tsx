@@ -1,4 +1,5 @@
 import { RouterProvider } from "@tanstack/react-router";
+import { Spinner } from "./components/ui/Spinner";
 import { AuthProvider, isWebMode, useAuth } from "./lib/auth";
 import { router } from "./router";
 import { LoginPage } from "./routes/login";
@@ -20,11 +21,7 @@ function AuthGate() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f6f2e8] dark:bg-slate-900">
-        <p className="text-sm text-gray-500 dark:text-slate-400">Chargement...</p>
-      </div>
-    );
+    return <Spinner fullScreen label="Chargement..." />;
   }
 
   if (!user) return <LoginPage />;
