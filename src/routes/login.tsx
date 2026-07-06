@@ -298,6 +298,7 @@ function RegisterForm({
   const isValid =
     form.nom.trim().length >= 2 &&
     form.email.trim().length > 0 &&
+    form.telephone1.trim().length > 0 &&
     form.password.length >= 8 &&
     form.password === form.passwordConfirm;
 
@@ -314,7 +315,7 @@ function RegisterForm({
         nom: form.nom.trim(),
         prenom: form.prenom?.trim() || undefined,
         email: form.email.trim(),
-        telephone1: form.telephone1?.trim() || undefined,
+        telephone1: form.telephone1.trim(),
         password: form.password,
         passwordConfirm: form.passwordConfirm,
         website: form.website?.trim() || undefined,
@@ -381,9 +382,10 @@ function RegisterForm({
               autoComplete="tel"
               value={form.telephone1}
               onChange={update("telephone1")}
+              required
               maxLength={50}
               className={inputClass}
-              placeholder="optionnel"
+              placeholder="771234567"
               disabled={submitting}
             />
           </div>

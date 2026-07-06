@@ -652,6 +652,7 @@ describe("auto-inscription + validation admin", () => {
       },
       body: JSON.stringify({
         nom: "Nouveau Venu",
+        telephone1: "770000100",
         email: testEmail(localPart),
         password: "Passw0rd!",
         passwordConfirm: "Passw0rd!",
@@ -685,6 +686,7 @@ describe("auto-inscription + validation admin", () => {
       },
       body: JSON.stringify({
         nom: "Compte Email",
+        telephone1: "770000101",
         email,
         password: "Passw0rd!",
         passwordConfirm: "Passw0rd!",
@@ -700,6 +702,26 @@ describe("auto-inscription + validation admin", () => {
     expect(login.status).toBe(200);
   });
 
+  it("refuse une auto-inscription sans téléphone", async () => {
+    registerIpCounter += 1;
+    const res = await app.request("/api/auth/register", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-forwarded-for": `10.0.0.${registerIpCounter}`,
+      },
+      body: JSON.stringify({
+        nom: "Sans Téléphone",
+        email: "register-sans-telephone@example.com",
+        password: "Passw0rd!",
+        passwordConfirm: "Passw0rd!",
+      }),
+    });
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error?: string };
+    expect(body.error).toBe("Téléphone obligatoire");
+  });
+
   it("refuse une auto-inscription qui remplit le honeypot anti-bot", async () => {
     registerIpCounter += 1;
     const res = await app.request("/api/auth/register", {
@@ -710,6 +732,7 @@ describe("auto-inscription + validation admin", () => {
       },
       body: JSON.stringify({
         nom: "Bot Test",
+        telephone1: "770000102",
         email: "bot-test@example.com",
         password: "Passw0rd!",
         passwordConfirm: "Passw0rd!",
@@ -798,6 +821,7 @@ describe("auto-inscription + validation admin", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         nom: "Autre",
+        telephone1: "770000103",
         email: testEmail("doublon-login"),
         password: "Passw0rd!",
         passwordConfirm: "Passw0rd!",

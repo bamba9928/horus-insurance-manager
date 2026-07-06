@@ -33,7 +33,7 @@ export interface RegisterInput {
   nom: string;
   prenom?: string | undefined;
   email: string;
-  telephone1?: string | undefined;
+  telephone1: string;
   password: string;
   passwordConfirm: string;
   website?: string | undefined;

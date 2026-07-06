@@ -43,12 +43,19 @@ function optionalText(max: number) {
     .transform((value) => value ?? null);
 }
 
+function requiredText(max: number, message: string) {
+  return z.preprocess(
+    (value) => (typeof value === "string" ? value.trim() : ""),
+    z.string().min(1, message).max(max),
+  );
+}
+
 const createUserSchema = z
   .object({
     nom: z.string().trim().min(2).max(200),
     prenom: optionalText(200),
     adresse: optionalText(500),
-    telephone1: optionalText(50),
+    telephone1: requiredText(50, "Téléphone obligatoire"),
     telephone2: optionalText(50),
     email: z.string().trim().email("Email invalide").max(200),
     password: z.string().min(8, "8 caractères minimum").max(200),

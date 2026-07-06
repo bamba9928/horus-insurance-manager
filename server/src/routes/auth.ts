@@ -35,12 +35,19 @@ const loginSchema = z.object({
   password: z.string().min(1).max(200),
 });
 
+function requiredText(max: number, message: string) {
+  return z.preprocess(
+    (value) => (typeof value === "string" ? value.trim() : ""),
+    z.string().min(1, message).max(max),
+  );
+}
+
 const registerSchema = z
   .object({
     nom: z.string().trim().min(2, "Nom trop court").max(200),
     prenom: z.string().trim().max(200).optional(),
     email: z.string().trim().email("Email invalide").max(200),
-    telephone1: z.string().trim().max(50).optional(),
+    telephone1: requiredText(50, "Téléphone obligatoire"),
     password: z.string().min(8, "8 caractères minimum").max(200),
     passwordConfirm: z.string().max(200).optional(),
     website: z.string().trim().max(0, "Requête invalide").optional(),

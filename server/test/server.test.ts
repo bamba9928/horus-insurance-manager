@@ -266,9 +266,30 @@ describe("administration des comptes", () => {
     const res = await api("/api/admin/users", {
       method: "POST",
       cookie: adminCookie,
-      body: { nom: "Doublon", email: AGENT_EMAIL, password: "unmotdepasse" },
+      body: {
+        nom: "Doublon",
+        telephone1: "770000002",
+        email: AGENT_EMAIL,
+        password: "unmotdepasse",
+      },
     });
     expect(res.status).toBe(409);
+  });
+
+  it("refuse de créer un compte sans téléphone", async () => {
+    const res = await api("/api/admin/users", {
+      method: "POST",
+      cookie: adminCookie,
+      body: {
+        nom: "Sans Téléphone",
+        email: "sans-telephone@example.com",
+        password: "password-123",
+        passwordConfirm: "password-123",
+      },
+    });
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error?: string };
+    expect(body.error).toBe("Téléphone obligatoire");
   });
 
   it("permet à l'admin de modifier les informations personnelles d'un compte", async () => {
@@ -325,6 +346,7 @@ describe("administration des comptes", () => {
       cookie: adminCookie,
       body: {
         nom: "Mismatch",
+        telephone1: "770000003",
         email: "mismatch@example.com",
         password: "password-123",
         passwordConfirm: "password-456",
@@ -340,12 +362,22 @@ describe("administration des comptes", () => {
       api("/api/admin/users", {
         method: "POST",
         cookie: adminCookie,
-        body: { nom: "Course A", email: "concurrent@example.com", password: "motdepasse1" },
+        body: {
+          nom: "Course A",
+          telephone1: "770000004",
+          email: "concurrent@example.com",
+          password: "motdepasse1",
+        },
       }),
       api("/api/admin/users", {
         method: "POST",
         cookie: adminCookie,
-        body: { nom: "Course B", email: "concurrent@example.com", password: "motdepasse2" },
+        body: {
+          nom: "Course B",
+          telephone1: "770000005",
+          email: "concurrent@example.com",
+          password: "motdepasse2",
+        },
       }),
     ]);
     const statuses = [a.status, b.status].sort();
@@ -358,6 +390,7 @@ describe("administration des comptes", () => {
       cookie: adminCookie,
       body: {
         nom: "Administrateur Deux",
+        telephone1: "770000006",
         email: ADMIN2_EMAIL,
         password: "admin-two-password",
         role: "ADMIN",
@@ -529,6 +562,7 @@ describe("administration des comptes", () => {
       cookie: adminCookie,
       body: {
         nom: "Suppression",
+        telephone1: "770000007",
         email,
         password,
         passwordConfirm: password,
