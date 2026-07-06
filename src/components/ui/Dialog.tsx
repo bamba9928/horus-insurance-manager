@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 interface DialogProps {
   /** Contrôle l'ouverture */
@@ -32,7 +33,9 @@ export function Dialog({ open, onClose, title, children, maxWidth = "max-w-lg" }
     }
   }, [open]);
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <dialog
       ref={dialogRef}
       className={`${maxWidth} w-full rounded-xl border-none bg-white p-0 shadow-xl backdrop:bg-black/50 dark:bg-slate-800 dark:text-slate-100`}
@@ -55,6 +58,7 @@ export function Dialog({ open, onClose, title, children, maxWidth = "max-w-lg" }
           <div className="px-4 py-3.5">{children}</div>
         </>
       )}
-    </dialog>
+    </dialog>,
+    document.body,
   );
 }

@@ -7,7 +7,9 @@
 import { Navigate, useNavigate } from "@tanstack/react-router";
 import { type ChangeEvent, type FormEvent, useCallback, useEffect, useState } from "react";
 import { Header } from "../components/layout";
+import { Dialog } from "../components/ui/Dialog";
 import { Spinner } from "../components/ui/Spinner";
+import { useToast } from "../components/ui/Toast";
 import { useImpersonation } from "../lib/admin-impersonation";
 import { useAuth } from "../lib/auth";
 import { csrfHeaders } from "../lib/csrf";
@@ -208,8 +210,8 @@ function editUserFormFromUser(user: AdminUser): EditUserFormState {
 function CreateUserForm({ onCreated }: { onCreated: () => void }) {
   const [form, setForm] = useState<CreateUserFormState>(initialCreateUserForm);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const { showToast } = useToast();
 
   const updateField =
     (field: keyof CreateUserFormState) =>
@@ -221,7 +223,6 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    setMessage(null);
     if (form.password !== form.passwordConfirm) {
       setError("La confirmation du mot de passe ne correspond pas.");
       return;
@@ -239,7 +240,11 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
         passwordConfirm: form.passwordConfirm,
         role: form.role,
       });
-      setMessage(`Compte « ${form.email.trim()} » créé.`);
+      showToast({
+        title: "Compte créé",
+        message: `Le compte ${form.email.trim()} est prêt.`,
+        variant: "success",
+      });
       setForm(initialCreateUserForm);
       onCreated();
     } catch (err) {
@@ -439,7 +444,6 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
         </div>
       </form>
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-      {message && <p className="mt-2 text-sm text-green-700">{message}</p>}
     </section>
   );
 }
@@ -459,9 +463,15 @@ function UserRow({
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<EditUserFormState>(() => editUserFormFromUser(user));
   const [editError, setEditError] = useState<string | null>(null);
-  const [editMessage, setEditMessage] = useState<string | null>(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { actingUser, startActing, stopActing } = useImpersonation();
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (!editing) setEditForm(editUserFormFromUser(user));
@@ -473,19 +483,38 @@ function UserRow({
       setEditForm((current) => ({ ...current, [field]: e.target.value }));
     };
 
-  const resetPassword = async () => {
-    const pwd = window.prompt(`Nouveau mot de passe pour « ${user.login} » (8 caractères min.) :`);
-    if (!pwd) return;
-    if (pwd.length < 8) {
-      window.alert("Le mot de passe doit contenir au moins 8 caractères.");
+  const openPasswordDialog = () => {
+    setNewPassword("");
+    setPasswordError(null);
+    setPasswordDialogOpen(true);
+  };
+
+  const closePasswordDialog = () => {
+    if (busy) return;
+    setPasswordDialogOpen(false);
+    setNewPassword("");
+    setPasswordError(null);
+  };
+
+  const resetPassword = async (e: FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 8) {
+      setPasswordError("Le mot de passe doit contenir au moins 8 caractères.");
       return;
     }
     setBusy(true);
+    setPasswordError(null);
     try {
-      await adminFetch(`/users/${user.id}/password`, "POST", { password: pwd });
-      window.alert("Mot de passe réinitialisé. L'utilisateur devra se reconnecter.");
+      await adminFetch(`/users/${user.id}/password`, "POST", { password: newPassword });
+      setPasswordDialogOpen(false);
+      setNewPassword("");
+      showToast({
+        title: "Mot de passe réinitialisé",
+        message: "L'utilisateur devra se reconnecter avec son nouveau mot de passe.",
+        variant: "success",
+      });
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Erreur");
+      setPasswordError(err instanceof Error ? err.message : "Erreur");
     } finally {
       setBusy(false);
     }
@@ -495,9 +524,18 @@ function UserRow({
     setBusy(true);
     try {
       await adminFetch(`/users/${user.id}/active`, "POST", { actif: user.actif === 0 });
+      showToast({
+        title: user.actif ? "Compte suspendu" : "Compte réactivé",
+        message: `${fullName || user.login} a été ${user.actif ? "suspendu" : "réactivé"}.`,
+        variant: "success",
+      });
       onChanged();
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Erreur");
+      showToast({
+        title: "Action impossible",
+        message: err instanceof Error ? err.message : "Erreur",
+        variant: "error",
+      });
     } finally {
       setBusy(false);
     }
@@ -507,9 +545,20 @@ function UserRow({
     setBusy(true);
     try {
       await adminFetch(`/users/${user.id}/approve`, "POST", { approved: user.approved === 0 });
+      showToast({
+        title: user.approved ? "Validation retirée" : "Compte validé",
+        message: `${fullName || user.login} est maintenant ${
+          user.approved ? "en attente" : "validé"
+        }.`,
+        variant: "success",
+      });
       onChanged();
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Erreur");
+      showToast({
+        title: "Action impossible",
+        message: err instanceof Error ? err.message : "Erreur",
+        variant: "error",
+      });
     } finally {
       setBusy(false);
     }
@@ -520,18 +569,39 @@ function UserRow({
     navigate({ to: "/" });
   };
 
-  const deleteAccount = async () => {
-    const typed = window.prompt(
-      `Suppression définitive du compte « ${user.login} » et de sa base métier.\nTapez SUPPRIMER pour confirmer :`,
-    );
-    if (typed !== "SUPPRIMER") return;
+  const openDeleteDialog = () => {
+    setDeleteConfirmation("");
+    setDeleteError(null);
+    setDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    if (busy) return;
+    setDeleteDialogOpen(false);
+    setDeleteConfirmation("");
+    setDeleteError(null);
+  };
+
+  const deleteAccount = async (e: FormEvent) => {
+    e.preventDefault();
+    if (deleteConfirmation !== "SUPPRIMER") {
+      setDeleteError("Tapez SUPPRIMER pour confirmer la suppression définitive.");
+      return;
+    }
     setBusy(true);
+    setDeleteError(null);
     try {
       await adminFetch(`/users/${user.id}`, "DELETE");
       if (actingUser?.id === user.id) stopActing();
+      setDeleteDialogOpen(false);
+      showToast({
+        title: "Compte supprimé",
+        message: `${fullName || user.login} et sa base métier ont été supprimés.`,
+        variant: "success",
+      });
       onChanged();
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Erreur");
+      setDeleteError(err instanceof Error ? err.message : "Erreur");
     } finally {
       setBusy(false);
     }
@@ -541,7 +611,6 @@ function UserRow({
     e.preventDefault();
     setBusy(true);
     setEditError(null);
-    setEditMessage(null);
     try {
       await adminFetch(`/users/${user.id}`, "PATCH", {
         nom: editForm.nom.trim(),
@@ -552,7 +621,11 @@ function UserRow({
         email: editForm.email.trim(),
       });
       if (user.id === currentUserId) await onCurrentUserChanged();
-      setEditMessage("Informations mises à jour.");
+      showToast({
+        title: "Profil mis à jour",
+        message: `Les informations de ${fullName || user.login} ont été enregistrées.`,
+        variant: "success",
+      });
       onChanged();
       setEditing(false);
     } catch (err) {
@@ -575,6 +648,8 @@ function UserRow({
   const neutralActionClass = `${actionButtonClass} text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-700`;
   const primaryActionClass = `${actionButtonClass} text-[#614e1a] hover:bg-[#614e1a]/10`;
   const dangerActionClass = `${actionButtonClass} text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/20`;
+  const modalInputClass =
+    "mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
 
   return (
     <>
@@ -663,7 +738,6 @@ function UserRow({
                 onClick={() => {
                   setEditing((current) => !current);
                   setEditError(null);
-                  setEditMessage(null);
                 }}
                 disabled={busy}
                 className={primaryActionClass}
@@ -672,7 +746,7 @@ function UserRow({
               </button>
               <button
                 type="button"
-                onClick={resetPassword}
+                onClick={openPasswordDialog}
                 disabled={busy}
                 className={primaryActionClass}
               >
@@ -715,7 +789,7 @@ function UserRow({
                 </button>
                 <button
                   type="button"
-                  onClick={deleteAccount}
+                  onClick={openDeleteDialog}
                   disabled={busy}
                   className={dangerActionClass}
                 >
@@ -835,7 +909,6 @@ function UserRow({
                 </div>
               </div>
               {editError && <p className="text-sm text-red-600">{editError}</p>}
-              {editMessage && <p className="text-sm text-green-700">{editMessage}</p>}
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
@@ -843,7 +916,6 @@ function UserRow({
                     setEditing(false);
                     setEditForm(editUserFormFromUser(user));
                     setEditError(null);
-                    setEditMessage(null);
                   }}
                   disabled={busy}
                   className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
@@ -862,6 +934,120 @@ function UserRow({
           </td>
         </tr>
       )}
+      <Dialog
+        open={passwordDialogOpen}
+        onClose={closePasswordDialog}
+        title={`Réinitialiser le mot de passe`}
+        maxWidth="max-w-md"
+      >
+        <form onSubmit={resetPassword} className="space-y-4">
+          <div>
+            <p className="text-sm text-gray-600 dark:text-slate-300">
+              Définissez un nouveau mot de passe pour{" "}
+              <span className="font-semibold text-gray-900 dark:text-slate-100">{user.login}</span>.
+            </p>
+            <label
+              htmlFor={`reset-password-${user.id}`}
+              className="mt-3 block text-xs font-medium text-gray-600 dark:text-slate-400"
+            >
+              Nouveau mot de passe
+            </label>
+            <input
+              id={`reset-password-${user.id}`}
+              type="password"
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                setPasswordError(null);
+              }}
+              minLength={8}
+              maxLength={200}
+              className={modalInputClass}
+              placeholder="8 caractères minimum"
+              autoFocus
+            />
+          </div>
+          {passwordError && (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
+              {passwordError}
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={closePasswordDialog}
+              disabled={busy}
+              className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={busy}
+              className="rounded-lg bg-[#614e1a] px-4 py-1.5 text-sm font-medium text-white hover:bg-[#8b7335] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {busy ? "Enregistrement..." : "Réinitialiser"}
+            </button>
+          </div>
+        </form>
+      </Dialog>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={closeDeleteDialog}
+        title="Supprimer le compte"
+        maxWidth="max-w-md"
+      >
+        <form onSubmit={deleteAccount} className="space-y-4">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-100">
+            Suppression définitive du compte <span className="font-semibold">{user.login}</span> et
+            de sa base métier.
+          </div>
+          <div>
+            <label
+              htmlFor={`delete-confirm-${user.id}`}
+              className="block text-xs font-medium text-gray-600 dark:text-slate-400"
+            >
+              Tapez SUPPRIMER pour confirmer
+            </label>
+            <input
+              id={`delete-confirm-${user.id}`}
+              type="text"
+              value={deleteConfirmation}
+              onChange={(e) => {
+                setDeleteConfirmation(e.target.value);
+                setDeleteError(null);
+              }}
+              className={modalInputClass}
+              autoComplete="off"
+              autoFocus
+            />
+          </div>
+          {deleteError && (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
+              {deleteError}
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={closeDeleteDialog}
+              disabled={busy}
+              className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={busy || deleteConfirmation !== "SUPPRIMER"}
+              className="rounded-lg bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {busy ? "Suppression..." : "Supprimer"}
+            </button>
+          </div>
+        </form>
+      </Dialog>
     </>
   );
 }
