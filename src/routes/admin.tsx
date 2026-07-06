@@ -1,6 +1,7 @@
 /**
  * Page d'administration (super admin, mode web) :
- * créer un compte, réinitialiser un mot de passe, suspendre / réactiver.
+ * créer un compte, modifier le profil, réinitialiser un mot de passe,
+ * suspendre / réactiver, supprimer.
  */
 
 import { Navigate, useNavigate } from "@tanstack/react-router";
@@ -62,8 +63,12 @@ function formatSize(bytes: number | null): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 }
 
+function formatDateTime(value: string | null): string {
+  return value ? new Date(value).toLocaleString("fr-FR") : "jamais";
+}
+
 export function AdminPage() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,6 +94,10 @@ export function AdminPage() {
     return <Navigate to="/profil" replace />;
   }
 
+  const adminCount = users.filter((u) => u.role === "ADMIN").length;
+  const pendingCount = users.filter((u) => !u.approved).length;
+  const suspendedCount = users.filter((u) => !u.actif).length;
+
   return (
     <>
       <Header title="Administration des comptes" />
@@ -97,9 +106,17 @@ export function AdminPage() {
 
         <section className="rounded-xl border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800">
           <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-slate-700">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
-              Profils et comptes ({users.length})
-            </h3>
+            <div>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
+                Profils et comptes ({users.length})
+              </h3>
+              {!loading && (
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
+                  {adminCount} admin{adminCount > 1 ? "s" : ""} · {pendingCount} en attente ·{" "}
+                  {suspendedCount} suspendu{suspendedCount > 1 ? "s" : ""}
+                </p>
+              )}
+            </div>
             <button
               type="button"
               onClick={reload}
@@ -114,21 +131,25 @@ export function AdminPage() {
             <Spinner logoWidth={0} size={28} className="py-6" />
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[980px] text-sm">
+              <table className="w-full min-w-[1060px] text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 text-left text-xs text-gray-500 dark:border-slate-700 dark:text-slate-400">
-                    <th className="px-4 py-1.5 font-medium">Profil</th>
-                    <th className="px-4 py-1.5 font-medium">Coordonnées</th>
-                    <th className="px-4 py-1.5 font-medium">Rôle</th>
-                    <th className="px-4 py-1.5 font-medium">État</th>
-                    <th className="px-4 py-1.5 font-medium">Base / données</th>
-                    <th className="px-4 py-1.5 font-medium">Dernière connexion</th>
-                    <th className="px-4 py-1.5 font-medium">Actions</th>
+                    <th className="px-4 py-2 font-medium">Utilisateur</th>
+                    <th className="px-4 py-2 font-medium">Accès</th>
+                    <th className="px-4 py-2 font-medium">Données</th>
+                    <th className="px-4 py-2 font-medium">Activité</th>
+                    <th className="px-4 py-2 text-right font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((u) => (
-                    <UserRow key={u.id} user={u} currentUserId={user.id} onChanged={reload} />
+                    <UserRow
+                      key={u.id}
+                      user={u}
+                      currentUserId={user.id}
+                      onChanged={reload}
+                      onCurrentUserChanged={refresh}
+                    />
                   ))}
                 </tbody>
               </table>
@@ -152,6 +173,15 @@ type CreateUserFormState = {
   role: AdminUser["role"];
 };
 
+type EditUserFormState = {
+  nom: string;
+  prenom: string;
+  adresse: string;
+  telephone1: string;
+  telephone2: string;
+  email: string;
+};
+
 const initialCreateUserForm: CreateUserFormState = {
   nom: "",
   prenom: "",
@@ -163,6 +193,17 @@ const initialCreateUserForm: CreateUserFormState = {
   passwordConfirm: "",
   role: "USER",
 };
+
+function editUserFormFromUser(user: AdminUser): EditUserFormState {
+  return {
+    nom: user.nom,
+    prenom: user.prenom ?? "",
+    adresse: user.adresse ?? "",
+    telephone1: user.telephone1 ?? "",
+    telephone2: user.telephone2 ?? "",
+    email: user.email ?? user.login,
+  };
+}
 
 function CreateUserForm({ onCreated }: { onCreated: () => void }) {
   const [form, setForm] = useState<CreateUserFormState>(initialCreateUserForm);
@@ -407,14 +448,30 @@ function UserRow({
   user,
   currentUserId,
   onChanged,
+  onCurrentUserChanged,
 }: {
   user: AdminUser;
   currentUserId: number;
   onChanged: () => void;
+  onCurrentUserChanged: () => Promise<unknown>;
 }) {
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState<EditUserFormState>(() => editUserFormFromUser(user));
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editMessage, setEditMessage] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { startActing } = useImpersonation();
+  const { actingUser, startActing, stopActing } = useImpersonation();
+
+  useEffect(() => {
+    if (!editing) setEditForm(editUserFormFromUser(user));
+  }, [editing, user]);
+
+  const updateEditField =
+    (field: keyof EditUserFormState) =>
+    (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setEditForm((current) => ({ ...current, [field]: e.target.value }));
+    };
 
   const resetPassword = async () => {
     const pwd = window.prompt(`Nouveau mot de passe pour « ${user.login} » (8 caractères min.) :`);
@@ -463,6 +520,48 @@ function UserRow({
     navigate({ to: "/" });
   };
 
+  const deleteAccount = async () => {
+    const typed = window.prompt(
+      `Suppression définitive du compte « ${user.login} » et de sa base métier.\nTapez SUPPRIMER pour confirmer :`,
+    );
+    if (typed !== "SUPPRIMER") return;
+    setBusy(true);
+    try {
+      await adminFetch(`/users/${user.id}`, "DELETE");
+      if (actingUser?.id === user.id) stopActing();
+      onChanged();
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveProfile = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setEditError(null);
+    setEditMessage(null);
+    try {
+      await adminFetch(`/users/${user.id}`, "PATCH", {
+        nom: editForm.nom.trim(),
+        prenom: editForm.prenom.trim(),
+        adresse: editForm.adresse.trim(),
+        telephone1: editForm.telephone1.trim(),
+        telephone2: editForm.telephone2.trim(),
+        email: editForm.email.trim(),
+      });
+      if (user.id === currentUserId) await onCurrentUserChanged();
+      setEditMessage("Informations mises à jour.");
+      onChanged();
+      setEditing(false);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const isSelf = user.id === currentUserId;
   const hasStats =
     user.clients_count != null &&
@@ -471,115 +570,298 @@ function UserRow({
     user.paiements_count != null;
   const fullName = [user.prenom, user.nom].filter(Boolean).join(" ") || user.nom;
   const phones = [user.telephone1, user.telephone2].filter(Boolean).join(" · ");
+  const actionButtonClass =
+    "rounded px-2 py-1 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50";
+  const neutralActionClass = `${actionButtonClass} text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-700`;
+  const primaryActionClass = `${actionButtonClass} text-[#614e1a] hover:bg-[#614e1a]/10`;
+  const dangerActionClass = `${actionButtonClass} text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/20`;
 
   return (
-    <tr className="border-b border-gray-100 last:border-0 dark:border-slate-700/60">
-      <td className="px-4 py-2 align-top">
-        <div className="font-medium text-gray-900 dark:text-slate-100">{fullName}</div>
-        <div className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">{user.login}</div>
-      </td>
-      <td className="px-4 py-2 align-top text-gray-700 dark:text-slate-300">
-        <div>{user.email ?? "—"}</div>
-        {phones && <div className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">{phones}</div>}
-        {user.adresse && (
-          <div className="mt-0.5 max-w-xs text-xs text-gray-500 dark:text-slate-400">
-            {user.adresse}
+    <>
+      <tr className="border-b border-gray-100 last:border-0 dark:border-slate-700/60">
+        <td className="max-w-sm px-4 py-3 align-top">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-gray-900 dark:text-slate-100">{fullName}</span>
+            {isSelf && (
+              <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-slate-700 dark:text-slate-300">
+                Vous
+              </span>
+            )}
           </div>
-        )}
-      </td>
-      <td className="px-4 py-1.5">
-        <span
-          className={`rounded px-2 py-0.5 text-xs font-medium ${
-            user.role === "ADMIN"
-              ? "bg-[#614e1a]/10 text-[#614e1a]"
-              : "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300"
-          }`}
-        >
-          {user.role === "ADMIN" ? "Admin" : "Utilisateur"}
-        </span>
-      </td>
-      <td className="px-4 py-1.5">
-        <div className="flex flex-col items-start gap-1">
-          <span
-            className={`rounded px-2 py-0.5 text-xs font-medium ${
-              user.actif ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-            }`}
-          >
-            {user.actif ? "Actif" : "Suspendu"}
-          </span>
-          <span
-            className={`rounded px-2 py-0.5 text-xs font-medium ${
-              user.approved
-                ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-                : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-            }`}
-          >
-            {user.approved ? "Validé" : "En attente"}
-          </span>
-        </div>
-      </td>
-      <td className="px-4 py-1.5 text-gray-500 dark:text-slate-400">
-        <div>{formatSize(user.db_size_bytes)}</div>
-        {hasStats ? (
-          <div className="mt-1 text-xs text-gray-400 dark:text-slate-500">
-            {user.clients_count} clients · {user.vehicules_count} véhicules · {user.polices_count}{" "}
-            polices · {user.paiements_count} paiements
-          </div>
-        ) : (
-          <div className="mt-1 text-xs text-gray-400 dark:text-slate-500">Aucune base active</div>
-        )}
-      </td>
-      <td className="px-4 py-1.5 text-gray-500 dark:text-slate-400">
-        {user.last_login_at ? new Date(user.last_login_at).toLocaleString("fr-FR") : "jamais"}
-      </td>
-      <td className="px-4 py-1.5">
-        <div className="flex flex-wrap gap-2">
-          {!isSelf && (
-            <button
-              type="button"
-              onClick={toggleApproved}
-              disabled={busy}
-              className={`rounded px-2 py-1 text-xs font-medium disabled:opacity-50 ${
+          <div className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">{user.login}</div>
+          <div className="mt-2 text-xs text-gray-700 dark:text-slate-300">{user.email ?? "—"}</div>
+          {phones && (
+            <div className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">{phones}</div>
+          )}
+          {user.adresse && (
+            <div className="mt-0.5 max-w-xs text-xs text-gray-500 dark:text-slate-400">
+              {user.adresse}
+            </div>
+          )}
+        </td>
+        <td className="px-4 py-3 align-top">
+          <div className="flex max-w-[150px] flex-wrap items-start gap-1">
+            <span
+              className={`rounded px-2 py-0.5 text-xs font-medium ${
+                user.role === "ADMIN"
+                  ? "bg-[#614e1a]/10 text-[#614e1a]"
+                  : "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300"
+              }`}
+            >
+              {user.role === "ADMIN" ? "Admin" : "Utilisateur"}
+            </span>
+            <span
+              className={`rounded px-2 py-0.5 text-xs font-medium ${
+                user.actif ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+              }`}
+            >
+              {user.actif ? "Actif" : "Suspendu"}
+            </span>
+            <span
+              className={`rounded px-2 py-0.5 text-xs font-medium ${
                 user.approved
-                  ? "text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
-                  : "bg-green-600 text-white hover:bg-green-700"
+                  ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                  : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
               }`}
             >
-              {user.approved ? "Retirer la validation" : "Valider le compte"}
-            </button>
+              {user.approved ? "Validé" : "En attente"}
+            </span>
+          </div>
+        </td>
+        <td className="px-4 py-3 align-top text-gray-500 dark:text-slate-400">
+          <div className="font-medium text-gray-700 dark:text-slate-300">
+            {formatSize(user.db_size_bytes)}
+          </div>
+          {hasStats ? (
+            <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-gray-400 dark:text-slate-500">
+              <span>{user.clients_count} clients</span>
+              <span>{user.vehicules_count} véhicules</span>
+              <span>{user.polices_count} polices</span>
+              <span>{user.paiements_count} paiements</span>
+            </div>
+          ) : (
+            <div className="mt-1 text-xs text-gray-400 dark:text-slate-500">Aucune base active</div>
           )}
-          {!isSelf && (
-            <button
-              type="button"
-              onClick={actAsUser}
-              disabled={busy}
-              className="rounded px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-50 dark:text-blue-300 dark:hover:bg-blue-900/20"
-            >
-              Voir / modifier les données
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={resetPassword}
-            disabled={busy}
-            className="rounded px-2 py-1 text-xs text-[#614e1a] hover:bg-[#614e1a]/10 disabled:opacity-50"
-          >
-            Mot de passe
-          </button>
-          {!isSelf && (
-            <button
-              type="button"
-              onClick={toggleActive}
-              disabled={busy}
-              className={`rounded px-2 py-1 text-xs disabled:opacity-50 ${
-                user.actif ? "text-red-600 hover:bg-red-50" : "text-green-700 hover:bg-green-50"
-              }`}
-            >
-              {user.actif ? "Suspendre" : "Réactiver"}
-            </button>
-          )}
-        </div>
-      </td>
-    </tr>
+        </td>
+        <td className="px-4 py-3 align-top text-xs text-gray-500 dark:text-slate-400">
+          <div>
+            <span className="block text-gray-400 dark:text-slate-500">Dernière connexion</span>
+            <span className="text-gray-700 dark:text-slate-300">
+              {formatDateTime(user.last_login_at)}
+            </span>
+          </div>
+          <div className="mt-2">
+            <span className="block text-gray-400 dark:text-slate-500">Créé le</span>
+            <span>{formatDateTime(user.created_at)}</span>
+          </div>
+        </td>
+        <td className="px-4 py-3 align-top">
+          <div className="flex min-w-[250px] flex-col items-end gap-2">
+            <div className="flex flex-wrap justify-end gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing((current) => !current);
+                  setEditError(null);
+                  setEditMessage(null);
+                }}
+                disabled={busy}
+                className={primaryActionClass}
+              >
+                Modifier
+              </button>
+              <button
+                type="button"
+                onClick={resetPassword}
+                disabled={busy}
+                className={primaryActionClass}
+              >
+                Mot de passe
+              </button>
+            </div>
+            {!isSelf && (
+              <div className="flex flex-wrap justify-end gap-1.5">
+                <button
+                  type="button"
+                  onClick={toggleApproved}
+                  disabled={busy}
+                  className={
+                    user.approved
+                      ? neutralActionClass
+                      : `${actionButtonClass} bg-green-600 text-white hover:bg-green-700`
+                  }
+                >
+                  {user.approved ? "Retirer validation" : "Valider"}
+                </button>
+                <button
+                  type="button"
+                  onClick={actAsUser}
+                  disabled={busy}
+                  className={`${actionButtonClass} text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-900/20`}
+                >
+                  Données
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleActive}
+                  disabled={busy}
+                  className={
+                    user.actif
+                      ? dangerActionClass
+                      : `${actionButtonClass} text-green-700 hover:bg-green-50 dark:text-green-300 dark:hover:bg-green-900/20`
+                  }
+                >
+                  {user.actif ? "Suspendre" : "Réactiver"}
+                </button>
+                <button
+                  type="button"
+                  onClick={deleteAccount}
+                  disabled={busy}
+                  className={dangerActionClass}
+                >
+                  Supprimer
+                </button>
+              </div>
+            )}
+          </div>
+        </td>
+      </tr>
+      {editing && (
+        <tr className="border-b border-gray-100 bg-gray-50 dark:border-slate-700/60 dark:bg-slate-900/40">
+          <td colSpan={5} className="px-4 py-3">
+            <form onSubmit={saveProfile} className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <label
+                    htmlFor={`edit-prenom-${user.id}`}
+                    className="block text-xs font-medium text-gray-600 dark:text-slate-400"
+                  >
+                    Prénom
+                  </label>
+                  <input
+                    id={`edit-prenom-${user.id}`}
+                    type="text"
+                    value={editForm.prenom}
+                    onChange={updateEditField("prenom")}
+                    maxLength={200}
+                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor={`edit-nom-${user.id}`}
+                    className="block text-xs font-medium text-gray-600 dark:text-slate-400"
+                  >
+                    Nom
+                  </label>
+                  <input
+                    id={`edit-nom-${user.id}`}
+                    type="text"
+                    value={editForm.nom}
+                    onChange={updateEditField("nom")}
+                    required
+                    minLength={2}
+                    maxLength={200}
+                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor={`edit-email-${user.id}`}
+                    className="block text-xs font-medium text-gray-600 dark:text-slate-400"
+                  >
+                    Email de connexion
+                  </label>
+                  <input
+                    id={`edit-email-${user.id}`}
+                    type="email"
+                    data-no-upper
+                    value={editForm.email}
+                    onChange={updateEditField("email")}
+                    required
+                    maxLength={200}
+                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <label
+                    htmlFor={`edit-telephone1-${user.id}`}
+                    className="block text-xs font-medium text-gray-600 dark:text-slate-400"
+                  >
+                    Téléphone 1
+                  </label>
+                  <input
+                    id={`edit-telephone1-${user.id}`}
+                    type="tel"
+                    value={editForm.telephone1}
+                    onChange={updateEditField("telephone1")}
+                    maxLength={50}
+                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor={`edit-telephone2-${user.id}`}
+                    className="block text-xs font-medium text-gray-600 dark:text-slate-400"
+                  >
+                    Téléphone 2
+                  </label>
+                  <input
+                    id={`edit-telephone2-${user.id}`}
+                    type="tel"
+                    value={editForm.telephone2}
+                    onChange={updateEditField("telephone2")}
+                    maxLength={50}
+                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label
+                    htmlFor={`edit-adresse-${user.id}`}
+                    className="block text-xs font-medium text-gray-600 dark:text-slate-400"
+                  >
+                    Adresse
+                  </label>
+                  <textarea
+                    id={`edit-adresse-${user.id}`}
+                    value={editForm.adresse}
+                    onChange={updateEditField("adresse")}
+                    rows={2}
+                    maxLength={500}
+                    className="mt-1 block w-full resize-y rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                </div>
+              </div>
+              {editError && <p className="text-sm text-red-600">{editError}</p>}
+              {editMessage && <p className="text-sm text-green-700">{editMessage}</p>}
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(false);
+                    setEditForm(editUserFormFromUser(user));
+                    setEditError(null);
+                    setEditMessage(null);
+                  }}
+                  disabled={busy}
+                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className="rounded-lg bg-[#614e1a] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#8b7335] disabled:opacity-50"
+                >
+                  {busy ? "Enregistrement..." : "Enregistrer"}
+                </button>
+              </div>
+            </form>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }

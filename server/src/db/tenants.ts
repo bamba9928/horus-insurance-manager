@@ -417,3 +417,12 @@ export function closeTenantDb(dataDir: string, userId: number): void {
   if (db?.open) db.close();
   openDbs.delete(dbPath);
 }
+
+/** Ferme puis supprime le fichier SQLite métier d'un utilisateur et ses journaux WAL/SHM. */
+export function deleteTenantDb(dataDir: string, userId: number): void {
+  const dbPath = tenantDbPath(dataDir, userId);
+  closeTenantDb(dataDir, userId);
+  fs.rmSync(dbPath, { force: true });
+  fs.rmSync(`${dbPath}-wal`, { force: true });
+  fs.rmSync(`${dbPath}-shm`, { force: true });
+}

@@ -52,10 +52,12 @@ export type SecurityAction =
   | "LOGIN_BLOCKED"
   | "LOGOUT"
   | "PROFILE_UPDATE"
+  | "USER_PROFILE_UPDATE"
   | "PROFILE_PASSWORD_CHANGE"
   | "USER_CREATE"
   | "USER_PASSWORD_RESET"
   | "USER_ACTIVE_CHANGE"
+  | "USER_DELETE"
   | "BACKUP_DATABASE"
   | "RESTORE_DATABASE"
   | "ADMIN_TENANT_WRITE"
@@ -265,6 +267,35 @@ export function updateUserProfile(
   );
 }
 
+export function updateUserAccountProfile(
+  db: Database.Database,
+  userId: number,
+  data: {
+    login: string;
+    nom: string;
+    prenom?: string | null;
+    adresse?: string | null;
+    telephone1?: string | null;
+    telephone2?: string | null;
+    email: string;
+  },
+): void {
+  db.prepare(
+    `UPDATE users
+     SET login = ?, nom = ?, prenom = ?, adresse = ?, telephone1 = ?, telephone2 = ?, email = ?
+     WHERE id = ?`,
+  ).run(
+    data.login,
+    data.nom,
+    data.prenom ?? null,
+    data.adresse ?? null,
+    data.telephone1 ?? null,
+    data.telephone2 ?? null,
+    data.email,
+    userId,
+  );
+}
+
 export function setUserActive(db: Database.Database, userId: number, actif: boolean): void {
   db.prepare("UPDATE users SET actif = ? WHERE id = ?").run(actif ? 1 : 0, userId);
 }
@@ -272,6 +303,11 @@ export function setUserActive(db: Database.Database, userId: number, actif: bool
 /** Valide (ou dévalide) un compte : accès complet aux fonctions restreintes. */
 export function setUserApproved(db: Database.Database, userId: number, approved: boolean): void {
   db.prepare("UPDATE users SET approved = ? WHERE id = ?").run(approved ? 1 : 0, userId);
+}
+
+/** Supprime définitivement un compte utilisateur de la base d'administration. */
+export function deleteUser(db: Database.Database, userId: number): void {
+  db.prepare("DELETE FROM users WHERE id = ?").run(userId);
 }
 
 /** Nombre d'administrateurs actifs (garde-fou : ne jamais tomber à zéro). */

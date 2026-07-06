@@ -182,7 +182,7 @@ describe("authentification", () => {
     expect(body.user.login).toBe("admin");
   });
 
-  it("met à jour le profil de l'utilisateur connecté", async () => {
+  it("interdit à l'utilisateur connecté de modifier ses informations personnelles", async () => {
     const res = await api("/api/profile", {
       method: "PATCH",
       cookie: adminCookie,
@@ -195,30 +195,7 @@ describe("authentification", () => {
         email: "admin.principal@example.com",
       },
     });
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as {
-      user: {
-        nom: string;
-        prenom: string | null;
-        adresse: string | null;
-        telephone1: string | null;
-        telephone2: string | null;
-        email: string | null;
-      };
-    };
-    expect(body.user).toMatchObject({
-      nom: "Principal",
-      prenom: "Admin",
-      adresse: "Plateau, Dakar",
-      telephone1: "771112233",
-      telephone2: "781112233",
-      email: "admin.principal@example.com",
-    });
-
-    const meRes = await api("/api/me", { cookie: adminCookie });
-    const me = (await meRes.json()) as { user: { nom: string; email: string | null } };
-    expect(me.user.nom).toBe("Principal");
-    expect(me.user.email).toBe("admin.principal@example.com");
+    expect(res.status).toBe(403);
   });
 });
 
@@ -294,6 +271,54 @@ describe("administration des comptes", () => {
     expect(res.status).toBe(409);
   });
 
+  it("permet à l'admin de modifier les informations personnelles d'un compte", async () => {
+    const res = await api(`/api/admin/users/${agentId}`, {
+      method: "PATCH",
+      cookie: adminCookie,
+      body: {
+        nom: "Un Modifié",
+        prenom: "Agent",
+        adresse: "Mermoz, Dakar",
+        telephone1: "771234000",
+        telephone2: "781234000",
+        email: AGENT_EMAIL,
+      },
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      user: {
+        login: string;
+        nom: string;
+        prenom: string | null;
+        adresse: string | null;
+        telephone1: string | null;
+        telephone2: string | null;
+        email: string | null;
+      };
+    };
+    expect(body.user).toMatchObject({
+      login: AGENT_EMAIL,
+      nom: "Un Modifié",
+      prenom: "Agent",
+      adresse: "Mermoz, Dakar",
+      telephone1: "771234000",
+      telephone2: "781234000",
+      email: AGENT_EMAIL,
+    });
+  });
+
+  it("refuse de modifier un compte avec un email déjà utilisé", async () => {
+    const res = await api(`/api/admin/users/${agentId}`, {
+      method: "PATCH",
+      cookie: adminCookie,
+      body: {
+        nom: "Doublon",
+        email: ADMIN_EMAIL,
+      },
+    });
+    expect(res.status).toBe(409);
+  });
+
   it("refuse une confirmation de mot de passe différente", async () => {
     const res = await api("/api/admin/users", {
       method: "POST",
@@ -360,7 +385,7 @@ describe("administration des comptes", () => {
     const agent = body.users.find((u) => u.login === AGENT_EMAIL);
     expect(agent?.prenom).toBe("Agent");
     expect(agent?.email).toBe(AGENT_EMAIL);
-    expect(agent?.telephone1).toBe("770000001");
+    expect(agent?.telephone1).toBe("771234000");
     expect(Number(agent?.clients_count ?? 0)).toBeGreaterThanOrEqual(1);
     expect(Number(agent?.vehicules_count ?? 0)).toBeGreaterThanOrEqual(1);
     expect(agent).toHaveProperty("polices_count");
@@ -484,6 +509,65 @@ describe("administration des comptes", () => {
       body: { actif: false },
     });
     expect(res.status).toBe(400);
+  });
+
+  it("empêche l'admin de supprimer son propre compte", async () => {
+    const meRes = await api("/api/me", { cookie: adminCookie });
+    const me = (await meRes.json()) as { user: { id: number } };
+    const res = await api(`/api/admin/users/${me.user.id}`, {
+      method: "DELETE",
+      cookie: adminCookie,
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("supprime un utilisateur, ses sessions et sa base métier", async () => {
+    const email = "suppression@example.com";
+    const password = "delete-password-123";
+    const created = await api("/api/admin/users", {
+      method: "POST",
+      cookie: adminCookie,
+      body: {
+        nom: "Suppression",
+        email,
+        password,
+        passwordConfirm: password,
+      },
+    });
+    expect(created.status).toBe(201);
+    const createdBody = (await created.json()) as { user: { id: number; login: string } };
+    const deletedUserId = createdBody.user.id;
+    const dbPath = tenantDbPath(dataDir, deletedUserId);
+    expect(fs.existsSync(dbPath)).toBe(true);
+
+    const loginRes = await login(email, password);
+    expect(loginRes.status).toBe(200);
+    const deletedUserCookie = extractCookie(loginRes);
+
+    const forbidden = await api(`/api/admin/users/${deletedUserId}`, {
+      method: "DELETE",
+      cookie: agentCookie,
+    });
+    expect(forbidden.status).toBe(403);
+
+    const deleted = await api(`/api/admin/users/${deletedUserId}`, {
+      method: "DELETE",
+      cookie: adminCookie,
+    });
+    expect(deleted.status).toBe(200);
+    expect(fs.existsSync(dbPath)).toBe(false);
+    expect((await api("/api/me", { cookie: deletedUserCookie })).status).toBe(401);
+    expect((await login(email, password)).status).toBe(401);
+
+    const list = await api("/api/admin/users", { cookie: adminCookie });
+    const listBody = (await list.json()) as { users: Array<{ login: string }> };
+    expect(listBody.users.some((u) => u.login === email)).toBe(false);
+
+    const audit = adminDb
+      .prepare("SELECT action, detail FROM security_events WHERE action = 'USER_DELETE'")
+      .get() as { action: string; detail: string } | undefined;
+    expect(audit?.action).toBe("USER_DELETE");
+    expect(audit?.detail).toContain(`"targetUserId":${deletedUserId}`);
   });
 });
 
