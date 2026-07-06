@@ -13,8 +13,8 @@ interface AccountPendingNoticeProps {
 export function AccountPendingNotice({ feature }: AccountPendingNoticeProps) {
   const { config } = useAuth();
   const email = config.adminEmail;
-  const whatsappLabel = "+221 77 249 05 30";
-  const whatsappHref = `https://wa.me/221772490530?text=${encodeURIComponent(
+  const whatsappLabel = "+221 77 340 96 58";
+  const whatsappHref = `https://wa.me/221773409658?text=${encodeURIComponent(
     "Bonjour, je souhaite activer mon compte Horus.",
   )}`;
 

@@ -164,17 +164,18 @@ function LoginForm({
         Connectez-vous
       </h2>
 
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-4" autoComplete="on">
         <div>
-          <label htmlFor="login" className={loginLabelClass}>
+          <label htmlFor="login-email" className={loginLabelClass}>
             Email
           </label>
           <input
             ref={loginInputRef}
-            id="login"
+            id="login-email"
+            name="email"
             type="email"
             data-no-upper
-            autoComplete="email"
+            autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -199,6 +200,7 @@ function LoginForm({
           <div className="relative mt-1">
             <input
               id="password"
+              name="current-password"
               type={showPassword ? "text" : "password"}
               data-no-upper
               autoComplete="current-password"
@@ -330,7 +332,7 @@ function RegisterForm({
         Créer un compte
       </h2>
 
-      <form onSubmit={onSubmit} className="space-y-3">
+      <form onSubmit={onSubmit} className="space-y-3" autoComplete="on">
         <div
           className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden"
           aria-hidden="true"
@@ -338,6 +340,7 @@ function RegisterForm({
           <label htmlFor="reg-website">Site web</label>
           <input
             id="reg-website"
+            name="website"
             type="text"
             value={form.website ?? ""}
             onChange={update("website")}
@@ -354,7 +357,9 @@ function RegisterForm({
             </label>
             <input
               id="reg-nom"
+              name="name"
               type="text"
+              autoComplete="name"
               value={form.nom}
               onChange={update("nom")}
               required
@@ -371,7 +376,9 @@ function RegisterForm({
             </label>
             <input
               id="reg-tel"
+              name="tel"
               type="tel"
+              autoComplete="tel"
               value={form.telephone1}
               onChange={update("telephone1")}
               maxLength={50}
@@ -388,9 +395,10 @@ function RegisterForm({
           </label>
           <input
             id="reg-email"
+            name="email"
             type="email"
             data-no-upper
-            autoComplete="email"
+            autoComplete="username"
             value={form.email}
             onChange={update("email")}
             required
@@ -408,6 +416,7 @@ function RegisterForm({
             </label>
             <input
               id="reg-password"
+              name="new-password"
               type="password"
               data-no-upper
               autoComplete="new-password"
@@ -427,6 +436,7 @@ function RegisterForm({
             </label>
             <input
               id="reg-password-confirm"
+              name="new-password-confirm"
               type="password"
               data-no-upper
               autoComplete="new-password"
