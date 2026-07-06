@@ -3,10 +3,11 @@
  * créer un compte, réinitialiser un mot de passe, suspendre / réactiver.
  */
 
-import { Navigate } from "@tanstack/react-router";
+import { Navigate, useNavigate } from "@tanstack/react-router";
 import { type ChangeEvent, type FormEvent, useCallback, useEffect, useState } from "react";
 import { Header } from "../components/layout";
 import { Spinner } from "../components/ui/Spinner";
+import { useImpersonation } from "../lib/admin-impersonation";
 import { useAuth } from "../lib/auth";
 import { csrfHeaders } from "../lib/csrf";
 
@@ -23,6 +24,7 @@ interface AdminUser {
   email: string | null;
   role: "ADMIN" | "USER";
   actif: 0 | 1;
+  approved: 0 | 1;
   created_at: string;
   last_login_at: string | null;
   db_size_bytes: number | null;
@@ -139,7 +141,6 @@ export function AdminPage() {
 }
 
 type CreateUserFormState = {
-  login: string;
   nom: string;
   prenom: string;
   adresse: string;
@@ -152,7 +153,6 @@ type CreateUserFormState = {
 };
 
 const initialCreateUserForm: CreateUserFormState = {
-  login: "",
   nom: "",
   prenom: "",
   adresse: "",
@@ -188,7 +188,6 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
     setSubmitting(true);
     try {
       await adminFetch("/users", "POST", {
-        login: form.login.trim(),
         nom: form.nom.trim(),
         prenom: form.prenom.trim(),
         adresse: form.adresse.trim(),
@@ -199,7 +198,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
         passwordConfirm: form.passwordConfirm,
         role: form.role,
       });
-      setMessage(`Compte « ${form.login.trim()} » créé.`);
+      setMessage(`Compte « ${form.email.trim()} » créé.`);
       setForm(initialCreateUserForm);
       onCreated();
     } catch (err) {
@@ -338,24 +337,6 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
           </h4>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <label htmlFor="new-login" className={labelClass}>
-                Identifiant
-              </label>
-              <input
-                id="new-login"
-                type="text"
-                data-no-upper
-                autoComplete="username"
-                value={form.login}
-                onChange={updateField("login")}
-                required
-                minLength={3}
-                maxLength={50}
-                className={inputClass}
-                placeholder="agence.dakar"
-              />
-            </div>
-            <div>
               <label htmlFor="new-role" className={labelClass}>
                 Rôle
               </label>
@@ -432,6 +413,8 @@ function UserRow({
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const navigate = useNavigate();
+  const { startActing } = useImpersonation();
 
   const resetPassword = async () => {
     const pwd = window.prompt(`Nouveau mot de passe pour « ${user.login} » (8 caractères min.) :`);
@@ -461,6 +444,23 @@ function UserRow({
     } finally {
       setBusy(false);
     }
+  };
+
+  const toggleApproved = async () => {
+    setBusy(true);
+    try {
+      await adminFetch(`/users/${user.id}/approve`, "POST", { approved: user.approved === 0 });
+      onChanged();
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const actAsUser = () => {
+    startActing({ id: user.id, label: fullName || user.login });
+    navigate({ to: "/" });
   };
 
   const isSelf = user.id === currentUserId;
@@ -499,13 +499,24 @@ function UserRow({
         </span>
       </td>
       <td className="px-4 py-1.5">
-        <span
-          className={`rounded px-2 py-0.5 text-xs font-medium ${
-            user.actif ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-          }`}
-        >
-          {user.actif ? "Actif" : "Suspendu"}
-        </span>
+        <div className="flex flex-col items-start gap-1">
+          <span
+            className={`rounded px-2 py-0.5 text-xs font-medium ${
+              user.actif ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+            }`}
+          >
+            {user.actif ? "Actif" : "Suspendu"}
+          </span>
+          <span
+            className={`rounded px-2 py-0.5 text-xs font-medium ${
+              user.approved
+                ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+            }`}
+          >
+            {user.approved ? "Validé" : "En attente"}
+          </span>
+        </div>
       </td>
       <td className="px-4 py-1.5 text-gray-500 dark:text-slate-400">
         <div>{formatSize(user.db_size_bytes)}</div>
@@ -522,7 +533,31 @@ function UserRow({
         {user.last_login_at ? new Date(user.last_login_at).toLocaleString("fr-FR") : "jamais"}
       </td>
       <td className="px-4 py-1.5">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {!isSelf && (
+            <button
+              type="button"
+              onClick={toggleApproved}
+              disabled={busy}
+              className={`rounded px-2 py-1 text-xs font-medium disabled:opacity-50 ${
+                user.approved
+                  ? "text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
+                  : "bg-green-600 text-white hover:bg-green-700"
+              }`}
+            >
+              {user.approved ? "Retirer la validation" : "Valider le compte"}
+            </button>
+          )}
+          {!isSelf && (
+            <button
+              type="button"
+              onClick={actAsUser}
+              disabled={busy}
+              className="rounded px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-50 dark:text-blue-300 dark:hover:bg-blue-900/20"
+            >
+              Voir / modifier les données
+            </button>
+          )}
           <button
             type="button"
             onClick={resetPassword}

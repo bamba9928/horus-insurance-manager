@@ -67,7 +67,7 @@ export const assureurUpdateSchema = assureurCreateSchema.partial().extend({
 // ============ POLICES ============
 
 const TYPES_CARTE = ["VERTE", "JAUNE"] as const;
-const DUREES_MOIS = [1, 3, 6, 9, 12, 24] as const;
+const DUREES_MOIS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 const STATUTS_POLICE = ["ACTIVE", "EXPIRÉE", "ANNULÉE", "RENOUVELÉE"] as const;
 const STATUTS_INTEGRATION = ["LOCAL", "PENDING", "SYNCED", "ERROR"] as const;
 

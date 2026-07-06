@@ -131,7 +131,7 @@ export function AssureurQuickCreatePanel({
         <button
           type="button"
           onClick={handleCancel}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
+          className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50"
         >
           Annuler
         </button>

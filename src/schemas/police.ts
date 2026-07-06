@@ -9,8 +9,9 @@ import { z } from "zod/v4";
 /** Types de carte autorisés */
 export const TYPES_CARTE = ["VERTE", "JAUNE"] as const;
 
-/** Durées en mois autorisées */
-export const DUREES_MOIS = [1, 3, 6, 9, 12, 24] as const;
+/** Durées en mois proposées pour les nouvelles polices */
+export const DUREES_MOIS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+type DureeMois = (typeof DUREES_MOIS)[number];
 
 /** Statuts de police */
 export const STATUTS_POLICE = ["ACTIVE", "EXPIRÉE", "ANNULÉE", "RENOUVELÉE"] as const;
@@ -27,8 +28,8 @@ export const policeCreateSchema = z.object({
     .number("Durée requise")
     .int()
     .refine(
-      (v): v is 1 | 3 | 6 | 9 | 12 | 24 => ([1, 3, 6, 9, 12, 24] as number[]).includes(v),
-      "Durée invalide. Valeurs acceptées : 1, 3, 6, 9, 12, 24 mois",
+      (v): v is DureeMois => (DUREES_MOIS as readonly number[]).includes(v),
+      "Durée invalide. Valeurs acceptées : 1 à 12 mois",
     ),
   appreciation: z.string().max(2000).optional(),
   externalReference: z.string().max(200).optional(),

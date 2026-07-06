@@ -27,6 +27,28 @@ import type {
 /** Base de l'API : même origine par défaut (le backend sert le frontend). */
 const BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
+/**
+ * Mode « admin cross-tenant ». Quand un id est défini, les requêtes métier
+ * sont préfixées vers `/api/admin/tenants/:id` : un administrateur agit sur
+ * la base d'un utilisateur donné. Résolu côté client pour le confort, mais
+ * c'est le serveur qui revalide le rôle ADMIN et l'existence de la cible —
+ * un utilisateur non-admin reçoit 403, jamais les données d'autrui.
+ */
+let actingTenantId: number | null = null;
+
+export function setActingTenantId(id: number | null): void {
+  actingTenantId = id != null && Number.isInteger(id) && id > 0 ? id : null;
+}
+
+export function getActingTenantId(): number | null {
+  return actingTenantId;
+}
+
+/** Racine d'API à utiliser : tenant admin si actif, sinon la base propre. */
+function apiRoot(selfScope: boolean): string {
+  return actingTenantId != null && !selfScope ? `/api/admin/tenants/${actingTenantId}` : "/api";
+}
+
 /** Erreur HTTP portant le code de statut. */
 export class ApiError extends Error {
   constructor(
@@ -38,12 +60,17 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  opts?: { selfScope?: boolean },
+): Promise<T> {
   const headers = {
     ...(body !== undefined ? { "content-type": "application/json" } : {}),
     ...csrfHeaders(method),
   };
-  const res = await fetch(`${BASE}/api${path}`, {
+  const res = await fetch(`${BASE}${apiRoot(opts?.selfScope ?? false)}${path}`, {
     method,
     credentials: "include",
     ...(body !== undefined
@@ -102,7 +129,13 @@ export async function restoreDatabase(bytes: Uint8Array): Promise<string> {
 }
 
 export async function verifyContract(immatriculation: string): Promise<VerificationApiResponse> {
-  return request<VerificationApiResponse>("GET", `/verify/${encodeURIComponent(immatriculation)}`);
+  // Proxy externe, sans notion de tenant : toujours sur la base propre.
+  return request<VerificationApiResponse>(
+    "GET",
+    `/verify/${encodeURIComponent(immatriculation)}`,
+    undefined,
+    { selfScope: true },
+  );
 }
 
 export async function openExternalUrl(url: string): Promise<void> {

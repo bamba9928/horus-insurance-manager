@@ -343,7 +343,7 @@ export function VehiculeForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50"
+          className="rounded-lg border border-gray-300 bg-white px-4 py-1.5 text-sm text-black hover:bg-gray-50"
         >
           {t("common.cancel")}
         </button>

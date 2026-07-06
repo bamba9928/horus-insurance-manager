@@ -10,27 +10,29 @@ import { buildApp } from "./app.js";
 import { hashPassword } from "./auth/password.js";
 import { LoginRateLimiter } from "./auth/rateLimit.js";
 import { purgeExpiredSessions } from "./auth/sessions.js";
-import { createUser, openAdminDb } from "./db/adminDb.js";
+import { createUser, ensureUserEmailForLogin, openAdminDb } from "./db/adminDb.js";
 import { closeAllTenantDbs, provisionTenantDb } from "./db/tenants.js";
 import { loadEnv } from "./env.js";
 
 const env = loadEnv();
 const adminDb = openAdminDb(env.dataDir);
+ensureUserEmailForLogin(adminDb, env.adminLogin, env.adminEmail);
 
 // ── Bootstrap super admin au premier démarrage ──
 const hasAdmin = adminDb.prepare("SELECT id FROM users WHERE role = 'ADMIN' LIMIT 1").get();
 if (!hasAdmin) {
   const password = env.adminPassword ?? crypto.randomBytes(12).toString("base64url");
   const adminId = createUser(adminDb, {
-    login: env.adminLogin,
+    login: env.adminEmail,
     nom: "Super administrateur",
+    email: env.adminEmail,
     passwordHash: await hashPassword(password),
     role: "ADMIN",
   });
   provisionTenantDb(env.dataDir, adminId);
 
   console.log("═".repeat(60));
-  console.log(`Compte super admin créé : ${env.adminLogin}`);
+  console.log(`Compte super admin créé : ${env.adminEmail}`);
   if (!env.adminPassword) {
     console.log(`Mot de passe généré : ${password}`);
     console.log("⚠ Notez-le maintenant, il ne sera plus jamais affiché.");

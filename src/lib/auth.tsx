@@ -24,22 +24,52 @@ export interface AuthUser {
   telephone2: string | null;
   email: string | null;
   role: "ADMIN" | "USER";
+  /** Compte validé par un admin. Faux = en attente (accès restreint). */
+  approved: boolean;
 }
+
+/** Données d'auto-inscription. */
+export interface RegisterInput {
+  nom: string;
+  prenom?: string | undefined;
+  email: string;
+  telephone1?: string | undefined;
+  password: string;
+  passwordConfirm: string;
+  website?: string | undefined;
+}
+
+/** Config publique du serveur (inscription, contact admin). */
+export interface PublicConfig {
+  registrationEnabled: boolean;
+  adminEmail: string;
+}
+
+const DEFAULT_CONFIG: PublicConfig = {
+  registrationEnabled: false,
+  adminEmail: "contact@horus-assur.digital",
+};
 
 interface AuthState {
   user: AuthUser | null;
   loading: boolean;
+  config: PublicConfig;
   refresh: () => Promise<AuthUser | null>;
   login: (login: string, password: string) => Promise<void>;
+  register: (input: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
 }
 
 const defaultState: AuthState = {
   user: null,
   loading: false,
+  config: DEFAULT_CONFIG,
   refresh: async () => null,
   login: async () => {
     throw new Error("Authentification indisponible");
+  },
+  register: async () => {
+    throw new Error("Inscription indisponible");
   },
   logout: async () => {},
 };
@@ -54,6 +84,21 @@ export function useAuth(): AuthState {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [config, setConfig] = useState<PublicConfig>(DEFAULT_CONFIG);
+
+  // Charge la config publique (inscription activée, email de contact).
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${BASE}/api/config`, { credentials: "include" })
+      .then((res) => (res.ok ? (res.json() as Promise<PublicConfig>) : null))
+      .then((cfg) => {
+        if (!cancelled && cfg) setConfig(cfg);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const fetchCurrentUser = useCallback(async (): Promise<AuthUser | null> => {
     try {
@@ -101,6 +146,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
   }, []);
 
+  const register = useCallback(async (input: RegisterInput) => {
+    const res = await fetch(`${BASE}/api/auth/register`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(data.error ?? "Échec de l'inscription");
+    }
+    const data = (await res.json()) as { user: AuthUser };
+    setUser(data.user);
+  }, []);
+
   const logout = useCallback(async () => {
     await fetch(`${BASE}/api/auth/logout`, {
       method: "POST",
@@ -111,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, refresh, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, config, refresh, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

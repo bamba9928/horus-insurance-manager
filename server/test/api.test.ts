@@ -17,6 +17,7 @@ import { createUser, openAdminDb } from "../src/db/adminDb.js";
 import { closeAllTenantDbs, provisionTenantDb } from "../src/db/tenants.js";
 
 const PASSWORD = "password-123";
+const ADMIN_EMAIL = "bossadmin@example.com";
 
 let dataDir: string;
 let adminDb: ReturnType<typeof openAdminDb>;
@@ -29,12 +30,13 @@ function cookieValue(cookieHeader: string, name: string): string | undefined {
   return match ? decodeURIComponent(match[1] ?? "") : undefined;
 }
 
-async function seedUser(login: string): Promise<number> {
+async function seedUser(login: string, role: "USER" | "ADMIN" = "USER"): Promise<number> {
   const id = createUser(adminDb, {
     login,
     nom: login,
+    email: `${login}@example.com`,
     passwordHash: await hashPassword(PASSWORD),
-    role: "USER",
+    role,
   });
   provisionTenantDb(dataDir, id);
   return id;
@@ -84,26 +86,34 @@ async function createTestAssureur(cookie: string, nom: string): Promise<number> 
 
 let cookieA = "";
 let cookieB = "";
+let cookieAdmin = "";
+let userAId = 0;
+let adminId = 0;
 
 beforeAll(async () => {
   dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "horus-api-test-"));
   adminDb = openAdminDb(dataDir);
-  await seedUser("userA");
+  userAId = await seedUser("userA");
   await seedUser("userB");
+  adminId = await seedUser("bossadmin", "ADMIN");
   app = buildApp({
     env: {
       port: 0,
       dataDir,
       cookieSecure: false,
       adminLogin: "admin",
+      adminEmail: ADMIN_EMAIL,
       adminPassword: undefined,
       staticDir: undefined,
+      allowRegistration: true,
+      adminContactEmail: "contact@horus-assur.digital",
     },
     adminDb,
     rateLimiter: new LoginRateLimiter(),
   });
-  cookieA = await loginAs("userA");
-  cookieB = await loginAs("userB");
+  cookieA = await loginAs("userA@example.com");
+  cookieB = await loginAs("userB@example.com");
+  cookieAdmin = await loginAs("bossadmin@example.com");
 });
 
 afterAll(() => {
@@ -513,5 +523,286 @@ describe("contraintes", () => {
       },
     });
     expect(dup.status).toBe(409);
+  });
+});
+
+describe("permissions admin cross-tenant", () => {
+  it("interdit à un utilisateur non-admin d'accéder aux données d'un autre", async () => {
+    const res = await call(`/api/admin/tenants/${userAId}/clients`, { cookie: cookieB });
+    expect(res.status).toBe(403);
+  });
+
+  it("interdit la mutation cross-tenant à un non-admin", async () => {
+    const res = await call(`/api/admin/tenants/${userAId}/clients`, {
+      method: "POST",
+      cookie: cookieB,
+      body: { nomPrenom: "Injection interdite" },
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it("refuse l'accès sans session", async () => {
+    const res = await app.request(`/api/admin/tenants/${userAId}/clients`);
+    expect(res.status).toBe(401);
+  });
+
+  it("renvoie 404 pour un utilisateur cible inexistant", async () => {
+    const res = await call("/api/admin/tenants/999999/clients", { cookie: cookieAdmin });
+    expect(res.status).toBe(404);
+  });
+
+  it("renvoie 400 pour un identifiant de tenant invalide", async () => {
+    const res = await call("/api/admin/tenants/0/clients", { cookie: cookieAdmin });
+    expect(res.status).toBe(400);
+  });
+
+  it("laisse l'admin lire ET modifier les données d'un utilisateur", async () => {
+    // L'admin crée un client DANS la base de userA
+    const create = await call(`/api/admin/tenants/${userAId}/clients`, {
+      method: "POST",
+      cookie: cookieAdmin,
+      body: { nomPrenom: "Créé par admin pour A", telephone: "770000000" },
+    });
+    expect(create.status).toBe(201);
+    const { id } = (await create.json()) as { id: number };
+
+    // userA le voit dans SA propre base (isolation respectée, admin a écrit au bon endroit)
+    const listA = (await (await call("/api/clients", { cookie: cookieA })).json()) as Array<{
+      id: number;
+      nom_prenom: string;
+    }>;
+    expect(listA.map((c) => c.nom_prenom)).toContain("Créé par admin pour A");
+
+    // userB ne le voit PAS
+    const listB = (await (await call("/api/clients", { cookie: cookieB })).json()) as Array<{
+      nom_prenom: string;
+    }>;
+    expect(listB.map((c) => c.nom_prenom)).not.toContain("Créé par admin pour A");
+
+    // L'admin lit ce même client via la base de A
+    const readByAdmin = await call(`/api/admin/tenants/${userAId}/clients/${id}`, {
+      cookie: cookieAdmin,
+    });
+    expect(readByAdmin.status).toBe(200);
+
+    // L'admin modifie puis supprime dans la base de A
+    const patch = await call(`/api/admin/tenants/${userAId}/clients/${id}`, {
+      method: "PATCH",
+      cookie: cookieAdmin,
+      body: { id, nomPrenom: "Modifié par admin" },
+    });
+    expect(patch.status).toBe(200);
+    const del = await call(`/api/admin/tenants/${userAId}/clients/${id}`, {
+      method: "DELETE",
+      cookie: cookieAdmin,
+    });
+    expect(del.status).toBe(200);
+  });
+
+  it("journalise les mutations cross-tenant de l'admin", async () => {
+    await call(`/api/admin/tenants/${userAId}/clients`, {
+      method: "POST",
+      cookie: cookieAdmin,
+      body: { nomPrenom: "Trace audit" },
+    });
+    const row = adminDb
+      .prepare(
+        "SELECT COUNT(*) AS count FROM security_events WHERE action = 'ADMIN_TENANT_WRITE' AND user_id = ?",
+      )
+      .get(adminId) as { count: number };
+    expect(row.count).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("garde-fou dernier administrateur", () => {
+  it("refuse de suspendre le dernier administrateur actif", async () => {
+    const res = await call(`/api/admin/users/${adminId}/active`, {
+      method: "POST",
+      cookie: cookieAdmin,
+      body: { actif: false },
+    });
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("en-têtes de sécurité", () => {
+  it("émet les en-têtes de durcissement et anti-cache sur /api", async () => {
+    const res = await call("/api/clients", { cookie: cookieA });
+    expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(res.headers.get("x-frame-options")).toBe("DENY");
+    expect(res.headers.get("cache-control")).toBe("no-store");
+  });
+});
+
+describe("auto-inscription + validation admin", () => {
+  let registerIpCounter = 0;
+  function testEmail(localPart: string): string {
+    return `${localPart}@example.com`;
+  }
+
+  async function registerAndCookie(localPart: string): Promise<string> {
+    // IP distincte par inscription : le rate-limit est par IP, or les tests
+    // partagent la même origine.
+    registerIpCounter += 1;
+    const res = await app.request("/api/auth/register", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-forwarded-for": `10.0.0.${registerIpCounter}`,
+      },
+      body: JSON.stringify({
+        nom: "Nouveau Venu",
+        email: testEmail(localPart),
+        password: "Passw0rd!",
+        passwordConfirm: "Passw0rd!",
+      }),
+    });
+    expect(res.status).toBe(201);
+    const raw = res.headers.get("set-cookie") ?? "";
+    const session = raw.match(/horus_session=([^;,]+)/);
+    const csrf = raw.match(/horus_csrf=([^;,]+)/);
+    if (!session || !csrf) throw new Error(`Cookies incomplets : ${raw}`);
+    return `horus_session=${session[1]}; horus_csrf=${csrf[1]}`;
+  }
+
+  it("crée un compte en attente (approved=0) et ouvre une session", async () => {
+    const cookie = await registerAndCookie("nouveau1");
+    const me = (await (await call("/api/me", { cookie })).json()) as {
+      user: { role: string; approved: boolean };
+    };
+    expect(me.user.role).toBe("USER");
+    expect(me.user.approved).toBe(false);
+  });
+
+  it("crée un compte sans identifiant et permet la connexion par email", async () => {
+    registerIpCounter += 1;
+    const email = "email-login@example.com";
+    const register = await app.request("/api/auth/register", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-forwarded-for": `10.0.0.${registerIpCounter}`,
+      },
+      body: JSON.stringify({
+        nom: "Compte Email",
+        email,
+        password: "Passw0rd!",
+        passwordConfirm: "Passw0rd!",
+      }),
+    });
+    expect(register.status).toBe(201);
+
+    const login = await app.request("/api/auth/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ login: email, password: "Passw0rd!" }),
+    });
+    expect(login.status).toBe(200);
+  });
+
+  it("refuse une auto-inscription qui remplit le honeypot anti-bot", async () => {
+    registerIpCounter += 1;
+    const res = await app.request("/api/auth/register", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-forwarded-for": `10.0.0.${registerIpCounter}`,
+      },
+      body: JSON.stringify({
+        nom: "Bot Test",
+        email: "bot-test@example.com",
+        password: "Passw0rd!",
+        passwordConfirm: "Passw0rd!",
+        website: "https://spam.example",
+      }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("bloque « nouveau dossier » tant que non validé (403 ACCOUNT_PENDING)", async () => {
+    const cookie = await registerAndCookie("nouveau2");
+    const res = await call("/api/dossiers", {
+      method: "POST",
+      cookie,
+      body: {
+        client: { mode: "nouveau", data: { nomPrenom: "Interdit" } },
+        vehicule: {
+          mode: "nouveau",
+          data: {
+            immatriculation: "DK 7777 AA",
+            genre: "CAT_01",
+            typeVehicule: "Véhicule particulier",
+          },
+        },
+        police: { assureurId: 1, typeCarte: "VERTE", dateEffet: "2026-01-15", dureeMois: 12 },
+      },
+    });
+    expect(res.status).toBe(403);
+    const body = (await res.json()) as { code?: string; adminEmail?: string };
+    expect(body.code).toBe("ACCOUNT_PENDING");
+    expect(body.adminEmail).toBe("contact@horus-assur.digital");
+  });
+
+  it("bloque la vérification tant que non validé", async () => {
+    const cookie = await registerAndCookie("nouveau3");
+    const res = await call("/api/verify/DK1234AB", { cookie });
+    expect(res.status).toBe(403);
+  });
+
+  it("l'admin valide le compte, débloquant les fonctions sensibles", async () => {
+    const cookie = await registerAndCookie("nouveau4");
+    // Retrouver l'id du compte via la liste admin
+    const list = (await (await call("/api/admin/users", { cookie: cookieAdmin })).json()) as {
+      users: Array<{ id: number; login: string; approved: 0 | 1 }>;
+    };
+    const target = list.users.find((u) => u.login === testEmail("nouveau4"));
+    expect(target?.approved).toBe(0);
+
+    const approve = await call(`/api/admin/users/${target?.id}/approve`, {
+      method: "POST",
+      cookie: cookieAdmin,
+      body: { approved: true },
+    });
+    expect(approve.status).toBe(200);
+
+    // La session existante voit désormais approved=true et peut vérifier
+    const me = (await (await call("/api/me", { cookie })).json()) as {
+      user: { approved: boolean };
+    };
+    expect(me.user.approved).toBe(true);
+
+    const assureurId = await createTestAssureur(cookie, "Assureur Validé");
+    const dossier = await call("/api/dossiers", {
+      method: "POST",
+      cookie,
+      body: {
+        client: { mode: "nouveau", data: { nomPrenom: "Enfin autorisé" } },
+        vehicule: {
+          mode: "nouveau",
+          data: {
+            immatriculation: "DK 8888 BB",
+            genre: "CAT_01",
+            typeVehicule: "Véhicule particulier",
+          },
+        },
+        police: { assureurId, typeCarte: "VERTE", dateEffet: "2026-01-15", dureeMois: 12 },
+      },
+    });
+    expect(dossier.status).toBe(201);
+  });
+
+  it("refuse un email déjà utilisé", async () => {
+    await registerAndCookie("doublon-login");
+    const res = await app.request("/api/auth/register", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        nom: "Autre",
+        email: testEmail("doublon-login"),
+        password: "Passw0rd!",
+        passwordConfirm: "Passw0rd!",
+      }),
+    });
+    expect(res.status).toBe(409);
   });
 });

@@ -227,7 +227,7 @@ export function PoliceForm({
           <button
             type="button"
             onClick={() => setShowAssureurCreate((value) => !value)}
-            className="text-xs font-medium text-[#614e1a] hover:underline"
+            className="text-xs font-medium text-green-700 hover:underline dark:text-green-400"
           >
             Ajouter une compagnie
           </button>

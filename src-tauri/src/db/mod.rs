@@ -16,5 +16,11 @@ pub fn get_migrations() -> Vec<Migration> {
             sql: include_str!("migrations/002_integrations.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "Durées de police mensuelles de 1 à 12 mois",
+            sql: include_str!("migrations/003_durees_police_1_12.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }

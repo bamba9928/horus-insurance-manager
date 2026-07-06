@@ -13,11 +13,19 @@ import { buildApp } from "../src/app.js";
 import type { AuthEnv } from "../src/auth/middleware.js";
 import { hashPassword } from "../src/auth/password.js";
 import { LoginRateLimiter } from "../src/auth/rateLimit.js";
-import { createUser, openAdminDb } from "../src/db/adminDb.js";
+import {
+  createUser,
+  ensureUserEmailForLogin,
+  findUserByEmail,
+  openAdminDb,
+} from "../src/db/adminDb.js";
 import { provisionTenantDb, tenantDbPath } from "../src/db/tenants.js";
 
 const ADMIN_PASSWORD = "admin-password-123";
 const AGENT_PASSWORD = "agent-password-123";
+const ADMIN_EMAIL = "admin@example.com";
+const AGENT_EMAIL = "agent.un@example.com";
+const ADMIN2_EMAIL = "admin2@example.com";
 
 let dataDir: string;
 let adminDb: ReturnType<typeof openAdminDb>;
@@ -79,6 +87,7 @@ beforeAll(async () => {
   const adminId = createUser(adminDb, {
     login: "admin",
     nom: "Super administrateur",
+    email: ADMIN_EMAIL,
     passwordHash: await hashPassword(ADMIN_PASSWORD),
     role: "ADMIN",
   });
@@ -89,8 +98,11 @@ beforeAll(async () => {
       dataDir,
       cookieSecure: false,
       adminLogin: "admin",
+      adminEmail: ADMIN_EMAIL,
       adminPassword: undefined,
       staticDir: undefined,
+      allowRegistration: true,
+      adminContactEmail: "contact@horus-assur.digital",
     },
     adminDb,
     rateLimiter: new LoginRateLimiter(),
@@ -110,19 +122,46 @@ describe("santé", () => {
   });
 });
 
+describe("migration email admin", () => {
+  it("renseigne l'email d'un compte existant depuis son login historique", async () => {
+    const legacyDir = fs.mkdtempSync(path.join(os.tmpdir(), "horus-legacy-admin-"));
+    const legacyDb = openAdminDb(legacyDir);
+    try {
+      createUser(legacyDb, {
+        login: "admin",
+        nom: "Ancien admin",
+        passwordHash: await hashPassword("ancien-password"),
+        role: "ADMIN",
+      });
+
+      ensureUserEmailForLogin(legacyDb, "admin", "admin.legacy@example.com");
+
+      expect(findUserByEmail(legacyDb, "admin.legacy@example.com")?.login).toBe("admin");
+    } finally {
+      legacyDb.close();
+      fs.rmSync(legacyDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    }
+  });
+});
+
 describe("authentification", () => {
   it("refuse un login inconnu", async () => {
-    const res = await login("inconnu", "whatever-123", "10.0.0.1");
+    const res = await login("inconnu@example.com", "whatever-123", "10.0.0.1");
     expect(res.status).toBe(401);
   });
 
   it("refuse un mauvais mot de passe", async () => {
-    const res = await login("admin", "mauvais-mot-de-passe", "10.0.0.2");
+    const res = await login(ADMIN_EMAIL, "mauvais-mot-de-passe", "10.0.0.2");
     expect(res.status).toBe(401);
   });
 
+  it("refuse l'ancien identifiant texte : la connexion exige un email", async () => {
+    const res = await login("admin", ADMIN_PASSWORD, "10.0.0.3");
+    expect(res.status).toBe(400);
+  });
+
   it("accepte les bons identifiants et pose un cookie httpOnly", async () => {
-    const res = await login("admin", ADMIN_PASSWORD);
+    const res = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
     expect(res.status).toBe(200);
     const body = (await res.json()) as { user: { login: string; role: string } };
     expect(body.user.role).toBe("ADMIN");
@@ -189,13 +228,12 @@ describe("administration des comptes", () => {
       method: "POST",
       cookie: adminCookie,
       body: {
-        login: "agent1",
         nom: "Un",
         prenom: "Agent",
         adresse: "Parcelles Assainies, Dakar",
         telephone1: "770000001",
         telephone2: "780000001",
-        email: "agent.un@example.com",
+        email: AGENT_EMAIL,
         password: AGENT_PASSWORD,
         passwordConfirm: AGENT_PASSWORD,
       },
@@ -206,7 +244,7 @@ describe("administration des comptes", () => {
     };
     expect(body.user.role).toBe("USER");
     expect(body.user.prenom).toBe("Agent");
-    expect(body.user.email).toBe("agent.un@example.com");
+    expect(body.user.email).toBe(AGENT_EMAIL);
     agentId = body.user.id;
 
     // Le fichier SQLite du tenant existe avec le schéma métier complet
@@ -247,11 +285,11 @@ describe("administration des comptes", () => {
     }
   });
 
-  it("refuse un login en doublon", async () => {
+  it("refuse un email en doublon", async () => {
     const res = await api("/api/admin/users", {
       method: "POST",
       cookie: adminCookie,
-      body: { login: "agent1", nom: "Doublon", password: "unmotdepasse" },
+      body: { nom: "Doublon", email: AGENT_EMAIL, password: "unmotdepasse" },
     });
     expect(res.status).toBe(409);
   });
@@ -261,8 +299,8 @@ describe("administration des comptes", () => {
       method: "POST",
       cookie: adminCookie,
       body: {
-        login: "mismatch",
         nom: "Mismatch",
+        email: "mismatch@example.com",
         password: "password-123",
         passwordConfirm: "password-456",
       },
@@ -270,19 +308,19 @@ describe("administration des comptes", () => {
     expect(res.status).toBe(400);
   });
 
-  it("renvoie 409 (pas 500) sur une création concurrente du même login", async () => {
+  it("renvoie 409 (pas 500) sur une création concurrente du même email", async () => {
     // Deux créations simultanées : le contrôle d'existence préalable est
     // franchi par les deux, la contrainte UNIQUE tranche la seconde.
     const [a, b] = await Promise.all([
       api("/api/admin/users", {
         method: "POST",
         cookie: adminCookie,
-        body: { login: "concurrent", nom: "Course A", password: "motdepasse1" },
+        body: { nom: "Course A", email: "concurrent@example.com", password: "motdepasse1" },
       }),
       api("/api/admin/users", {
         method: "POST",
         cookie: adminCookie,
-        body: { login: "concurrent", nom: "Course B", password: "motdepasse2" },
+        body: { nom: "Course B", email: "concurrent@example.com", password: "motdepasse2" },
       }),
     ]);
     const statuses = [a.status, b.status].sort();
@@ -294,18 +332,18 @@ describe("administration des comptes", () => {
       method: "POST",
       cookie: adminCookie,
       body: {
-        login: "admin2",
         nom: "Administrateur Deux",
+        email: ADMIN2_EMAIL,
         password: "admin-two-password",
         role: "ADMIN",
       },
     });
     expect(res.status).toBe(201);
     const body = (await res.json()) as { user: { login: string; role: string } };
-    expect(body.user.login).toBe("admin2");
+    expect(body.user.login).toBe(ADMIN2_EMAIL);
     expect(body.user.role).toBe("ADMIN");
 
-    const loginRes = await login("admin2", "admin-two-password");
+    const loginRes = await login(ADMIN2_EMAIL, "admin-two-password");
     expect(loginRes.status).toBe(200);
     const cookie = extractCookie(loginRes);
     expect((await api("/api/admin/users", { cookie })).status).toBe(200);
@@ -315,13 +353,13 @@ describe("administration des comptes", () => {
     const res = await api("/api/admin/users", { cookie: adminCookie });
     expect(res.status).toBe(200);
     const body = (await res.json()) as { users: Array<Record<string, unknown>> };
-    expect(body.users.map((u) => u.login)).toEqual(expect.arrayContaining(["admin", "agent1"]));
+    expect(body.users.map((u) => u.login)).toEqual(expect.arrayContaining(["admin", AGENT_EMAIL]));
     for (const user of body.users) {
       expect(user).not.toHaveProperty("password_hash");
     }
-    const agent = body.users.find((u) => u.login === "agent1");
+    const agent = body.users.find((u) => u.login === AGENT_EMAIL);
     expect(agent?.prenom).toBe("Agent");
-    expect(agent?.email).toBe("agent.un@example.com");
+    expect(agent?.email).toBe(AGENT_EMAIL);
     expect(agent?.telephone1).toBe("770000001");
     expect(Number(agent?.clients_count ?? 0)).toBeGreaterThanOrEqual(1);
     expect(Number(agent?.vehicules_count ?? 0)).toBeGreaterThanOrEqual(1);
@@ -330,7 +368,7 @@ describe("administration des comptes", () => {
   });
 
   it("interdit les routes admin à un simple utilisateur", async () => {
-    const loginRes = await login("agent1", AGENT_PASSWORD);
+    const loginRes = await login(AGENT_EMAIL, AGENT_PASSWORD);
     expect(loginRes.status).toBe(200);
     agentCookie = extractCookie(loginRes);
 
@@ -343,7 +381,11 @@ describe("administration des comptes", () => {
     const res = await app.request("/api/admin/users", {
       method: "POST",
       headers: { cookie: sessionOnly, "content-type": "application/json" },
-      body: JSON.stringify({ login: "sanscsrf", nom: "Sans CSRF", password: "password-123" }),
+      body: JSON.stringify({
+        nom: "Sans CSRF",
+        email: "sanscsrf@example.com",
+        password: "password-123",
+      }),
     });
     expect(res.status).toBe(403);
   });
@@ -361,8 +403,8 @@ describe("administration des comptes", () => {
     expect(meRes.status).toBe(401);
 
     // Ancien mot de passe refusé, nouveau accepté
-    expect((await login("agent1", AGENT_PASSWORD, "10.0.0.3")).status).toBe(401);
-    const newLogin = await login("agent1", "nouveau-mdp-456");
+    expect((await login(AGENT_EMAIL, AGENT_PASSWORD, "10.0.0.3")).status).toBe(401);
+    const newLogin = await login(AGENT_EMAIL, "nouveau-mdp-456");
     expect(newLogin.status).toBe(200);
     agentCookie = extractCookie(newLogin);
     agentPassword = "nouveau-mdp-456";
@@ -378,7 +420,7 @@ describe("administration des comptes", () => {
 
     // Session coupée et connexion refusée
     expect((await api("/api/me", { cookie: agentCookie })).status).toBe(401);
-    expect((await login("agent1", agentPassword)).status).toBe(403);
+    expect((await login(AGENT_EMAIL, agentPassword)).status).toBe(403);
 
     const reactivate = await api(`/api/admin/users/${agentId}/active`, {
       method: "POST",
@@ -386,11 +428,11 @@ describe("administration des comptes", () => {
       body: { actif: true },
     });
     expect(reactivate.status).toBe(200);
-    expect((await login("agent1", agentPassword)).status).toBe(200);
+    expect((await login(AGENT_EMAIL, agentPassword)).status).toBe(200);
   });
 
   it("permet à l'utilisateur connecté de changer son mot de passe", async () => {
-    const loginRes = await login("agent1", agentPassword);
+    const loginRes = await login(AGENT_EMAIL, agentPassword);
     expect(loginRes.status).toBe(200);
     agentCookie = extractCookie(loginRes);
 
@@ -407,9 +449,9 @@ describe("administration des comptes", () => {
       body: { currentPassword: agentPassword, password: "profil-mdp-789" },
     });
     expect(res.status).toBe(200);
-    expect((await login("agent1", agentPassword)).status).toBe(401);
+    expect((await login(AGENT_EMAIL, agentPassword)).status).toBe(401);
 
-    const newLogin = await login("agent1", "profil-mdp-789");
+    const newLogin = await login(AGENT_EMAIL, "profil-mdp-789");
     expect(newLogin.status).toBe(200);
     agentCookie = extractCookie(newLogin);
     agentPassword = "profil-mdp-789";
@@ -449,18 +491,18 @@ describe("protection contre la force brute", () => {
   it("bloque après 10 échecs depuis la même IP", async () => {
     const ip = "203.0.113.99";
     for (let i = 0; i < 10; i++) {
-      const res = await login("admin", `tentative-${i}`, ip);
+      const res = await login(ADMIN_EMAIL, `tentative-${i}`, ip);
       expect(res.status).toBe(401);
     }
     // Même le bon mot de passe est bloqué pendant la fenêtre
-    const blocked = await login("admin", ADMIN_PASSWORD, ip);
+    const blocked = await login(ADMIN_EMAIL, ADMIN_PASSWORD, ip);
     expect(blocked.status).toBe(429);
   });
 });
 
 describe("déconnexion", () => {
   it("invalide la session au logout", async () => {
-    const loginRes = await login("agent1", agentPassword);
+    const loginRes = await login(AGENT_EMAIL, agentPassword);
     const cookie = extractCookie(loginRes);
 
     const logoutRes = await api("/api/auth/logout", { method: "POST", cookie });

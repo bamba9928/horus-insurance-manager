@@ -25,6 +25,8 @@ export interface UserRow {
   password_hash: string;
   role: Role;
   actif: 0 | 1;
+  /** 1 = compte validé par un admin ; 0 = auto-inscrit, en attente de validation. */
+  approved: 0 | 1;
   created_at: string;
   last_login_at: string | null;
 }
@@ -40,6 +42,8 @@ export interface SafeUser {
   telephone2: string | null;
   email: string | null;
   role: Role;
+  /** Compte validé par un admin (accès complet). Faux = en attente. */
+  approved: boolean;
 }
 
 export type SecurityAction =
@@ -53,7 +57,10 @@ export type SecurityAction =
   | "USER_PASSWORD_RESET"
   | "USER_ACTIVE_CHANGE"
   | "BACKUP_DATABASE"
-  | "RESTORE_DATABASE";
+  | "RESTORE_DATABASE"
+  | "ADMIN_TENANT_WRITE"
+  | "USER_REGISTER"
+  | "USER_APPROVE";
 
 export function toSafeUser(row: UserRow): SafeUser {
   return {
@@ -66,6 +73,7 @@ export function toSafeUser(row: UserRow): SafeUser {
     telephone2: row.telephone2,
     email: row.email,
     role: row.role,
+    approved: row.approved === 1,
   };
 }
 
@@ -82,6 +90,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   role          TEXT NOT NULL DEFAULT 'USER' CHECK(role IN ('ADMIN','USER')),
   actif         INTEGER NOT NULL DEFAULT 1 CHECK(actif IN (0,1)),
+  approved      INTEGER NOT NULL DEFAULT 1 CHECK(approved IN (0,1)),
   created_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_login_at TEXT
 );
@@ -129,6 +138,14 @@ function ensureUserProfileColumns(db: Database.Database): void {
   for (const [name, sql] of USER_PROFILE_COLUMN_MIGRATIONS) {
     if (!columns.has(name)) db.exec(sql);
   }
+  // Validation de compte : les comptes déjà présents avant l'ajout de
+  // l'auto-inscription sont considérés validés (DEFAULT 1).
+  if (!columns.has("approved")) {
+    db.exec("ALTER TABLE users ADD COLUMN approved INTEGER NOT NULL DEFAULT 1");
+  }
+  db.exec(
+    "UPDATE users SET email = login WHERE (email IS NULL OR trim(email) = '') AND instr(login, '@') > 1",
+  );
 }
 
 /** Ouvre (et initialise si besoin) la base d'administration. */
@@ -148,6 +165,18 @@ export function findUserByLogin(db: Database.Database, login: string): UserRow |
   return db.prepare("SELECT * FROM users WHERE login = ?").get(login) as UserRow | undefined;
 }
 
+export function findUserByEmail(db: Database.Database, email: string): UserRow | undefined {
+  return db.prepare("SELECT * FROM users WHERE lower(email) = lower(?)").get(email) as
+    | UserRow
+    | undefined;
+}
+
+export function ensureUserEmailForLogin(db: Database.Database, login: string, email: string): void {
+  db.prepare(
+    "UPDATE users SET email = ? WHERE lower(login) = lower(?) AND (email IS NULL OR trim(email) = '')",
+  ).run(email, login);
+}
+
 export function findUserById(db: Database.Database, id: number): UserRow | undefined {
   return db.prepare("SELECT * FROM users WHERE id = ?").get(id) as UserRow | undefined;
 }
@@ -157,7 +186,7 @@ export function listUsers(db: Database.Database): Omit<UserRow, "password_hash">
   return db
     .prepare(
       `SELECT id, login, nom, prenom, adresse, telephone1, telephone2, email,
-              role, actif, created_at, last_login_at
+              role, actif, approved, created_at, last_login_at
        FROM users
        ORDER BY login`,
     )
@@ -176,13 +205,15 @@ export function createUser(
     email?: string | null;
     passwordHash: string;
     role: Role;
+    /** Compte validé d'emblée (défaut). Faux pour une auto-inscription. */
+    approved?: boolean;
   },
 ): number {
   const result = db
     .prepare(
       `INSERT INTO users (
-        login, nom, prenom, adresse, telephone1, telephone2, email, password_hash, role
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        login, nom, prenom, adresse, telephone1, telephone2, email, password_hash, role, approved
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       data.login,
@@ -194,6 +225,7 @@ export function createUser(
       data.email ?? null,
       data.passwordHash,
       data.role,
+      data.approved === false ? 0 : 1,
     );
   return Number(result.lastInsertRowid);
 }
@@ -235,6 +267,19 @@ export function updateUserProfile(
 
 export function setUserActive(db: Database.Database, userId: number, actif: boolean): void {
   db.prepare("UPDATE users SET actif = ? WHERE id = ?").run(actif ? 1 : 0, userId);
+}
+
+/** Valide (ou dévalide) un compte : accès complet aux fonctions restreintes. */
+export function setUserApproved(db: Database.Database, userId: number, approved: boolean): void {
+  db.prepare("UPDATE users SET approved = ? WHERE id = ?").run(approved ? 1 : 0, userId);
+}
+
+/** Nombre d'administrateurs actifs (garde-fou : ne jamais tomber à zéro). */
+export function countActiveAdmins(db: Database.Database): number {
+  const row = db
+    .prepare("SELECT COUNT(*) AS count FROM users WHERE role = 'ADMIN' AND actif = 1")
+    .get() as { count: number } | undefined;
+  return row?.count ?? 0;
 }
 
 export function touchLastLogin(db: Database.Database, userId: number): void {

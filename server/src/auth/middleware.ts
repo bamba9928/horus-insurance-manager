@@ -72,3 +72,27 @@ export const requireAdmin: MiddlewareHandler<AuthEnv> = async (c, next) => {
   }
   await next();
 };
+
+/**
+ * Exige un compte validé par un admin (à chaîner après requireAuth).
+ * Un compte auto-inscrit peut se connecter mais reste bloqué sur les
+ * fonctions sensibles tant qu'un admin ne l'a pas validé. La réponse porte
+ * un code exploitable par le frontend + l'email de contact de l'admin.
+ */
+export function requireApproved(adminContactEmail: string): MiddlewareHandler<AuthEnv> {
+  return async (c, next) => {
+    if (!c.get("user").approved) {
+      return c.json(
+        {
+          error:
+            "Votre compte est en attente de validation par un administrateur. " +
+            `Contactez ${adminContactEmail} pour l'activation.`,
+          code: "ACCOUNT_PENDING",
+          adminEmail: adminContactEmail,
+        },
+        403,
+      );
+    }
+    await next();
+  };
+}

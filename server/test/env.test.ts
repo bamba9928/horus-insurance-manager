@@ -33,8 +33,22 @@ describe("loadEnv", () => {
     const env = loadEnv({});
     expect(env.port).toBe(3000);
     expect(env.adminLogin).toBe("admin");
+    expect(env.adminEmail).toBe("contact@horus-assur.digital");
     expect(env.adminPassword).toBeUndefined();
     expect(env.staticDir).toBeUndefined();
     expect(env.cookieSecure).toBe(false);
+    expect(env.allowRegistration).toBe(true);
+    expect(env.adminContactEmail).toBe("contact@horus-assur.digital");
+  });
+
+  it("utilise ADMIN_EMAIL pour l'email de connexion admin", () => {
+    const env = loadEnv({ ADMIN_EMAIL: "admin@example.com" });
+    expect(env.adminEmail).toBe("admin@example.com");
+    expect(env.adminContactEmail).toBe("admin@example.com");
+  });
+
+  it("désactive l'inscription quand ALLOW_REGISTRATION=false", () => {
+    expect(loadEnv({ ALLOW_REGISTRATION: "false" }).allowRegistration).toBe(false);
+    expect(loadEnv({ ALLOW_REGISTRATION: "true" }).allowRegistration).toBe(true);
   });
 });

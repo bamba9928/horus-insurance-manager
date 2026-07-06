@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Header } from "../../components/layout";
+import { AccountPendingNotice } from "../../components/ui/AccountPendingNotice";
 import { Spinner } from "../../components/ui/Spinner";
+import { useAuth } from "../../lib/auth";
 import { formatDateDisplay } from "../../lib/date-utils";
 import { openExternalUrl, type VerificationData, verifyContract } from "../../lib/ipc";
 
@@ -63,6 +65,7 @@ function extractCompagnie(operationMessage: string | null): string {
 }
 
 export function VerificationPage() {
+  const { user } = useAuth();
   const [immatriculationInput, setImmatriculationInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -124,6 +127,18 @@ export function VerificationPage() {
 
   const attestationUrl = result ? buildAttestationUrl(result.attestationNumber) : "";
   const cedeaoUrl = result ? buildCedeaoUrl(result.attestationNumber) : "";
+
+  // Compte auto-inscrit non validé : fonction réservée.
+  if (user != null && !user.approved) {
+    return (
+      <>
+        <Header title="Vérification de validité d'un contrat" />
+        <div className="overflow-auto p-4">
+          <AccountPendingNotice feature="Vérification d'un contrat" />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

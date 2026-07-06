@@ -1,6 +1,7 @@
 import { RouterProvider } from "@tanstack/react-router";
 import { Spinner } from "./components/ui/Spinner";
 import { useAutoNormalizeInputs } from "./hooks/useAutoNormalizeInputs";
+import { ImpersonationProvider } from "./lib/admin-impersonation";
 import { AuthProvider, isWebMode, useAuth } from "./lib/auth";
 import { router } from "./router";
 import { LoginPage } from "./routes/login";
@@ -30,7 +31,11 @@ function AuthGate() {
 
   if (!user) return <LoginPage />;
 
-  return <RouterProvider router={router} />;
+  return (
+    <ImpersonationProvider>
+      <RouterProvider router={router} />
+    </ImpersonationProvider>
+  );
 }
 
 export default App;

@@ -11,12 +11,15 @@ import { fr } from "date-fns/locale";
 /** Timezone du Sénégal */
 export const TZ_DAKAR = "Africa/Dakar";
 
+const DUREES_ECHEANCE_ACCEPTEES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24] as const;
+const DUREES_DEDUCTION_ACCEPTEES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+
 /**
  * Calcule la date d'échéance d'une police.
  * Règle métier : date_effet + N mois - 1 jour.
  *
  * @param dateEffet - Date d'effet au format ISO (YYYY-MM-DD) ou Date
- * @param dureeMois - Durée en mois (1, 3, 6, 9, 12 ou 24)
+ * @param dureeMois - Durée en mois (1 à 12 ; 24 toléré pour les anciennes données)
  * @returns Date d'échéance
  *
  * @example
@@ -28,8 +31,8 @@ export function calcEcheance(dateEffet: string | Date, dureeMois: number): Date 
   if (!isValid(effet)) {
     throw new Error(`Date d'effet invalide : ${String(dateEffet)}`);
   }
-  if (![1, 3, 6, 9, 12, 24].includes(dureeMois)) {
-    throw new Error(`Durée invalide : ${dureeMois} mois. Valeurs acceptées : 1, 3, 6, 9, 12, 24`);
+  if (!(DUREES_ECHEANCE_ACCEPTEES as readonly number[]).includes(dureeMois)) {
+    throw new Error(`Durée invalide : ${dureeMois} mois. Valeurs acceptées : 1 à 12 mois`);
   }
   return subDays(addMonths(effet, dureeMois), 1);
 }
@@ -101,7 +104,7 @@ export function formatFCFA(montant: number): string {
  *
  * @param dateEffet - Date de début
  * @param dateEcheance - Date de fin
- * @returns Durée en mois la plus proche parmi les valeurs acceptées, ou 12 par défaut
+ * @returns Durée en mois la plus proche entre 1 et 12, ou 12 par défaut
  */
 export function deduireDureeMois(dateEffet: string, dateEcheance: string): number {
   const effet = parseISO(dateEffet);
@@ -109,11 +112,10 @@ export function deduireDureeMois(dateEffet: string, dateEcheance: string): numbe
   const diffJours = differenceInDays(echeance, effet) + 1; // +1 car echeance = effet + N mois - 1 jour
   const diffMois = diffJours / 30.44; // Moyenne jours/mois
 
-  const valeursAcceptees = [1, 3, 6, 9, 12, 24];
   let meilleur = 12;
   let minEcart = Number.POSITIVE_INFINITY;
 
-  for (const v of valeursAcceptees) {
+  for (const v of DUREES_DEDUCTION_ACCEPTEES) {
     const ecart = Math.abs(diffMois - v);
     if (ecart < minEcart) {
       minEcart = ecart;

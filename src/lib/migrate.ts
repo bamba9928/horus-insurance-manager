@@ -42,6 +42,13 @@ export interface ImportReport {
   errors: Array<{ row: number; message: string }>;
 }
 
+const DUREES_MOIS_IMPORT = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+type DureeMoisImport = (typeof DUREES_MOIS_IMPORT)[number];
+
+function isDureeMoisImport(value: number): value is DureeMoisImport {
+  return (DUREES_MOIS_IMPORT as readonly number[]).includes(value);
+}
+
 /** Parse un CSV avec en-têtes en une liste d'objets. */
 async function parseCSV(file: File): Promise<Record<string, string>[]> {
   return new Promise((resolve, reject) => {
@@ -261,7 +268,7 @@ export async function importPolicesCSV(file: File): Promise<ImportReport> {
         continue;
       }
       const dureeMois = toInt(getField(r, "duree_mois", "duree", "dureemois"));
-      if (dureeMois === undefined || ![1, 3, 6, 9, 12, 24].includes(dureeMois)) {
+      if (dureeMois === undefined || !isDureeMoisImport(dureeMois)) {
         report.errors.push({
           row: i + 2,
           message:
@@ -287,7 +294,7 @@ export async function importPolicesCSV(file: File): Promise<ImportReport> {
         assureurId,
         typeCarte: typeCarte as "VERTE" | "JAUNE",
         dateEffet,
-        dureeMois: dureeMois as 1 | 3 | 6 | 9 | 12 | 24,
+        dureeMois,
         ...(numero ? { numeroPolice: numero } : {}),
         ...(getField(r, "appreciation") ? { appreciation: getField(r, "appreciation")! } : {}),
       });

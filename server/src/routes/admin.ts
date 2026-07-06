@@ -16,12 +16,15 @@ import { requireAdmin, requireAuth } from "../auth/middleware.js";
 import { hashPassword } from "../auth/password.js";
 import { deleteUserSessions } from "../auth/sessions.js";
 import {
+  countActiveAdmins,
   createUser,
+  findUserByEmail,
   findUserById,
   findUserByLogin,
   listUsers,
   recordSecurityEvent,
   setUserActive,
+  setUserApproved,
   toSafeUser,
   updateUserPassword,
 } from "../db/adminDb.js";
@@ -37,26 +40,14 @@ function optionalText(max: number) {
     .transform((value) => value ?? null);
 }
 
-const optionalEmail = z
-  .preprocess((value) => {
-    if (typeof value !== "string") return value;
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : undefined;
-  }, z.string().email("Email invalide").max(200).optional())
-  .transform((value) => value ?? null);
-
 const createUserSchema = z
   .object({
-    login: z
-      .string()
-      .trim()
-      .regex(/^[a-zA-Z0-9._-]{3,50}$/, "Login invalide (3-50 caractères, lettres/chiffres/._-)"),
     nom: z.string().trim().min(2).max(200),
     prenom: optionalText(200),
     adresse: optionalText(500),
     telephone1: optionalText(50),
     telephone2: optionalText(50),
-    email: optionalEmail,
+    email: z.string().trim().email("Email invalide").max(200),
     password: z.string().min(8, "8 caractères minimum").max(200),
     passwordConfirm: z.string().max(200).optional(),
     role: z.enum(["ADMIN", "USER"]).optional().default("USER"),
@@ -72,6 +63,10 @@ const passwordSchema = z.object({
 
 const activeSchema = z.object({
   actif: z.boolean(),
+});
+
+const approveSchema = z.object({
+  approved: z.boolean(),
 });
 
 function parseUserId(raw: string): number | null {
@@ -152,15 +147,20 @@ export function adminRoutes(ctx: AppContext): Hono<AuthEnv> {
       return c.json({ error: parsed.error.issues[0]?.message ?? "Requête invalide" }, 400);
     }
 
-    if (findUserByLogin(ctx.adminDb, parsed.data.login)) {
-      return c.json({ error: "Ce login existe déjà" }, 409);
+    const accountLogin = parsed.data.email;
+
+    if (
+      findUserByLogin(ctx.adminDb, accountLogin) ||
+      findUserByEmail(ctx.adminDb, parsed.data.email)
+    ) {
+      return c.json({ error: "Cet email est déjà utilisé" }, 409);
     }
 
     const passwordHash = await hashPassword(parsed.data.password);
     let userId: number;
     try {
       userId = createUser(ctx.adminDb, {
-        login: parsed.data.login,
+        login: accountLogin,
         nom: parsed.data.nom,
         prenom: parsed.data.prenom,
         adresse: parsed.data.adresse,
@@ -174,7 +174,7 @@ export function adminRoutes(ctx: AppContext): Hono<AuthEnv> {
       // Course entre le contrôle ci-dessus et l'INSERT (double soumission) :
       // la contrainte UNIQUE tranche, on renvoie 409 plutôt que 500.
       if ((err as { code?: string }).code === "SQLITE_CONSTRAINT_UNIQUE") {
-        return c.json({ error: "Ce login existe déjà" }, 409);
+        return c.json({ error: "Cet email est déjà utilisé" }, 409);
       }
       throw err;
     }
@@ -187,7 +187,7 @@ export function adminRoutes(ctx: AppContext): Hono<AuthEnv> {
       success: true,
       detail: JSON.stringify({
         targetUserId: userId,
-        targetLogin: parsed.data.login,
+        targetLogin: accountLogin,
         targetRole: parsed.data.role,
       }),
     });
@@ -236,8 +236,15 @@ export function adminRoutes(ctx: AppContext): Hono<AuthEnv> {
     if (userId === c.get("user").id && !parsed.data.actif) {
       return c.json({ error: "Impossible de suspendre son propre compte" }, 400);
     }
-    if (!findUserById(ctx.adminDb, userId)) {
+    const target = findUserById(ctx.adminDb, userId);
+    if (!target) {
       return c.json({ error: "Utilisateur introuvable" }, 404);
+    }
+
+    // Garde-fou : ne jamais suspendre le dernier administrateur actif, sinon
+    // plus personne ne peut gérer les comptes.
+    if (!parsed.data.actif && target.role === "ADMIN" && countActiveAdmins(ctx.adminDb) <= 1) {
+      return c.json({ error: "Impossible de suspendre le dernier administrateur actif" }, 400);
     }
 
     setUserActive(ctx.adminDb, userId, parsed.data.actif);
@@ -249,6 +256,31 @@ export function adminRoutes(ctx: AppContext): Hono<AuthEnv> {
       ip: clientIp(c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip")),
       success: true,
       detail: JSON.stringify({ targetUserId: userId, actif: parsed.data.actif }),
+    });
+    return c.json({ ok: true });
+  });
+
+  /** Valide (ou invalide) un compte auto-inscrit : débloque les fonctions sensibles. */
+  app.post("/users/:id/approve", async (c) => {
+    const userId = parseUserId(c.req.param("id"));
+    if (userId == null) return c.json({ error: "Identifiant invalide" }, 400);
+
+    const body = await c.req.json().catch(() => null);
+    const parsed = approveSchema.safeParse(body);
+    if (!parsed.success) return c.json({ error: "Requête invalide" }, 400);
+
+    if (!findUserById(ctx.adminDb, userId)) {
+      return c.json({ error: "Utilisateur introuvable" }, 404);
+    }
+
+    setUserApproved(ctx.adminDb, userId, parsed.data.approved);
+    recordSecurityEvent(ctx.adminDb, {
+      action: "USER_APPROVE",
+      userId: c.get("user").id,
+      login: c.get("user").login,
+      ip: clientIp(c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip")),
+      success: true,
+      detail: JSON.stringify({ targetUserId: userId, approved: parsed.data.approved }),
     });
     return c.json({ ok: true });
   });

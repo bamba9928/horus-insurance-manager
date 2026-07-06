@@ -15,7 +15,7 @@ import { getCookie, setCookie } from "hono/cookie";
 export const CSRF_COOKIE = "horus_csrf";
 export const CSRF_HEADER = "x-csrf-token";
 
-const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+export const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 export function createCsrfToken(): string {
   return crypto.randomBytes(32).toString("base64url");

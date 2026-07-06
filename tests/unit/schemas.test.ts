@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { clientCreateSchema } from "../../src/schemas/client";
-import { getPaiementStatut } from "../../src/schemas/paiement";
+import { getPaiementStatut, paiementCreateSchema } from "../../src/schemas/paiement";
 import { policeCreateSchema } from "../../src/schemas/police";
 import { getSousCategoriesByCategorie, vehiculeCreateSchema } from "../../src/schemas/vehicule";
 
@@ -108,6 +108,19 @@ describe("policeCreateSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("accepte les durées mensuelles de 1 à 12", () => {
+    for (const dureeMois of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]) {
+      const result = policeCreateSchema.safeParse({
+        vehiculeId: 1,
+        assureurId: 1,
+        typeCarte: "VERTE",
+        dateEffet: "2025-01-15",
+        dureeMois,
+      });
+      expect(result.success).toBe(true);
+    }
+  });
+
   it("rejette un type de carte invalide", () => {
     const result = policeCreateSchema.safeParse({
       vehiculeId: 1,
@@ -125,7 +138,7 @@ describe("policeCreateSchema", () => {
       assureurId: 1,
       typeCarte: "VERTE",
       dateEffet: "2025-01-15",
-      dureeMois: 5,
+      dureeMois: 13,
     });
     expect(result.success).toBe(false);
   });
@@ -142,6 +155,17 @@ describe("policeCreateSchema", () => {
 });
 
 describe("getPaiementStatut", () => {
+  it("accepte un paiement avec mode sans référence", () => {
+    const result = paiementCreateSchema.safeParse({
+      policeId: 1,
+      montantDu: 100000,
+      paye: 100000,
+      avance: 0,
+      mode: "ESPECES",
+    });
+    expect(result.success).toBe(true);
+  });
+
   it("retourne SOLDE quand reste = 0", () => {
     expect(getPaiementStatut(0, 100000)).toBe("SOLDE");
   });

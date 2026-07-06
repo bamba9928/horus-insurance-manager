@@ -929,7 +929,7 @@ function PoliceStep({
           <button
             type="button"
             onClick={() => setShowAssureurCreate((value) => !value)}
-            className="text-xs font-medium text-[#614e1a] hover:underline"
+            className="text-xs font-medium text-green-700 hover:underline dark:text-green-400"
           >
             Ajouter une compagnie
           </button>
@@ -1130,7 +1130,13 @@ function PaiementStep({
               <label htmlFor="mode" className="block text-sm font-medium text-gray-700">
                 {t("paiements.mode")}
               </label>
-              <select id="mode" {...register("mode")} className={inputClass}>
+              <select
+                id="mode"
+                {...register("mode", {
+                  setValueAs: (value) => (value === "" ? undefined : value),
+                })}
+                className={inputClass}
+              >
                 <option value="">— Sélectionner —</option>
                 {MODES_PAIEMENT.map((m) => (
                   <option key={m} value={m}>
@@ -1148,7 +1154,9 @@ function PaiementStep({
             <input
               id="reference"
               type="text"
-              {...register("reference")}
+              {...register("reference", {
+                setValueAs: (value) => (String(value).trim() === "" ? undefined : String(value)),
+              })}
               className={inputClass}
               placeholder="N° reçu, chèque..."
             />

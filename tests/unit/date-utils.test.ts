@@ -31,6 +31,11 @@ describe("calcEcheance", () => {
     expect(formatDateISO(result)).toBe("2025-04-14");
   });
 
+  it("gère la durée de 5 mois", () => {
+    const result = calcEcheance("2025-01-15", 5);
+    expect(formatDateISO(result)).toBe("2025-06-14");
+  });
+
   it("gère la durée de 6 mois", () => {
     const result = calcEcheance("2025-01-15", 6);
     expect(formatDateISO(result)).toBe("2025-07-14");
@@ -51,7 +56,7 @@ describe("calcEcheance", () => {
   });
 
   it("rejette une durée non autorisée", () => {
-    expect(() => calcEcheance("2025-01-15", 5)).toThrow("Durée invalide");
+    expect(() => calcEcheance("2025-01-15", 13)).toThrow("Durée invalide");
   });
 });
 
@@ -138,7 +143,7 @@ describe("deduireDureeMois", () => {
     expect(deduireDureeMois("2025-01-15", "2025-02-14")).toBe(1);
   });
 
-  it("déduit 24 mois pour un écart d'environ 2 ans", () => {
-    expect(deduireDureeMois("2025-01-15", "2027-01-14")).toBe(24);
+  it("ramène un écart d'environ 2 ans à 12 mois", () => {
+    expect(deduireDureeMois("2025-01-15", "2027-01-14")).toBe(12);
   });
 });
