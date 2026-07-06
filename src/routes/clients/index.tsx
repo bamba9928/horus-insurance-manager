@@ -149,20 +149,28 @@ export function ClientsPage() {
 
         {/* Panneau détail (maître-détail) */}
         {selectedClient && !isEditOpen && (
-          <div className="w-full overflow-auto border-t border-gray-200 bg-white p-4 sm:w-96 sm:shrink-0 sm:border-t-0 sm:border-l">
+          <div className="w-full overflow-auto border-t border-gray-200 bg-white p-4 sm:w-96 sm:shrink-0 sm:border-t-0 sm:border-l dark:border-slate-700 dark:bg-slate-800">
             <div className="relative">
-              <h3 className="text-center text-lg font-semibold text-gray-900">Détail client</h3>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                  {selectedClient.nom_prenom}
+                </h3>
+                {selectedClient.telephone && (
+                  <p className="text-sm text-gray-500 dark:text-slate-400">
+                    {selectedClient.telephone}
+                  </p>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setSelectedClient(null)}
-                className="absolute top-0 right-0 rounded-lg p-1 text-gray-400 hover:bg-gray-100"
+                className="absolute top-0 right-0 rounded-lg px-2 py-1 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-slate-700 dark:hover:text-slate-200"
               >
                 &times;
               </button>
             </div>
 
-            <div className="mt-4 space-y-3">
-              <DetailField label={t("clients.nomPrenom")} value={selectedClient.nom_prenom} />
+            <div className="mt-4 space-y-3 text-center">
               <DetailField label={t("clients.telephone")} value={selectedClient.telephone} />
               <DetailField label={t("clients.email")} value={selectedClient.email} />
               <DetailField label={t("clients.adresse")} value={selectedClient.adresse} />
@@ -187,27 +195,31 @@ export function ClientsPage() {
             </div>
 
             {/* Véhicules du client */}
-            <div className="mt-6 border-t border-gray-200 pt-4">
-              <h4 className="text-sm font-semibold text-gray-700">
+            <div className="mt-6 border-t border-gray-200 pt-4 dark:border-slate-700">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
                 Véhicules ({clientVehicules.length})
               </h4>
               {clientVehicules.length === 0 ? (
-                <p className="mt-2 text-xs text-gray-500">Aucun véhicule enregistré.</p>
+                <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">
+                  Aucun véhicule enregistré.
+                </p>
               ) : (
                 <ul className="mt-2 space-y-2">
                   {clientVehicules.map((v) => (
                     <li
                       key={v.id}
-                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm"
+                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm dark:border-slate-700"
                     >
-                      <span className="font-medium text-gray-900">{v.immatriculation}</span>
+                      <span className="font-medium text-gray-900 dark:text-slate-100">
+                        {v.immatriculation}
+                      </span>
                       {v.marque && (
-                        <span className="ml-2 text-gray-500">
+                        <span className="ml-2 text-gray-500 dark:text-slate-400">
                           {v.marque} {v.modele ?? ""}
                         </span>
                       )}
                       {v.genre && (
-                        <span className="ml-1 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                        <span className="ml-1 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 dark:bg-slate-700 dark:text-slate-300">
                           {v.genre}
                         </span>
                       )}

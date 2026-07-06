@@ -393,22 +393,29 @@ function PoliceDetailPanel({
   }
 
   return (
-    <div className="w-full overflow-auto border-t border-gray-200 bg-white p-4 sm:w-96 sm:shrink-0 sm:border-t-0 sm:border-l">
+    <div className="w-full overflow-auto border-t border-gray-200 bg-white p-4 sm:w-96 sm:shrink-0 sm:border-t-0 sm:border-l dark:border-slate-700 dark:bg-slate-800">
       <div className="relative">
-        <h3 className="text-center text-lg font-semibold text-gray-900">
-          {police.numero_police ?? `Police #${police.id}`}
-        </h3>
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+            {police.numero_police ?? `Police #${police.id}`}
+          </h3>
+          {(clientName || veh?.immatriculation) && (
+            <p className="text-sm text-gray-500 dark:text-slate-400">
+              {[clientName, veh?.immatriculation].filter(Boolean).join(" · ")}
+            </p>
+          )}
+        </div>
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-0 right-0 rounded-lg p-1 text-gray-400 hover:bg-gray-100"
+          className="absolute top-0 right-0 rounded-lg px-2 py-1 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-slate-700 dark:hover:text-slate-200"
         >
           &times;
         </button>
       </div>
 
       {/* Badge statut */}
-      <div className="mt-2">
+      <div className="mt-2 text-center">
         <span
           className={`rounded-full px-3 py-1 text-xs font-medium ${statutBadge(police.statut)}`}
         >
@@ -416,7 +423,7 @@ function PoliceDetailPanel({
         </span>
       </div>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 space-y-3 text-center">
         <DetailField label="Client" value={clientName} />
         <DetailField label="Véhicule" value={veh?.immatriculation} />
         <DetailField
@@ -425,8 +432,10 @@ function PoliceDetailPanel({
         />
         <DetailField label={t("polices.dureeMois")} value={`${police.duree_mois} mois`} />
         <div>
-          <p className="text-xs font-medium text-gray-500">{t("polices.dateEcheance")}</p>
-          <p className="text-sm text-gray-900">
+          <p className="text-xs font-medium text-gray-500 dark:text-slate-400">
+            {t("polices.dateEcheance")}
+          </p>
+          <p className="text-sm text-gray-900 dark:text-slate-100">
             {echeanceDisplay} <span className={`text-xs ${joursClass}`}>{joursDisplay}</span>
           </p>
         </div>
@@ -478,26 +487,33 @@ function PolicePaiementsList({ policeId, t }: { policeId: number; t: (key: strin
   };
 
   return (
-    <div className="mt-6 border-t border-gray-200 pt-4">
-      <h4 className="text-sm font-semibold text-gray-700">Paiements ({paiements.length})</h4>
+    <div className="mt-6 border-t border-gray-200 pt-4 dark:border-slate-700">
+      <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+        Paiements ({paiements.length})
+      </h4>
       {paiements.length === 0 ? (
-        <p className="mt-2 text-xs text-gray-500">Aucun paiement enregistré.</p>
+        <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">Aucun paiement enregistré.</p>
       ) : (
         <ul className="mt-2 space-y-2">
           {paiements.map((p) => {
             const reste = p.reste ?? p.montant_du - p.paye - p.avance;
             const statut = getPaiementStatut(reste, p.montant_du);
             return (
-              <li key={p.id} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm">
+              <li
+                key={p.id}
+                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm dark:border-slate-700"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-900">{formatFCFA(p.montant_du)}</span>
+                  <span className="font-medium text-gray-900 dark:text-slate-100">
+                    {formatFCFA(p.montant_du)}
+                  </span>
                   <span
                     className={`rounded px-2 py-0.5 text-xs font-medium ${statutColors[statut] ?? "bg-gray-100"}`}
                   >
                     {t(`paiements.${statut.toLowerCase()}`)}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
                   Payé : {formatFCFA(p.paye)} — Reste : {formatFCFA(reste)}
                   {p.mode && <span className="ml-1">({p.mode.replace("_", " ")})</span>}
                 </p>

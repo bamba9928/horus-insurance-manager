@@ -397,43 +397,60 @@ function PaiementDetailPanel({
   };
 
   return (
-    <div className="w-full overflow-auto border-t border-gray-200 bg-white p-4 sm:w-96 sm:shrink-0 sm:border-t-0 sm:border-l">
+    <div className="w-full overflow-auto border-t border-gray-200 bg-white p-4 sm:w-96 sm:shrink-0 sm:border-t-0 sm:border-l dark:border-slate-700 dark:bg-slate-800">
       <div className="relative">
-        <h3 className="text-center text-lg font-semibold text-gray-900">Détail paiement</h3>
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+            {clientName ?? "Détail paiement"}
+          </h3>
+          {(pol?.numero || veh?.immatriculation) && (
+            <p className="text-sm text-gray-500 dark:text-slate-400">
+              {[pol?.numero, veh?.immatriculation].filter(Boolean).join(" · ")}
+            </p>
+          )}
+        </div>
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-0 right-0 rounded-lg p-1 text-gray-400 hover:bg-gray-100"
+          className="absolute top-0 right-0 rounded-lg px-2 py-1 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-slate-700 dark:hover:text-slate-200"
         >
           &times;
         </button>
       </div>
 
       {/* Badge statut */}
-      <div className="mt-2">
+      <div className="mt-2 text-center">
         <span className={`rounded-full px-3 py-1 text-xs font-bold ${statutColors[statut]}`}>
           {t(`paiements.${statut.toLowerCase()}`)}
         </span>
       </div>
 
       {/* Montants */}
-      <div className="mt-4 rounded-lg border border-gray-200 p-4">
+      <div className="mt-4 rounded-lg border border-gray-200 p-4 dark:border-slate-700">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <p className="text-xs text-gray-500">{t("paiements.montantDu")}</p>
-            <p className="text-lg font-bold text-gray-900">{formatFCFA(paiement.montant_du)}</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400">{t("paiements.montantDu")}</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-slate-100">
+              {formatFCFA(paiement.montant_du)}
+            </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">{t("paiements.paye")}</p>
-            <p className="text-lg font-bold text-green-700">{formatFCFA(paiement.paye)}</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400">{t("paiements.paye")}</p>
+            <p className="text-lg font-bold text-green-700 dark:text-green-400">
+              {formatFCFA(paiement.paye)}
+            </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">{t("paiements.avance")}</p>
-            <p className="text-sm font-medium text-blue-700">{formatFCFA(paiement.avance)}</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400">{t("paiements.avance")}</p>
+            <p className="text-sm font-medium text-blue-700 dark:text-blue-400">
+              {formatFCFA(paiement.avance)}
+            </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">{t("paiements.reste")}</p>
-            <p className={`text-lg font-bold ${reste > 0 ? "text-red-700" : "text-green-700"}`}>
+            <p className="text-xs text-gray-500 dark:text-slate-400">{t("paiements.reste")}</p>
+            <p
+              className={`text-lg font-bold ${reste > 0 ? "text-red-700 dark:text-red-400" : "text-green-700 dark:text-green-400"}`}
+            >
               {formatFCFA(reste)}
             </p>
           </div>
@@ -441,7 +458,7 @@ function PaiementDetailPanel({
       </div>
 
       {/* Infos */}
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 space-y-3 text-center">
         <DetailField label="Police" value={pol?.numero} />
         <DetailField label="Client" value={clientName} />
         <DetailField label="Véhicule" value={veh?.immatriculation} />

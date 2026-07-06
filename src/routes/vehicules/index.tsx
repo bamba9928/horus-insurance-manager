@@ -185,21 +185,28 @@ export function VehiculesPage() {
 
         {/* Panneau détail (maître-détail) */}
         {selectedVehicule && !isEditOpen && (
-          <div className="w-full overflow-auto border-t border-gray-200 bg-white p-4 sm:w-96 sm:shrink-0 sm:border-t-0 sm:border-l">
+          <div className="w-full overflow-auto border-t border-gray-200 bg-white p-4 sm:w-96 sm:shrink-0 sm:border-t-0 sm:border-l dark:border-slate-700 dark:bg-slate-800">
             <div className="relative">
-              <h3 className="text-center text-lg font-semibold text-gray-900">
-                {selectedVehicule.immatriculation}
-              </h3>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                  {selectedVehicule.immatriculation}
+                </h3>
+                {[selectedVehicule.marque, selectedVehicule.modele].filter(Boolean).length > 0 && (
+                  <p className="text-sm text-gray-500 dark:text-slate-400">
+                    {[selectedVehicule.marque, selectedVehicule.modele].filter(Boolean).join(" ")}
+                  </p>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setSelectedVehicule(null)}
-                className="absolute top-0 right-0 rounded-lg p-1 text-gray-400 hover:bg-gray-100"
+                className="absolute top-0 right-0 rounded-lg px-2 py-1 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-slate-700 dark:hover:text-slate-200"
               >
                 &times;
               </button>
             </div>
 
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-3 text-center">
               <DetailField
                 label={t("vehicules.client")}
                 value={clientNameMap.get(selectedVehicule.client_id)}
@@ -246,28 +253,32 @@ export function VehiculesPage() {
             </div>
 
             {/* Polices du véhicule */}
-            <div className="mt-6 border-t border-gray-200 pt-4">
-              <h4 className="text-sm font-semibold text-gray-700">
+            <div className="mt-6 border-t border-gray-200 pt-4 dark:border-slate-700">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
                 Polices ({vehiculePolices.length})
               </h4>
               {vehiculePolices.length === 0 ? (
-                <p className="mt-2 text-xs text-gray-500">Aucune police enregistrée.</p>
+                <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">
+                  Aucune police enregistrée.
+                </p>
               ) : (
                 <ul className="mt-2 space-y-2">
                   {vehiculePolices.map((p) => (
                     <li
                       key={p.id}
-                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm"
+                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm dark:border-slate-700"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900">
+                        <span className="font-medium text-gray-900 dark:text-slate-100">
                           {p.numero_police ?? `#${p.id}`}
                         </span>
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">
+                      <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
                         {formatDateDisplay(new Date(p.date_effet))} — {p.duree_mois} mois
                         {p.statut && p.statut !== "ACTIVE" && (
-                          <span className="ml-1 text-gray-400">({p.statut})</span>
+                          <span className="ml-1 text-gray-400 dark:text-slate-500">
+                            ({p.statut})
+                          </span>
                         )}
                       </p>
                     </li>
