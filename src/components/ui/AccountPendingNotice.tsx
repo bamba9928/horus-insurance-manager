@@ -1,6 +1,6 @@
 /**
  * Message affiché lorsqu'un compte doit encore être activé pour utiliser une
- * fonction réservée. Rappelle la marche à suivre + l'email de contact.
+ * fonction réservée. Rappelle la marche à suivre + les contacts admin.
  */
 
 import { useAuth } from "../../lib/auth";
@@ -13,6 +13,10 @@ interface AccountPendingNoticeProps {
 export function AccountPendingNotice({ feature }: AccountPendingNoticeProps) {
   const { config } = useAuth();
   const email = config.adminEmail;
+  const whatsappLabel = "+221 77 249 05 30";
+  const whatsappHref = `https://wa.me/221772490530?text=${encodeURIComponent(
+    "Bonjour, je souhaite activer mon compte Horus.",
+  )}`;
 
   return (
     <div className="rounded-lg border border-amber-300 bg-amber-50 p-5 text-center dark:border-amber-700/50 dark:bg-amber-900/20">
@@ -26,12 +30,23 @@ export function AccountPendingNotice({ feature }: AccountPendingNoticeProps) {
         La fonction <strong>{feature}</strong> sera disponible après activation de votre compte.
       </p>
       <p className="mt-3 text-sm text-amber-800 dark:text-amber-200/90">
-        Contactez l'administrateur :{" "}
+        Contactez l'administrateur par email :{" "}
         <a
           href={`mailto:${email}?subject=${encodeURIComponent("Validation de mon compte Horus")}`}
-          className="font-semibold text-[#614e1a] underline-offset-4 hover:underline dark:text-[#c2a65b]"
+          className="font-semibold text-green-700 underline-offset-4 hover:underline dark:text-green-400"
         >
           {email}
+        </a>
+      </p>
+      <p className="mt-2 text-sm text-amber-800 dark:text-amber-200/90">
+        Ou via WhatsApp :{" "}
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noreferrer"
+          className="font-semibold text-green-700 underline-offset-4 hover:underline dark:text-green-400"
+        >
+          {whatsappLabel}
         </a>
       </p>
     </div>
