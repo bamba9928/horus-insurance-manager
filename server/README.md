@@ -25,8 +25,11 @@ Sans `ADMIN_PASSWORD`, un mot de passe aléatoire est généré et affiché
 | ---------------- | -------- | ----------------------------------------------- |
 | `PORT`           | `3000`   | Port HTTP                                       |
 | `DATA_DIR`       | `./data` | Répertoire des bases (admin.db + tenants/)      |
-| `ADMIN_LOGIN`    | `admin`  | Login du super admin (premier démarrage)        |
+| `ADMIN_LOGIN`    | `admin`  | Ancien login du super admin à récupérer si la base existe déjà |
+| `ADMIN_EMAIL`    | —        | Email utilisé pour se connecter comme super admin |
+| `ADMIN_CONTACT_EMAIL` | `ADMIN_EMAIL` | Email de contact affiché aux comptes à activer |
 | `ADMIN_PASSWORD` | —        | Mot de passe du super admin (sinon généré)      |
+| `ALLOW_REGISTRATION` | `true` | Active/désactive l'auto-inscription publique |
 | `NODE_ENV`       | —        | `production` active le cookie `Secure` (HTTPS)  |
 | `COOKIE_SECURE`  | —        | Force le cookie `Secure` (`true`/`false`) — prioritaire sur `NODE_ENV` |
 | `STATIC_DIR`     | —        | Répertoire du frontend web à servir (absent = API seule) |
