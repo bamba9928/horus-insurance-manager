@@ -3,14 +3,20 @@
  * Seule page visible sans session ; toute autre route est protégée.
  */
 
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { Share2 } from "lucide-react";
+import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { DevisRapideForm } from "../components/forms/DevisRapideForm";
 import { AppFooter } from "../components/layout";
+import { SeoMetadata } from "../components/seo/SeoMetadata";
+import { useToast } from "../components/ui/Toast";
 import { type RegisterInput, useAuth } from "../lib/auth";
+import { buildAbsoluteUrl, getClientPublicSiteUrl, SEO_CONFIG } from "../lib/seo";
 
 const LOGO_SRC = "/horus-manager-logo.png";
 const LOGO_SRC_SET = "/horus-manager-logo.png 1x, /horus-manager-logo@2x.png 2x";
 const SUPPORT_EMAIL = "contact@horus-assur.digital";
+const PUBLIC_SHARE_TEXT =
+  "Devis, clients, vehicules, polices, paiements et echeances d'assurance auto dans un seul outil.";
 
 function supportMailto(subject: string): string {
   return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`;
@@ -40,9 +46,11 @@ const loginLabelClass = "block text-sm font-medium text-green-700 dark:text-gree
 export function LoginPage() {
   const { config } = useAuth();
   const [mode, setMode] = useState<Mode>("home");
+  const pathname = typeof window === "undefined" ? "/" : window.location.pathname;
 
   return (
     <div className="flex min-h-dvh flex-col bg-gradient-to-br from-[#f6f2e8] to-[#ece3cd] dark:from-slate-900 dark:to-slate-800">
+      <SeoMetadata pathname={pathname} />
       <div className="flex flex-1 items-center justify-center p-4 sm:p-6 lg:py-8">
         <div className={`w-full ${mode === "home" ? "max-w-6xl" : "max-w-sm"}`}>
           {/* Logo / Titre */}
@@ -98,8 +106,51 @@ function HomePanel({
   onGoToLogin: () => void;
   onGoToRegister: () => void;
 }) {
+  const { showToast } = useToast();
+
+  const handleShare = useCallback(async () => {
+    const url = buildAbsoluteUrl("/", getClientPublicSiteUrl());
+    const shareData = {
+      title: SEO_CONFIG.appName,
+      text: PUBLIC_SHARE_TEXT,
+      url,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(url);
+      showToast({
+        title: "Lien copie",
+        message: "Le lien public Horus Assurances Manager est dans le presse-papiers.",
+        variant: "success",
+      });
+    } catch {
+      showToast({
+        title: "Lien public",
+        message: url,
+        variant: "info",
+        durationMs: 7000,
+      });
+    }
+  }, [showToast]);
+
   return (
     <div className="flex h-full flex-col justify-center space-y-4 text-center">
+      <div className="space-y-1.5">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+          Gestion assurance auto
+        </h2>
+        <p className="text-sm leading-6 text-gray-600 dark:text-slate-300">{PUBLIC_SHARE_TEXT}</p>
+      </div>
       <div className="space-y-3">
         <button
           type="button"
@@ -115,6 +166,14 @@ function HomePanel({
           className="flex w-full items-center justify-center rounded-lg bg-[#614e1a] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#8b7335]"
         >
           Connectez-vous
+        </button>
+        <button
+          type="button"
+          onClick={handleShare}
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-700"
+        >
+          <Share2 className="h-4 w-4" aria-hidden="true" />
+          Partager
         </button>
       </div>
       {!registrationEnabled && (

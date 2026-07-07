@@ -101,6 +101,7 @@ beforeAll(async () => {
       adminEmail: ADMIN_EMAIL,
       adminPassword: undefined,
       staticDir: undefined,
+      publicSiteUrl: undefined,
       allowRegistration: true,
       adminContactEmail: "contact@horus-assur.digital",
     },
@@ -119,6 +120,71 @@ describe("santé", () => {
   it("répond sur /api/health", async () => {
     const res = await api("/api/health");
     expect(res.status).toBe(200);
+  });
+});
+
+describe("fichiers SEO statiques", () => {
+  it("sert robots, sitemap, llms et injecte les métadonnées HTML", async () => {
+    const staticDir = fs.mkdtempSync(path.join(os.tmpdir(), "horus-static-seo-"));
+    fs.writeFileSync(
+      path.join(staticDir, "index.html"),
+      '<!doctype html><html><head><!-- horus:seo:start --><title>old</title><!-- horus:seo:end --></head><body><div id="root"></div></body></html>',
+    );
+
+    const staticApp = buildApp({
+      env: {
+        port: 0,
+        dataDir,
+        cookieSecure: false,
+        adminLogin: "admin",
+        adminEmail: ADMIN_EMAIL,
+        adminPassword: undefined,
+        staticDir,
+        publicSiteUrl: "https://horus.example.com",
+        allowRegistration: true,
+        adminContactEmail: "contact@horus-assur.digital",
+      },
+      adminDb,
+      rateLimiter: new LoginRateLimiter(),
+    });
+
+    try {
+      const robots = await staticApp.request("/robots.txt");
+      expect(robots.status).toBe(200);
+      const robotsText = await robots.text();
+      expect(robotsText).toContain("Disallow: /api/");
+      expect(robotsText).toContain("Disallow: /clients");
+      expect(robotsText).toContain("Sitemap: https://horus.example.com/sitemap.xml");
+
+      const sitemap = await staticApp.request("/sitemap.xml");
+      expect(sitemap.status).toBe(200);
+      expect(sitemap.headers.get("content-type")).toContain("application/xml");
+      expect(await sitemap.text()).toContain("<loc>https://horus.example.com/</loc>");
+
+      const llms = await staticApp.request("/llms.txt");
+      expect(llms.status).toBe(200);
+      const llmsText = await llms.text();
+      expect(llmsText).toContain("Canonical URL: https://horus.example.com/");
+      expect(llmsText).toContain("Private data");
+
+      const home = await staticApp.request("/");
+      expect(home.status).toBe(200);
+      const homeHtml = await home.text();
+      expect(homeHtml).toContain(
+        "<title>Horus Assurances Manager | Gestion assurance auto</title>",
+      );
+      expect(homeHtml).toContain('href="https://horus.example.com/"');
+      expect(homeHtml).toContain('content="https://horus.example.com/social-card.svg"');
+
+      const privateRoute = await staticApp.request("/clients");
+      expect(privateRoute.status).toBe(200);
+      const privateHtml = await privateRoute.text();
+      expect(privateHtml).toContain("<title>Gestion clients | Horus Assurances Manager</title>");
+      expect(privateHtml).toContain('content="noindex, nofollow, noarchive"');
+      expect(privateHtml).toContain('href="https://horus.example.com/clients"');
+    } finally {
+      fs.rmSync(staticDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    }
   });
 });
 

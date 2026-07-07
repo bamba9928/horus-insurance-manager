@@ -3,15 +3,19 @@
  * Sidebar fixe à gauche + zone de contenu scrollable à droite.
  */
 
-import { Outlet } from "@tanstack/react-router";
+import { Outlet, useRouterState } from "@tanstack/react-router";
 import { useImpersonation } from "../../lib/admin-impersonation";
+import { SeoMetadata } from "../seo/SeoMetadata";
 import { AppFooter } from "./AppFooter";
 import { MobileNav } from "./MobileNav";
 import { Sidebar } from "./Sidebar";
 
 export function AppLayout() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-slate-900">
+      <SeoMetadata pathname={pathname} />
       <div className="hidden md:block">
         <Sidebar />
       </div>

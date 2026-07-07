@@ -21,15 +21,40 @@ export interface ServerEnv {
   adminPassword: string | undefined;
   /** Répertoire du frontend web à servir (statique + SPA). Absent = API seule. */
   staticDir: string | undefined;
+  /** URL publique canonique pour SEO, sitemap et cartes sociales. */
+  publicSiteUrl: string | undefined;
   /** Autorise l'auto-inscription publique (défaut : true). */
   allowRegistration: boolean;
   /** Email de contact affiché aux comptes en attente de validation. */
   adminContactEmail: string;
 }
 
+function optionalEnv(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function normalizePublicSiteUrl(value: string | undefined): string | undefined {
+  const trimmed = optionalEnv(value);
+  if (!trimmed) return undefined;
+
+  const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  try {
+    const url = new URL(withProtocol);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return undefined;
+    return url.origin;
+  } catch {
+    return undefined;
+  }
+}
+
 export function loadEnv(processEnv: NodeJS.ProcessEnv = process.env): ServerEnv {
   const adminEmail =
     processEnv.ADMIN_EMAIL || processEnv.ADMIN_CONTACT_EMAIL || "contact@horus-assur.digital";
+  const publicSiteUrl = normalizePublicSiteUrl(
+    optionalEnv(processEnv.PUBLIC_SITE_URL) ?? optionalEnv(processEnv.DOMAIN),
+  );
 
   return {
     port: Number(processEnv.PORT ?? 3000),
@@ -47,6 +72,7 @@ export function loadEnv(processEnv: NodeJS.ProcessEnv = process.env): ServerEnv 
     // mot de passe vide.
     adminPassword: processEnv.ADMIN_PASSWORD || undefined,
     staticDir: processEnv.STATIC_DIR ? path.resolve(processEnv.STATIC_DIR) : undefined,
+    publicSiteUrl,
     // Auto-inscription activée sauf si explicitement désactivée.
     allowRegistration: processEnv.ALLOW_REGISTRATION !== "false",
     adminContactEmail: processEnv.ADMIN_CONTACT_EMAIL || adminEmail,

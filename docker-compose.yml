@@ -11,6 +11,8 @@ services:
       DATA_DIR: /data
       STATIC_DIR: /app/public
       COOKIE_SECURE: "true"
+      DOMAIN: ${DOMAIN:-}
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-}
       ADMIN_LOGIN: ${ADMIN_LOGIN:-admin}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_CONTACT_EMAIL: ${ADMIN_CONTACT_EMAIL:-}

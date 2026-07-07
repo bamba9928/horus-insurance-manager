@@ -105,6 +105,7 @@ beforeAll(async () => {
       adminEmail: ADMIN_EMAIL,
       adminPassword: undefined,
       staticDir: undefined,
+      publicSiteUrl: undefined,
       allowRegistration: true,
       adminContactEmail: "contact@horus-assur.digital",
     },

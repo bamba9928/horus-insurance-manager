@@ -86,7 +86,7 @@ export function buildApp(ctx: AppContext): Hono<AuthEnv> {
 
   // Frontend web servi par le même process (déploiement en un seul conteneur).
   if (ctx.env.staticDir) {
-    mountStatic(app, ctx.env.staticDir);
+    mountStatic(app, ctx.env.staticDir, { publicSiteUrl: ctx.env.publicSiteUrl });
   }
 
   return app;

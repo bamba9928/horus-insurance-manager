@@ -36,6 +36,7 @@ describe("loadEnv", () => {
     expect(env.adminEmail).toBe("contact@horus-assur.digital");
     expect(env.adminPassword).toBeUndefined();
     expect(env.staticDir).toBeUndefined();
+    expect(env.publicSiteUrl).toBeUndefined();
     expect(env.cookieSecure).toBe(false);
     expect(env.allowRegistration).toBe(true);
     expect(env.adminContactEmail).toBe("contact@horus-assur.digital");
@@ -50,5 +51,15 @@ describe("loadEnv", () => {
   it("désactive l'inscription quand ALLOW_REGISTRATION=false", () => {
     expect(loadEnv({ ALLOW_REGISTRATION: "false" }).allowRegistration).toBe(false);
     expect(loadEnv({ ALLOW_REGISTRATION: "true" }).allowRegistration).toBe(true);
+  });
+
+  it("normalise l'URL publique canonique", () => {
+    expect(loadEnv({ PUBLIC_SITE_URL: "horus.example.com/app" }).publicSiteUrl).toBe(
+      "https://horus.example.com",
+    );
+    expect(loadEnv({ DOMAIN: "assurance.example.com" }).publicSiteUrl).toBe(
+      "https://assurance.example.com",
+    );
+    expect(loadEnv({ PUBLIC_SITE_URL: "ftp://example.com" }).publicSiteUrl).toBeUndefined();
   });
 });
