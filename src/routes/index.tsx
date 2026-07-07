@@ -8,7 +8,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DataTable } from "../components/data-table/DataTable";
-import { DevisRapideForm } from "../components/forms/DevisRapideForm";
 import { NouveauDossierButton } from "../components/forms/NouveauDossierButton";
 import { Header } from "../components/layout";
 import { DetailField } from "../components/ui/DetailField";
@@ -346,9 +345,7 @@ export function DashboardPage() {
         </div>
       </Header>
       <div className="overflow-auto p-4">
-        <DevisRapideForm />
-
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <KPICard
             label={t("dashboard.policesActives")}
             value={kpiLoading ? "…" : String(kpi?.policesActives ?? 0)}

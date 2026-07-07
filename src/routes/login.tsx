@@ -4,6 +4,7 @@
  */
 
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { DevisRapideForm } from "../components/forms/DevisRapideForm";
 import { type RegisterInput, useAuth } from "../lib/auth";
 
 const LOGO_SRC = "/horus-manager-logo.png";
@@ -41,9 +42,9 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-[#f6f2e8] to-[#ece3cd] p-4 sm:p-6 dark:from-slate-900 dark:to-slate-800">
-      <div className="w-full max-w-sm">
+      <div className={`w-full ${mode === "home" ? "max-w-6xl" : "max-w-sm"}`}>
         {/* Logo / Titre */}
-        <div className="mb-8 text-center">
+        <div className="mb-6 text-center sm:mb-8">
           <img
             src={LOGO_SRC}
             srcSet={LOGO_SRC_SET}
@@ -53,22 +54,32 @@ export function LoginPage() {
           <h1 className="sr-only">HORUS</h1>
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-xl sm:p-6 dark:border-slate-700 dark:bg-slate-800">
-          {mode === "home" ? (
-            <HomePanel
-              registrationEnabled={config.registrationEnabled}
-              onGoToLogin={() => setMode("login")}
-              onGoToRegister={() => setMode("register")}
-            />
-          ) : mode === "login" ? (
-            <LoginForm
-              onBack={() => setMode("home")}
-              onSwitchToRegister={() => setMode("register")}
-            />
-          ) : (
-            <RegisterForm onBack={() => setMode("home")} onSwitchToLogin={() => setMode("login")} />
-          )}
-        </div>
+        {mode === "home" ? (
+          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
+            <DevisRapideForm />
+            <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-xl sm:p-6 dark:border-slate-700 dark:bg-slate-800">
+              <HomePanel
+                registrationEnabled={config.registrationEnabled}
+                onGoToLogin={() => setMode("login")}
+                onGoToRegister={() => setMode("register")}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-xl sm:p-6 dark:border-slate-700 dark:bg-slate-800">
+            {mode === "login" ? (
+              <LoginForm
+                onBack={() => setMode("home")}
+                onSwitchToRegister={() => setMode("register")}
+              />
+            ) : (
+              <RegisterForm
+                onBack={() => setMode("home")}
+                onSwitchToLogin={() => setMode("login")}
+              />
+            )}
+          </div>
+        )}
 
         <p className="mt-6 text-center text-xs text-gray-500 dark:text-slate-500">
           Accès réservé. Contact :{" "}
