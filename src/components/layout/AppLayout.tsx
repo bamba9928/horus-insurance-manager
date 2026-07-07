@@ -5,6 +5,7 @@
 
 import { Outlet } from "@tanstack/react-router";
 import { useImpersonation } from "../../lib/admin-impersonation";
+import { AppFooter } from "./AppFooter";
 import { MobileNav } from "./MobileNav";
 import { Sidebar } from "./Sidebar";
 
@@ -17,6 +18,7 @@ export function AppLayout() {
       <main className="flex flex-1 flex-col overflow-auto pb-20 md:pb-0 dark:text-slate-100">
         <ImpersonationBanner />
         <Outlet />
+        <AppFooter />
       </main>
       <MobileNav />
     </div>

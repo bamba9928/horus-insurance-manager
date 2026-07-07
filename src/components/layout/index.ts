@@ -1,3 +1,4 @@
+export { AppFooter } from "./AppFooter";
 export { AppLayout } from "./AppLayout";
 export { Header } from "./Header";
 export { MobileNav } from "./MobileNav";

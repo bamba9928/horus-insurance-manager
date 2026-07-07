@@ -7,6 +7,7 @@ import {
   DEVIS_CATEGORY_GROUPS,
   type DevisCategorieCode,
   type DevisRapideResult,
+  getDevisGenreLabel,
   getDevisGenresByCategorie,
 } from "../../lib/devis";
 import {
@@ -29,7 +30,7 @@ type DevisState =
     };
 
 const inputClass =
-  "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
+  "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
 
 const labelClass = "block text-sm font-medium text-gray-700 dark:text-slate-200";
 
@@ -39,7 +40,7 @@ export function DevisRapideForm() {
   const [puissance, setPuissance] = useState("");
   const [places, setPlaces] = useState("");
   const [cylindree, setCylindree] = useState<Cylindree | null>(null);
-  const [dureeMois, setDureeMois] = useState("12");
+  const [dureeMois, setDureeMois] = useState("");
 
   const genreOptions = useMemo(() => getDevisGenresByCategorie(categorie), [categorie]);
   const selectedGenre = useMemo(
@@ -84,7 +85,7 @@ export function DevisRapideForm() {
     devis.result && selectedGenre
       ? buildWhatsAppDevisUrl({
           categorieLabel: selectedCategorieLabel,
-          genreLabel: selectedGenre.label,
+          genreLabel: getDevisGenreLabel(selectedGenre.label),
           dureeMois: Number(dureeMois),
           aPayer: devis.result.aPayer,
           ...(selectedGenre.needsPuissance ? { puissance: Number(puissance) } : {}),
@@ -113,23 +114,32 @@ export function DevisRapideForm() {
     setCylindree(null);
   };
 
+  const handleReset = () => {
+    setCategorie(null);
+    setGenre(null);
+    setPuissance("");
+    setPlaces("");
+    setCylindree(null);
+    setDureeMois("");
+  };
+
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
+    <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-xl shadow-black/5 dark:border-slate-700 dark:bg-slate-800">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_15rem] lg:items-stretch">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
               Demande de devis
             </h3>
-            <span className="text-xs font-medium text-gray-500 dark:text-slate-400">
+            <span className="inline-flex w-fit rounded-full bg-[#614e1a]/10 px-2.5 py-1 text-xs font-semibold text-[#614e1a] dark:bg-amber-300/10 dark:text-amber-200">
               Devis auto
             </span>
           </div>
 
-          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label htmlFor="devis-categorie" className={labelClass}>
-                Catégorie *
+                Catégorie véhicule *
               </label>
               <SearchableSelect
                 id="devis-categorie"
@@ -139,6 +149,7 @@ export function DevisRapideForm() {
                   value: item.value,
                   label: item.label,
                 }))}
+                className="py-2"
                 placeholder="— Sélectionner —"
                 allowClear={false}
               />
@@ -154,8 +165,9 @@ export function DevisRapideForm() {
                 onChange={handleGenreChange}
                 options={genreOptions.map((item) => ({
                   value: item.value,
-                  label: item.label,
+                  label: getDevisGenreLabel(item.label),
                 }))}
+                className="py-2"
                 placeholder={categorie ? "— Sélectionner —" : "Catégorie d'abord"}
                 emptyText="Aucun genre tarifé"
                 disabled={!categorie}
@@ -166,7 +178,7 @@ export function DevisRapideForm() {
             {selectedGenre?.needsPuissance && (
               <div>
                 <label htmlFor="devis-puissance" className={labelClass}>
-                  Puissance *
+                  Puissance fiscale *
                   {selectedGenre.maxCV !== undefined && (
                     <span className="ml-1 text-xs text-gray-500">(max {selectedGenre.maxCV})</span>
                   )}
@@ -215,6 +227,7 @@ export function DevisRapideForm() {
                     value: item.value,
                     label: item.label,
                   }))}
+                  className="py-2"
                   placeholder="— Sélectionner —"
                   allowClear={false}
                 />
@@ -223,7 +236,7 @@ export function DevisRapideForm() {
 
             <div>
               <label htmlFor="devis-duree" className={labelClass}>
-                Durée *
+                Choisir une validité *
               </label>
               <select
                 id="devis-duree"
@@ -231,6 +244,7 @@ export function DevisRapideForm() {
                 onChange={(event) => setDureeMois(event.target.value)}
                 className={inputClass}
               >
+                <option value="">— Choisir une validité —</option>
                 {DUREES_MOIS.map((duree) => (
                   <option key={duree} value={duree}>
                     {duree} mois
@@ -247,42 +261,45 @@ export function DevisRapideForm() {
           )}
         </div>
 
-        <div className="border-t border-gray-200 pt-4 xl:w-80 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-4 dark:border-slate-700">
-          <p className="text-xs font-medium text-gray-500 dark:text-slate-400">À payer</p>
-          <p className="mt-1 text-3xl font-bold text-[#614e1a] tabular-nums dark:text-amber-200">
-            {devis.result ? formatFCFA(devis.result.aPayer) : "—"}
-          </p>
+        <div className="flex min-h-full flex-col justify-between rounded-lg border border-[#614e1a]/15 bg-[#f8f4ea] p-4 dark:border-amber-300/15 dark:bg-slate-900">
+          <div>
+            <p className="text-xs font-semibold uppercase text-gray-500 dark:text-slate-400">
+              À payer
+            </p>
+            <p className="mt-2 min-h-9 text-2xl font-bold text-[#614e1a] tabular-nums dark:text-amber-200">
+              {devis.result ? formatFCFA(devis.result.aPayer) : "—"}
+            </p>
+          </div>
 
-          {devis.result && (
-            <div className="mt-3 space-y-1 text-xs text-gray-600 dark:text-slate-300">
-              <p>Réduction : {Math.round(devis.result.bonus * 100)} %</p>
-              <p>Frais : {formatFCFA(devis.result.frais)}</p>
-              {devis.result.remiseAPayer > 0 && (
-                <p>Remise devis : -{formatFCFA(devis.result.remiseAPayer)}</p>
-              )}
-            </div>
-          )}
-
-          {whatsappUrl ? (
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#8b7335] focus:outline-none focus:ring-2 focus:ring-[#614e1a]/40"
-            >
-              <MessageCircle className="h-4 w-4" aria-hidden="true" />
-              Valider le devis
-            </a>
-          ) : (
+          <div className="mt-4 space-y-2">
+            {whatsappUrl ? (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#8b7335] focus:outline-none focus:ring-2 focus:ring-[#614e1a]/40"
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                Valider le devis
+              </a>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="inline-flex min-h-10 w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-500 dark:bg-slate-700 dark:text-slate-400"
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                Valider le devis
+              </button>
+            )}
             <button
               type="button"
-              disabled
-              className="mt-4 inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-500 dark:bg-slate-700 dark:text-slate-400"
+              onClick={handleReset}
+              className="inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-[#614e1a]/30 bg-white px-4 py-2 text-sm font-semibold text-[#614e1a] transition-colors hover:bg-[#614e1a]/10 dark:border-amber-300/30 dark:bg-slate-900 dark:text-amber-200 dark:hover:bg-amber-300/10"
             >
-              <MessageCircle className="h-4 w-4" aria-hidden="true" />
-              Valider le devis
+              Réinitialiser
             </button>
-          )}
+          </div>
         </div>
       </div>
     </section>

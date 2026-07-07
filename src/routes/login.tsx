@@ -5,6 +5,7 @@
 
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { DevisRapideForm } from "../components/forms/DevisRapideForm";
+import { AppFooter } from "../components/layout";
 import { type RegisterInput, useAuth } from "../lib/auth";
 
 const LOGO_SRC = "/horus-manager-logo.png";
@@ -41,56 +42,49 @@ export function LoginPage() {
   const [mode, setMode] = useState<Mode>("home");
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-[#f6f2e8] to-[#ece3cd] p-4 sm:p-6 dark:from-slate-900 dark:to-slate-800">
-      <div className={`w-full ${mode === "home" ? "max-w-6xl" : "max-w-sm"}`}>
-        {/* Logo / Titre */}
-        <div className="mb-6 text-center sm:mb-8">
-          <img
-            src={LOGO_SRC}
-            srcSet={LOGO_SRC_SET}
-            alt="Horus Assurances"
-            className="mx-auto h-auto w-52 max-w-full object-contain drop-shadow-lg sm:w-64"
-          />
-          <h1 className="sr-only">HORUS</h1>
-        </div>
+    <div className="flex min-h-dvh flex-col bg-gradient-to-br from-[#f6f2e8] to-[#ece3cd] dark:from-slate-900 dark:to-slate-800">
+      <div className="flex flex-1 items-center justify-center p-4 sm:p-6 lg:py-8">
+        <div className={`w-full ${mode === "home" ? "max-w-6xl" : "max-w-sm"}`}>
+          {/* Logo / Titre */}
+          <div className="mb-5 text-center sm:mb-6">
+            <img
+              src={LOGO_SRC}
+              srcSet={LOGO_SRC_SET}
+              alt="Horus Assurances"
+              className="mx-auto h-auto w-44 max-w-full object-contain drop-shadow-lg sm:w-56"
+            />
+            <h1 className="sr-only">HORUS</h1>
+          </div>
 
-        {mode === "home" ? (
-          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
-            <DevisRapideForm />
-            <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-xl sm:p-6 dark:border-slate-700 dark:bg-slate-800">
-              <HomePanel
-                registrationEnabled={config.registrationEnabled}
-                onGoToLogin={() => setMode("login")}
-                onGoToRegister={() => setMode("register")}
-              />
+          {mode === "home" ? (
+            <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+              <DevisRapideForm />
+              <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-xl shadow-black/5 sm:p-6 dark:border-slate-700 dark:bg-slate-800">
+                <HomePanel
+                  registrationEnabled={config.registrationEnabled}
+                  onGoToLogin={() => setMode("login")}
+                  onGoToRegister={() => setMode("register")}
+                />
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-xl sm:p-6 dark:border-slate-700 dark:bg-slate-800">
-            {mode === "login" ? (
-              <LoginForm
-                onBack={() => setMode("home")}
-                onSwitchToRegister={() => setMode("register")}
-              />
-            ) : (
-              <RegisterForm
-                onBack={() => setMode("home")}
-                onSwitchToLogin={() => setMode("login")}
-              />
-            )}
-          </div>
-        )}
-
-        <p className="mt-6 text-center text-xs text-gray-500 dark:text-slate-500">
-          Accès réservé. Contact :{" "}
-          <a
-            href={`mailto:${SUPPORT_EMAIL}`}
-            className="font-medium text-green-700 underline-offset-4 hover:underline dark:text-green-400"
-          >
-            {SUPPORT_EMAIL}
-          </a>
-        </p>
+          ) : (
+            <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-xl sm:p-6 dark:border-slate-700 dark:bg-slate-800">
+              {mode === "login" ? (
+                <LoginForm
+                  onBack={() => setMode("home")}
+                  onSwitchToRegister={() => setMode("register")}
+                />
+              ) : (
+                <RegisterForm
+                  onBack={() => setMode("home")}
+                  onSwitchToLogin={() => setMode("login")}
+                />
+              )}
+            </div>
+          )}
+        </div>
       </div>
+      <AppFooter variant="public" />
     </div>
   );
 }
@@ -105,12 +99,8 @@ function HomePanel({
   onGoToRegister: () => void;
 }) {
   return (
-    <div className="space-y-4 text-center">
-      <h2 className="text-lg font-semibold text-[#614e1a] dark:text-[#c2a65b]">Bienvenue</h2>
-      <p className="text-sm text-gray-600 dark:text-slate-400">
-        Accédez à votre espace Horus Assurances Manager.
-      </p>
-      <div className="space-y-3 pt-1">
+    <div className="flex h-full flex-col justify-center space-y-4 text-center">
+      <div className="space-y-3">
         <button
           type="button"
           onClick={onGoToRegister}

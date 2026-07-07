@@ -13,27 +13,27 @@ export const DEVIS_WHATSAPP_PHONE = "221773409658";
 export const DEVIS_CATEGORY_GROUPS = [
   {
     value: "CAT_01",
-    label: "CAT 01 : Véhicule Particulier (VP)",
+    label: "VP",
     genres: ["CAT_01_VP"],
   },
   {
     value: "CAT_02",
-    label: "CAT 02 : Véhicules Utilitaires (TPC)",
+    label: "TPC",
     genres: ["CAT_02_TPC_LT3T5_FGTTE", "CAT_02_TPC_LT3T5_CAMIONNETTE", "CAT_02_TPC_GT3T5"],
   },
   {
     value: "CAT_03",
-    label: "CAT 03 : Véhicules Transports (TPM)",
+    label: "TPM",
     genres: ["CAT_03_TPM_LT3T5", "CAT_03_TPM_GT3T5"],
   },
   {
     value: "CAT_04",
-    label: "CAT 04 : Transport de Personnes (TPV)",
+    label: "TPV",
     genres: ["CAT_04_TAXI_URBAIN", "CAT_04_TAXI_INTERURBAIN", "CAT_04_AUTOCAR_MINICAR"],
   },
   {
     value: "CAT_05",
-    label: "CAT 05 : 2 roues / 3 roues",
+    label: "2 ROUES / TRICYCLE",
     genres: ["CAT_05_2R", "TRICYCLE"],
   },
 ] as const;
@@ -77,6 +77,10 @@ export function getDevisGenresByCategorie(categorie: DevisCategorieCode | null) 
   return TARIF_CATEGORIES.filter((item) =>
     (group.genres as readonly TarifCategorie[]).includes(item.value),
   );
+}
+
+export function getDevisGenreLabel(label: string): string {
+  return label.replace(/^CAT\s*\d+\s+—\s+/, "").replace(/\s*\(CAT\s*\d+\)$/i, "");
 }
 
 export function getDevisCommercialParams(genre: TarifCategorie, dureeMois: number) {

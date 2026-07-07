@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   buildWhatsAppDevisUrl,
   computeDevisRapide,
+  DEVIS_CATEGORY_GROUPS,
   DEVIS_WHATSAPP_PHONE,
   getDevisCommercialParams,
+  getDevisGenreLabel,
 } from "../../src/lib/devis";
 import { computeTarif } from "../../src/lib/tarification";
 
@@ -48,6 +50,30 @@ describe("computeDevisRapide", () => {
 
     expect(devis.remiseAPayer).toBe(0);
     expect(devis.aPayer).toBe(devis.tarif.primeTotale);
+  });
+});
+
+describe("DEVIS_CATEGORY_GROUPS", () => {
+  it("affiche des catégories simplifiées pour le devis public", () => {
+    expect(DEVIS_CATEGORY_GROUPS.map((categorie) => categorie.label)).toEqual([
+      "VP",
+      "TPC",
+      "TPM",
+      "TPV",
+      "2 ROUES / TRICYCLE",
+    ]);
+  });
+});
+
+describe("getDevisGenreLabel", () => {
+  it("retire le préfixe CAT et le tiret des genres du devis public", () => {
+    expect(getDevisGenreLabel("CAT 01 — Véhicule Particulier (VP)")).toBe(
+      "Véhicule Particulier (VP)",
+    );
+    expect(getDevisGenreLabel("CAT 04 — TPV · Taxi Urbain (4/5 places)")).toBe(
+      "TPV · Taxi Urbain (4/5 places)",
+    );
+    expect(getDevisGenreLabel("Tricycle (CAT 5)")).toBe("Tricycle");
   });
 });
 
