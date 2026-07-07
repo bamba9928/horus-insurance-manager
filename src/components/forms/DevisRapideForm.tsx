@@ -32,7 +32,7 @@ type DevisState =
 const inputClass =
   "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100";
 
-const labelClass = "block text-sm font-medium text-gray-700 dark:text-slate-200";
+const labelClass = "block text-sm font-medium text-green-700 dark:text-green-400";
 
 export function DevisRapideForm() {
   const [categorie, setCategorie] = useState<DevisCategorieCode | null>(null);
@@ -127,7 +127,7 @@ export function DevisRapideForm() {
     <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-xl shadow-black/5 dark:border-slate-700 dark:bg-slate-800">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_15rem] lg:items-stretch">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
               Demande de devis
             </h3>
@@ -261,7 +261,7 @@ export function DevisRapideForm() {
           )}
         </div>
 
-        <div className="flex min-h-full flex-col justify-between rounded-lg border border-[#614e1a]/15 bg-[#f8f4ea] p-4 dark:border-amber-300/15 dark:bg-slate-900">
+        <div className="flex min-h-full flex-col justify-between rounded-lg border border-[#614e1a]/15 bg-[#f8f4ea] p-4 text-center lg:text-left dark:border-amber-300/15 dark:bg-slate-900">
           <div>
             <p className="text-xs font-semibold uppercase text-gray-500 dark:text-slate-400">
               À payer
