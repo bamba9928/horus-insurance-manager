@@ -1,7 +1,7 @@
 /**
  * Normalisation des saisies utilisateur.
  *
- * - Téléphone (Sénégal) : 9 chiffres commençant par 70, 71, 75, 76 ou 77.
+ * - Téléphone (Sénégal) : 9 chiffres commençant par 70, 71, 75, 76, 77 ou 78.
  *   Les espaces et caractères spéciaux sont retirés automatiquement.
  * - Majuscules : appliquées globalement à la frappe par le hook
  *   `useAutoNormalizeInputs` (voir src/hooks). Ce module ne contient que
@@ -11,13 +11,14 @@
  */
 
 /** Préfixes mobiles sénégalais autorisés. */
-export const PHONE_PREFIXES = ["70", "71", "75", "76", "77"] as const;
+export const PHONE_PREFIXES = ["70", "71", "75", "76", "77", "78"] as const;
 
 /** Un numéro valide : 9 chiffres commençant par un préfixe autorisé. */
-export const PHONE_REGEX = /^(70|71|75|76|77)\d{7}$/;
+export const PHONE_REGEX = /^(70|71|75|76|77|78)\d{7}$/;
 
 /** Message d'erreur standard pour un téléphone invalide. */
-export const PHONE_ERROR = "Téléphone invalide : 9 chiffres commençant par 70, 71, 75, 76 ou 77";
+export const PHONE_ERROR =
+  "Téléphone invalide : 9 chiffres commençant par 70, 71, 75, 76, 77 ou 78";
 
 /**
  * Retire tout ce qui n'est pas un chiffre, enlève l'indicatif pays 221

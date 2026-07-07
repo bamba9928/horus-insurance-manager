@@ -38,6 +38,14 @@ describe("clientCreateSchema", () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it("accepte un téléphone commençant par 78", () => {
+    const result = clientCreateSchema.safeParse({
+      nomPrenom: "Test",
+      telephone: "78 123 45 67",
+    });
+    expect(result.success).toBe(true);
+  });
 });
 
 describe("vehiculeCreateSchema", () => {
