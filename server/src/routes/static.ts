@@ -52,16 +52,16 @@ const APP_NAME = "Horus Assurances Manager";
 const BRAND_NAME = "Horus Assurances";
 const SUPPORT_EMAIL = "contact@horus-assur.digital";
 const DEFAULT_DESCRIPTION =
-  "Plateforme web et desktop pour gerer devis, clients, vehicules, polices, paiements et echeances d'assurance auto.";
+  "Plateforme web et desktop pour gérer devis, clients, véhicules, polices, paiements et échéances d'assurance auto.";
 const COMMON_KEYWORDS = [
   "assurance auto",
   "gestion assurance",
   "courtier assurance",
   "police assurance",
   "devis assurance auto",
-  "echeances assurance",
+  "échéances assurance",
   "paiements assurance",
-  "Senegal",
+  "Sénégal",
 ];
 const PRIVATE_PATHS = [
   "/api/",
@@ -86,71 +86,71 @@ const ROUTE_SEO: Record<string, SeoRoute> = {
     keywords: COMMON_KEYWORDS,
   },
   "/verification": {
-    title: `Verification d'assurance | ${APP_NAME}`,
-    description: "Controle interne des attestations, polices et dossiers d'assurance auto.",
+    title: `Vérification d'assurance | ${APP_NAME}`,
+    description: "Contrôle interne des attestations, polices et dossiers d'assurance auto.",
     canonicalPath: "/verification",
     robots: NOINDEX_ROBOTS,
-    keywords: ["verification assurance", "controle police assurance", ...COMMON_KEYWORDS],
+    keywords: ["vérification assurance", "contrôle police assurance", ...COMMON_KEYWORDS],
   },
   "/clients": {
     title: `Gestion clients | ${APP_NAME}`,
-    description: "Espace authentifie de suivi des clients et contacts d'assurance auto.",
+    description: "Espace authentifié de suivi des clients et contacts d'assurance auto.",
     canonicalPath: "/clients",
     robots: NOINDEX_ROBOTS,
     keywords: ["gestion clients assurance", "crm assurance auto", ...COMMON_KEYWORDS],
   },
   "/vehicules": {
-    title: `Gestion vehicules | ${APP_NAME}`,
-    description: "Espace authentifie de suivi des vehicules assures et de leurs informations.",
+    title: `Gestion véhicules | ${APP_NAME}`,
+    description: "Espace authentifié de suivi des véhicules assurés et de leurs informations.",
     canonicalPath: "/vehicules",
     robots: NOINDEX_ROBOTS,
-    keywords: ["vehicules assures", "flotte auto", ...COMMON_KEYWORDS],
+    keywords: ["véhicules assurés", "flotte auto", ...COMMON_KEYWORDS],
   },
   "/polices": {
     title: `Gestion polices | ${APP_NAME}`,
-    description: "Espace authentifie de suivi des polices, renouvellements et statuts.",
+    description: "Espace authentifié de suivi des polices, renouvellements et statuts.",
     canonicalPath: "/polices",
     robots: NOINDEX_ROBOTS,
     keywords: ["polices assurance", "renouvellement assurance", ...COMMON_KEYWORDS],
   },
   "/paiements": {
     title: `Suivi paiements | ${APP_NAME}`,
-    description: "Espace authentifie de suivi des encaissements, restes a payer et impayes.",
+    description: "Espace authentifié de suivi des encaissements, restes à payer et impayés.",
     canonicalPath: "/paiements",
     robots: NOINDEX_ROBOTS,
-    keywords: ["paiements assurance", "impayes assurance", ...COMMON_KEYWORDS],
+    keywords: ["paiements assurance", "impayés assurance", ...COMMON_KEYWORDS],
   },
   "/echeances": {
-    title: `Echeances assurance | ${APP_NAME}`,
-    description: "Espace authentifie de pilotage des echeances et renouvellements a venir.",
+    title: `Échéances assurance | ${APP_NAME}`,
+    description: "Espace authentifié de pilotage des échéances et renouvellements à venir.",
     canonicalPath: "/echeances",
     robots: NOINDEX_ROBOTS,
-    keywords: ["echeances assurance", "renouvellements assurance auto", ...COMMON_KEYWORDS],
+    keywords: ["échéances assurance", "renouvellements assurance auto", ...COMMON_KEYWORDS],
   },
   "/parametres": {
-    title: `Parametres | ${APP_NAME}`,
-    description: "Parametres prives de configuration du gestionnaire d'assurance auto.",
+    title: `Paramètres | ${APP_NAME}`,
+    description: "Paramètres privés de configuration du gestionnaire d'assurance auto.",
     canonicalPath: "/parametres",
     robots: NOINDEX_ROBOTS,
     keywords: ["configuration assurance", ...COMMON_KEYWORDS],
   },
   "/profil": {
     title: `Profil utilisateur | ${APP_NAME}`,
-    description: "Profil prive de l'utilisateur Horus Assurances Manager.",
+    description: "Profil privé de l'utilisateur Horus Assurances Manager.",
     canonicalPath: "/profil",
     robots: NOINDEX_ROBOTS,
     keywords: ["profil utilisateur assurance", ...COMMON_KEYWORDS],
   },
   "/tarification": {
     title: `Tarification assurance auto | ${APP_NAME}`,
-    description: "Calculateur authentifie pour preparer des tarifs et devis d'assurance auto.",
+    description: "Calculateur authentifié pour préparer des tarifs et devis d'assurance auto.",
     canonicalPath: "/tarification",
     robots: NOINDEX_ROBOTS,
     keywords: ["tarification assurance auto", "calcul devis auto", ...COMMON_KEYWORDS],
   },
   "/admin": {
     title: `Administration | ${APP_NAME}`,
-    description: "Console privee d'administration des comptes Horus Assurances Manager.",
+    description: "Console privée d'administration des comptes Horus Assurances Manager.",
     canonicalPath: "/admin",
     robots: NOINDEX_ROBOTS,
     keywords: ["administration assurance", ...COMMON_KEYWORDS],
@@ -182,8 +182,8 @@ function getRouteSeo(pathname: string): SeoRoute {
   const normalized = normalizePathname(pathname);
   return (
     ROUTE_SEO[normalized] ?? {
-      title: `Espace prive | ${APP_NAME}`,
-      description: "Espace authentifie Horus Assurances Manager.",
+      title: `Espace privé | ${APP_NAME}`,
+      description: "Espace authentifié Horus Assurances Manager.",
       canonicalPath: normalized,
       robots: NOINDEX_ROBOTS,
       keywords: COMMON_KEYWORDS,
@@ -260,7 +260,7 @@ function buildStructuredData(route: SeoRoute, canonicalUrl: string, baseUrl: str
         logo: absoluteUrl(baseUrl, LOGO_PATH),
         image: imageUrl,
         email: SUPPORT_EMAIL,
-        areaServed: { "@type": "Country", name: "Senegal" },
+        areaServed: { "@type": "Country", name: "Sénégal" },
       },
       {
         "@type": "WebSite",
@@ -283,10 +283,10 @@ function buildStructuredData(route: SeoRoute, canonicalUrl: string, baseUrl: str
         offers: { "@type": "Offer", category: "Insurance management software" },
         featureList: [
           "Devis assurance auto",
-          "Gestion clients et vehicules",
+          "Gestion clients et véhicules",
           "Suivi des polices",
-          "Paiements et impayes",
-          "Alertes d'echeances",
+          "Paiements et impayés",
+          "Alertes d'échéances",
         ],
       },
       {
@@ -296,18 +296,18 @@ function buildStructuredData(route: SeoRoute, canonicalUrl: string, baseUrl: str
         mainEntity: [
           {
             "@type": "Question",
-            name: "A quoi sert Horus Assurances Manager ?",
+            name: "À quoi sert Horus Assurances Manager ?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "Horus Assurances Manager aide les courtiers et equipes d'assurance auto a gerer les devis, clients, vehicules, polices, paiements et echeances.",
+              text: "Horus Assurances Manager aide les courtiers et équipes d'assurance auto à gérer les devis, clients, véhicules, polices, paiements et échéances.",
             },
           },
           {
             "@type": "Question",
-            name: "Les donnees clients sont-elles publiques ?",
+            name: "Les données clients sont-elles publiques ?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "Non. Les espaces clients, vehicules, polices, paiements et administration sont authentifies et declares en noindex pour les moteurs.",
+              text: "Non. Les espaces clients, véhicules, polices, paiements et administration sont authentifiés et déclarés en noindex pour les moteurs.",
             },
           },
         ],

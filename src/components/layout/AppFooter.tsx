@@ -12,7 +12,7 @@ export function AppFooter({ variant = "app" }: AppFooterProps) {
     <footer
       className={
         isPublic
-          ? "w-full shrink-0 px-4 pb-4 pt-3 text-center text-xs text-gray-500 dark:text-slate-500"
+          ? "w-full shrink-0 px-4 pb-6 pt-20 text-center text-xs text-gray-500 dark:text-slate-500"
           : "shrink-0 border-t border-gray-200 bg-white px-4 py-3 text-xs text-gray-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
       }
     >

@@ -238,19 +238,18 @@ export function DevisRapideForm() {
               <label htmlFor="devis-duree" className={labelClass}>
                 Choisir une validité *
               </label>
-              <select
+              <SearchableSelect
                 id="devis-duree"
                 value={dureeMois}
-                onChange={(event) => setDureeMois(event.target.value)}
-                className={inputClass}
-              >
-                <option value="">— Choisir une validité —</option>
-                {DUREES_MOIS.map((duree) => (
-                  <option key={duree} value={duree}>
-                    {duree} mois
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setDureeMois(value == null ? "" : String(value))}
+                options={DUREES_MOIS.map((duree) => ({
+                  value: String(duree),
+                  label: `${duree} mois`,
+                }))}
+                className="py-2"
+                placeholder="— Choisir une validité —"
+                allowClear={false}
+              />
             </div>
           </div>
 
