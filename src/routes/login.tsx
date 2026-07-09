@@ -22,7 +22,11 @@ const PUBLIC_SHARE_TEXT =
 /** Même numéro que le devis WhatsApp — une seule source de vérité. */
 const CONTACT_PHONE_DISPLAY = "+221 77 340 96 58";
 const CONTACT_PHONE_TEL = `+${DEVIS_WHATSAPP_PHONE}`;
-const CONTACT_WHATSAPP_URL = `https://wa.me/${DEVIS_WHATSAPP_PHONE}`;
+/* Un `text` dédié : sans lui, WhatsApp rouvre la conversation avec le dernier
+   brouillon pré-rempli (ex. un devis validé puis réinitialisé). */
+const CONTACT_WHATSAPP_URL = `https://wa.me/${DEVIS_WHATSAPP_PHONE}?text=${encodeURIComponent(
+  "Bonjour, je vous contacte depuis le site Horus Assurances Manager.",
+)}`;
 const CONTACT_LOCATION = "Dakar, Sénégal";
 
 /** Reprend la `featureList` déclarée dans le JSON-LD (cf. lib/seo.ts). */
