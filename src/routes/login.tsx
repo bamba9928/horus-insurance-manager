@@ -320,7 +320,7 @@ function HomePanel({
       if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
       await navigator.clipboard.writeText(url);
       showToast({
-        title: "Lien copie",
+        title: "Lien copié",
         message: "Le lien public Horus Assurances Manager est dans le presse-papiers.",
         variant: "success",
       });
