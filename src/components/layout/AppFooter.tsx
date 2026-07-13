@@ -42,6 +42,18 @@ export function AppFooter({ variant = "app" }: AppFooterProps) {
         >
           Facebook
         </a>
+        <span className="hidden text-gray-300 sm:inline dark:text-slate-600">•</span>
+        <span>
+          Propulsé par{" "}
+          <a
+            href="https://horuservices.cloud/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-[#614e1a] underline-offset-4 hover:underline dark:text-amber-300"
+          >
+            Horus Services
+          </a>
+        </span>
       </div>
     </footer>
   );
