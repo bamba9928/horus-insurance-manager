@@ -1,4 +1,5 @@
 const SUPPORT_EMAIL = "contact@horus-assur.digital";
+const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61592098011927";
 
 interface AppFooterProps {
   variant?: "app" | "public";
@@ -30,6 +31,16 @@ export function AppFooter({ variant = "app" }: AppFooterProps) {
           className="font-medium text-green-700 underline-offset-4 hover:underline dark:text-green-400"
         >
           {SUPPORT_EMAIL}
+        </a>
+        <span className="hidden text-gray-300 sm:inline dark:text-slate-600">•</span>
+        <a
+          href={FACEBOOK_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-blue-700 underline-offset-4 hover:underline dark:text-blue-400"
+          aria-label="Suivre Horus Assurances sur Facebook"
+        >
+          Facebook
         </a>
       </div>
     </footer>
