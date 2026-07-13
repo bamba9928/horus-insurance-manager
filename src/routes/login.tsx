@@ -3,7 +3,16 @@
  * Seule page visible sans session ; toute autre route est protégée.
  */
 
-import { Check, ChevronDown, FileText, MapPin, MessageCircle, Phone, Share2 } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  FileText,
+  MapPin,
+  MessageCircle,
+  Phone,
+  SearchCheck,
+  Share2,
+} from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { DevisRapideForm } from "../components/forms/DevisRapideForm";
 import { AppFooter } from "../components/layout";
@@ -12,6 +21,7 @@ import { useToast } from "../components/ui/Toast";
 import { type RegisterInput, useAuth } from "../lib/auth";
 import { DEVIS_WHATSAPP_PHONE } from "../lib/devis";
 import { buildAbsoluteUrl, getClientPublicSiteUrl, SEO_CONFIG } from "../lib/seo";
+import { VerificationPage } from "./verification";
 
 const LOGO_SRC = "/horus-manager-logo.png";
 const LOGO_SRC_SET = "/horus-manager-logo.png 1x, /horus-manager-logo@2x.png 2x";
@@ -56,7 +66,7 @@ function getErrorMessage(err: unknown): string {
   return "Une erreur inattendue s'est produite. Réessayez.";
 }
 
-type Mode = "home" | "login" | "register";
+type Mode = "home" | "login" | "register" | "verification";
 
 const FOCUSABLE_SELECTOR = "input, select, textarea, button";
 
@@ -161,7 +171,9 @@ export function LoginPage() {
     <div className="flex min-h-dvh flex-col bg-gradient-to-br from-[#f6f2e8] to-[#ece3cd] dark:from-slate-900 dark:to-slate-800">
       <SeoMetadata pathname={pathname} />
       <div className="flex flex-1 items-center justify-center p-4 sm:p-6 lg:py-8">
-        <div className={`w-full ${mode === "home" ? "max-w-4xl" : "max-w-sm"}`}>
+        <div
+          className={`w-full ${mode === "home" || mode === "verification" ? "max-w-4xl" : "max-w-sm"}`}
+        >
           {/* Logo / Titre */}
           <div className="mb-5 text-center sm:mb-6">
             <img
@@ -184,6 +196,7 @@ export function LoginPage() {
                     registrationEnabled={config.registrationEnabled}
                     onGoToLogin={() => setMode("login")}
                     onGoToRegister={() => setMode("register")}
+                    onGoToVerification={() => setMode("verification")}
                     devisOpen={devisOpen}
                     onToggleDevis={toggleDevis}
                   />
@@ -207,7 +220,9 @@ export function LoginPage() {
             </div>
           ) : (
             <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-xl sm:p-6 dark:border-slate-700 dark:bg-slate-800">
-              {mode === "login" ? (
+              {mode === "verification" ? (
+                <VerificationPage onBack={() => setMode("home")} />
+              ) : mode === "login" ? (
                 <LoginForm
                   onBack={() => setMode("home")}
                   onSwitchToRegister={() => setMode("register")}
@@ -292,12 +307,14 @@ function HomePanel({
   registrationEnabled,
   onGoToLogin,
   onGoToRegister,
+  onGoToVerification,
   devisOpen,
   onToggleDevis,
 }: {
   registrationEnabled: boolean;
   onGoToLogin: () => void;
   onGoToRegister: () => void;
+  onGoToVerification: () => void;
   devisOpen: boolean;
   onToggleDevis: () => void;
 }) {
@@ -367,8 +384,16 @@ function HomePanel({
         )}
       </div>
 
-      {/* Actions tertiaires : la démo de devis et le partage. */}
+      {/* Actions publiques : vérification, demande de devis et partage. */}
       <div className="space-y-3 border-t border-gray-100 pt-4 dark:border-slate-700">
+        <button
+          type="button"
+          onClick={onGoToVerification}
+          className="mx-auto flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-[#614e1a]/5 hover:text-[#614e1a] dark:text-slate-400 dark:hover:bg-amber-300/10 dark:hover:text-amber-200"
+        >
+          <SearchCheck className="h-4 w-4" aria-hidden="true" />
+          Vérifier la validité de votre contrat
+        </button>
         <button
           type="button"
           onClick={onToggleDevis}

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Header } from "../../components/layout";
 import { AccountPendingNotice } from "../../components/ui/AccountPendingNotice";
 import { Spinner } from "../../components/ui/Spinner";
-import { useAuth } from "../../lib/auth";
+import { isWebMode, useAuth } from "../../lib/auth";
 import { formatDateDisplay } from "../../lib/date-utils";
 import { openExternalUrl, type VerificationData, verifyContract } from "../../lib/ipc";
 
@@ -64,7 +64,7 @@ function extractCompagnie(operationMessage: string | null): string {
   return match?.[1]?.trim() || "—";
 }
 
-export function VerificationPage() {
+export function VerificationPage({ onBack }: { onBack?: () => void }) {
   const { user } = useAuth();
   const [immatriculationInput, setImmatriculationInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -127,6 +127,9 @@ export function VerificationPage() {
 
   const attestationUrl = result ? buildAttestationUrl(result.attestationNumber) : "";
   const cedeaoUrl = result ? buildCedeaoUrl(result.attestationNumber) : "";
+  // Sur le site public, les liens vers les documents restent réservés aux
+  // utilisateurs connectés. L'application desktop n'a pas d'authentification.
+  const showDocumentLinks = !isWebMode || user != null;
 
   // Compte auto-inscrit non validé : fonction réservée.
   if (user != null && !user.approved) {
@@ -142,8 +145,22 @@ export function VerificationPage() {
 
   return (
     <>
-      <Header title="Vérification de validité d'un contrat" />
+      {!onBack && <Header title="Vérification de validité d'un contrat" />}
       <div className="overflow-auto p-4">
+        {onBack && (
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-300 px-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+            >
+              Retour à l'accueil
+            </button>
+            <h2 className="text-lg font-semibold text-[#614e1a] dark:text-[#c2a65b]">
+              Vérification de validité d'un contrat
+            </h2>
+          </div>
+        )}
         <section className="rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
           <form onSubmit={handleVerify} className="flex flex-col gap-3 md:flex-row md:items-end">
             <div className="w-full md:max-w-lg">
@@ -212,27 +229,29 @@ export function VerificationPage() {
               <ReadonlyField label="Date d'échéance" value={formatApiDate(result.dateEcheance)} />
               <ReadonlyField label="Marque" value={result.marque} />
               <ReadonlyField label="Modèle" value={result.modele} />
-              <div className="lg:col-span-2">
-                <p className="mb-1 text-xs font-medium text-gray-500 dark:text-slate-400">
-                  Liens utiles
-                </p>
-                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => void openExternalLink(attestationUrl)}
-                    className="inline-flex h-10 items-center justify-center rounded-lg bg-[#614e1a] px-3 text-sm font-semibold text-white transition-colors hover:bg-[#8b7335]"
-                  >
-                    Ouvrir Attestation
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void openExternalLink(cedeaoUrl)}
-                    className="inline-flex h-10 items-center justify-center rounded-lg border border-[#614e1a] px-3 text-sm font-semibold text-[#614e1a] transition-colors hover:bg-[#614e1a]/10 dark:text-[#c9b37f]"
-                  >
-                    Ouvrir CEDEAO
-                  </button>
+              {showDocumentLinks && (
+                <div className="lg:col-span-2">
+                  <p className="mb-1 text-xs font-medium text-gray-500 dark:text-slate-400">
+                    Liens utiles
+                  </p>
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => void openExternalLink(attestationUrl)}
+                      className="inline-flex h-10 items-center justify-center rounded-lg bg-[#614e1a] px-3 text-sm font-semibold text-white transition-colors hover:bg-[#8b7335]"
+                    >
+                      Ouvrir Attestation
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void openExternalLink(cedeaoUrl)}
+                      className="inline-flex h-10 items-center justify-center rounded-lg border border-[#614e1a] px-3 text-sm font-semibold text-[#614e1a] transition-colors hover:bg-[#614e1a]/10 dark:text-[#c9b37f]"
+                    >
+                      Ouvrir CEDEAO
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </section>
         )}

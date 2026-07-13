@@ -396,6 +396,29 @@ describe("vérification (proxy AAS)", () => {
     vi.unstubAllGlobals();
   });
 
+  it("est accessible publiquement sans session", async () => {
+    const fetchSpy = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            operationStatus: "ERROR",
+            operationMessage: "Aucun contrat valide",
+            data: null,
+          }),
+          { status: 200 },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const res = await app.request("/api/public/verify/DK1234AB");
+
+    expect(res.status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "https://apiaas.diotali.com/applicationtiers/verify/DK1234AB",
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+  });
+
   it("rejette une immatriculation trop longue sans appeler l'API externe", async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);

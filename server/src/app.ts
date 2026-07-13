@@ -17,6 +17,7 @@ import { adminTenantRoutes, apiRoutes } from "./routes/api.js";
 import { authRoutes } from "./routes/auth.js";
 import { profileRoutes } from "./routes/profile.js";
 import { mountStatic } from "./routes/static.js";
+import { verificationHandler } from "./routes/verification.js";
 
 export interface AppContext {
   env: ServerEnv;
@@ -31,6 +32,9 @@ export function buildApp(ctx: AppContext): Hono<AuthEnv> {
   const mutationLimiter = new SlidingWindowLimiter();
   // Limiteur d'auto-inscription (par IP) : quelques comptes par fenêtre.
   const registrationLimiter = new SlidingWindowLimiter(5, 10 * 60_000);
+  // La vérification publique appelle un service externe : quota par IP pour
+  // empêcher qu'elle soit utilisée comme proxy sans limite.
+  const publicVerificationLimiter = new SlidingWindowLimiter(30, 60_000);
 
   app.onError((err, c) => {
     console.error(`[erreur] ${c.req.method} ${c.req.path}:`, err);
@@ -68,6 +72,21 @@ export function buildApp(ctx: AppContext): Hono<AuthEnv> {
       registrationEnabled: ctx.env.allowRegistration,
       adminEmail: ctx.env.adminContactEmail,
     }),
+  );
+
+  app.get(
+    "/api/public/verify/:immatriculation",
+    async (c, next) => {
+      const ip =
+        c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ||
+        c.req.header("x-real-ip") ||
+        "local";
+      if (!publicVerificationLimiter.hit(`verify:${ip}`)) {
+        return c.json({ error: "Trop de vérifications. Réessayez dans un instant." }, 429);
+      }
+      await next();
+    },
+    verificationHandler,
   );
 
   app.route("/api/auth", authRoutes(ctx, registrationLimiter));

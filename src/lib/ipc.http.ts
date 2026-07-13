@@ -129,13 +129,18 @@ export async function restoreDatabase(bytes: Uint8Array): Promise<string> {
 }
 
 export async function verifyContract(immatriculation: string): Promise<VerificationApiResponse> {
-  // Proxy externe, sans notion de tenant : toujours sur la base propre.
-  return request<VerificationApiResponse>(
-    "GET",
-    `/verify/${encodeURIComponent(immatriculation)}`,
-    undefined,
-    { selfScope: true },
-  );
+  const res = await fetch(`${BASE}/api/public/verify/${encodeURIComponent(immatriculation)}`);
+  if (!res.ok) {
+    let message = `Erreur ${res.status}`;
+    try {
+      const data = (await res.json()) as { error?: string };
+      if (data.error) message = data.error;
+    } catch {
+      // corps non-JSON
+    }
+    throw new ApiError(res.status, message);
+  }
+  return (await res.json()) as VerificationApiResponse;
 }
 
 export async function openExternalUrl(url: string): Promise<void> {
