@@ -95,7 +95,7 @@ export function AppFooter({ variant = "app" }: AppFooterProps) {
         </div>
 
         <div className="flex flex-col items-center gap-3 border-t border-white/10 bg-slate-950/40 px-4 py-4 text-center text-xs leading-5 text-slate-500 sm:flex-row sm:justify-between sm:px-8 sm:text-left">
-          <span>© {year} Horus Assurances Manager. Tous droits réservés.</span>
+          <span>© {year}. Tous droits réservés.</span>
           <a
             href={HORUS_SERVICES_URL}
             target="_blank"
