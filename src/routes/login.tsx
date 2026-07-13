@@ -389,7 +389,7 @@ function HomePanel({
         <button
           type="button"
           onClick={onGoToVerification}
-          className="mx-auto flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-[#614e1a]/5 hover:text-[#614e1a] dark:text-slate-400 dark:hover:bg-amber-300/10 dark:hover:text-amber-200"
+          className="mx-auto flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-50 hover:text-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-400/10 dark:hover:text-emerald-300"
         >
           <SearchCheck className="h-4 w-4" aria-hidden="true" />
           Vérifier la validité de votre contrat
@@ -399,7 +399,7 @@ function HomePanel({
           onClick={onToggleDevis}
           aria-expanded={devisOpen}
           aria-controls="devis-rapide-panel"
-          className="mx-auto flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-[#614e1a]/5 hover:text-[#614e1a] dark:text-slate-400 dark:hover:bg-amber-300/10 dark:hover:text-amber-200"
+          className="mx-auto flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-[#8b6b18] transition-colors hover:bg-amber-50 hover:text-[#614e1a] dark:text-amber-300 dark:hover:bg-amber-300/10 dark:hover:text-amber-200"
         >
           <FileText className="h-4 w-4" aria-hidden="true" />
           Demander un devis
@@ -413,7 +413,7 @@ function HomePanel({
           onClick={handleShare}
           aria-label="Partager le lien du site"
           title="Partager le lien du site"
-          className="mx-auto flex h-9 w-9 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-300"
+          className="mx-auto flex h-9 w-9 items-center justify-center rounded-full text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-400/10 dark:hover:text-blue-300"
         >
           <Share2 className="h-4 w-4" aria-hidden="true" />
         </button>
