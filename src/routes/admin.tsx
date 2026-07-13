@@ -467,7 +467,6 @@ function UserRow({
   const [newPassword, setNewPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { actingUser, startActing, stopActing } = useImpersonation();
@@ -570,7 +569,6 @@ function UserRow({
   };
 
   const openDeleteDialog = () => {
-    setDeleteConfirmation("");
     setDeleteError(null);
     setDeleteDialogOpen(true);
   };
@@ -578,16 +576,11 @@ function UserRow({
   const closeDeleteDialog = () => {
     if (busy) return;
     setDeleteDialogOpen(false);
-    setDeleteConfirmation("");
     setDeleteError(null);
   };
 
   const deleteAccount = async (e: FormEvent) => {
     e.preventDefault();
-    if (deleteConfirmation !== "SUPPRIMER") {
-      setDeleteError("Tapez SUPPRIMER pour confirmer la suppression définitive.");
-      return;
-    }
     setBusy(true);
     setDeleteError(null);
     try {
@@ -1004,26 +997,6 @@ function UserRow({
             Suppression définitive du compte <span className="font-semibold">{user.login}</span> et
             de sa base métier.
           </div>
-          <div>
-            <label
-              htmlFor={`delete-confirm-${user.id}`}
-              className="block text-xs font-medium text-gray-600 dark:text-slate-400"
-            >
-              Tapez SUPPRIMER pour confirmer
-            </label>
-            <input
-              id={`delete-confirm-${user.id}`}
-              type="text"
-              value={deleteConfirmation}
-              onChange={(e) => {
-                setDeleteConfirmation(e.target.value);
-                setDeleteError(null);
-              }}
-              className={modalInputClass}
-              autoComplete="off"
-              autoFocus
-            />
-          </div>
           {deleteError && (
             <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
               {deleteError}
@@ -1040,7 +1013,7 @@ function UserRow({
             </button>
             <button
               type="submit"
-              disabled={busy || deleteConfirmation !== "SUPPRIMER"}
+              disabled={busy}
               className="rounded-lg bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {busy ? "Suppression..." : "Supprimer"}
