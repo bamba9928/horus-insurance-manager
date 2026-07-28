@@ -7,7 +7,8 @@
 	# En-têtes de sécurité de base
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
-		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests"
+		# connect.facebook.net / www.facebook.com : pixel Meta Ads (cf. server/src/routes/static.ts)
+		Content-Security-Policy "default-src 'self'; script-src 'self' https://connect.facebook.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://www.facebook.com; font-src 'self' data:; connect-src 'self' https://connect.facebook.net https://www.facebook.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests"
 		Cross-Origin-Opener-Policy "same-origin"
 		Permissions-Policy "camera=(), microphone=(), geolocation=()"
 		X-Content-Type-Options "nosniff"

@@ -15,11 +15,12 @@ import {
 } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { DevisRapideForm } from "../components/forms/DevisRapideForm";
-import { AppFooter } from "../components/layout";
+import { AppFooter, CookieConsentBanner } from "../components/layout";
 import { SeoMetadata } from "../components/seo/SeoMetadata";
 import { useToast } from "../components/ui/Toast";
 import { type RegisterInput, useAuth } from "../lib/auth";
 import { DEVIS_WHATSAPP_PHONE } from "../lib/devis";
+import { trackMetaEvent } from "../lib/meta-pixel";
 import { buildAbsoluteUrl, getClientPublicSiteUrl, SEO_CONFIG } from "../lib/seo";
 import { VerificationPage } from "./verification";
 
@@ -238,6 +239,7 @@ export function LoginPage() {
         </div>
       </div>
       <AppFooter variant="public" />
+      <CookieConsentBanner />
     </div>
   );
 }
@@ -618,6 +620,7 @@ function RegisterForm({
         website: form.website?.trim() || undefined,
       });
       // Succès → l'AuthProvider a défini l'utilisateur, l'app se charge.
+      trackMetaEvent("CompleteRegistration");
     } catch (err) {
       setError(getErrorMessage(err));
       setSubmitting(false);

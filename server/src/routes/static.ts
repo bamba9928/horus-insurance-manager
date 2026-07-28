@@ -157,9 +157,13 @@ const ROUTE_SEO: Record<string, SeoRoute> = {
   },
 };
 
+/* Pixel Meta (Facebook Ads) : fbevents.js est servi par connect.facebook.net et
+   poste les événements sur www.facebook.com (balise image + fetch). */
+const META_PIXEL_SCRIPT_SRC = "https://connect.facebook.net";
+const META_PIXEL_ENDPOINT = "https://www.facebook.com";
+
 const SECURITY_HEADERS = {
-  "content-security-policy":
-    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+  "content-security-policy": `default-src 'self'; script-src 'self' ${META_PIXEL_SCRIPT_SRC}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: ${META_PIXEL_ENDPOINT}; font-src 'self' data:; connect-src 'self' ${META_PIXEL_SCRIPT_SRC} ${META_PIXEL_ENDPOINT}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'`,
   "cross-origin-opener-policy": "same-origin",
   "permissions-policy": "camera=(), microphone=(), geolocation=()",
   "referrer-policy": "strict-origin-when-cross-origin",

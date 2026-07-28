@@ -1,4 +1,5 @@
-import { ExternalLink, Mail, ShieldCheck } from "lucide-react";
+import { Cookie, ExternalLink, Mail, ShieldCheck } from "lucide-react";
+import { reopenConsentBanner } from "../../lib/consent";
 
 const SUPPORT_EMAIL = "contact@horus-assur.digital";
 const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61592098011927";
@@ -17,14 +18,19 @@ export function AppFooter({ variant = "app" }: AppFooterProps) {
 
   if (!isPublic) {
     return (
-      <footer className="shrink-0 border-t border-gray-200 bg-white px-3 py-3 sm:px-4 dark:border-slate-700 dark:bg-slate-800">
+      <footer className="relative shrink-0 border-t border-amber-200/60 bg-gradient-to-b from-white to-amber-50/40 px-3 py-3 sm:px-4 dark:border-slate-700 dark:from-slate-800 dark:to-slate-900">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c2a65b] to-transparent dark:via-amber-300/50"
+          aria-hidden="true"
+        />
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 text-xs text-gray-500 sm:flex-row sm:gap-2 dark:text-slate-400">
           <div className="flex items-center justify-center gap-2 text-center sm:justify-start sm:text-left">
-            <ShieldCheck
-              className="h-4 w-4 text-[#614e1a] dark:text-amber-300"
-              aria-hidden="true"
-            />
-            <span>© {year} Horus Assurances Manager</span>
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#614e1a]/10 text-[#614e1a] ring-1 ring-inset ring-[#614e1a]/15 dark:bg-amber-300/10 dark:text-amber-300 dark:ring-amber-300/20">
+              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <span className="font-medium text-gray-600 dark:text-slate-300">
+              © {year} Horus Assurances Manager
+            </span>
           </div>
 
           <div className="grid w-full grid-cols-2 items-center gap-1 sm:flex sm:w-auto sm:flex-wrap sm:justify-center">
@@ -95,7 +101,18 @@ export function AppFooter({ variant = "app" }: AppFooterProps) {
         </div>
 
         <div className="flex flex-col items-center gap-3 border-t border-white/10 bg-slate-950/40 px-4 py-4 text-center text-xs leading-5 text-slate-500 sm:flex-row sm:justify-between sm:px-8 sm:text-left">
-          <span>© {year}. Tous droits réservés.</span>
+          <span className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-start">
+            © {year}. Tous droits réservés.
+            {/* Revenir sur le consentement aux cookies de mesure. */}
+            <button
+              type="button"
+              onClick={reopenConsentBanner}
+              className="inline-flex items-center gap-1.5 rounded text-slate-400 transition-colors hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+            >
+              <Cookie className="h-3.5 w-3.5" aria-hidden="true" />
+              Cookies
+            </button>
+          </span>
           <a
             href={HORUS_SERVICES_URL}
             target="_blank"
@@ -126,7 +143,7 @@ function FooterIconLink({
     <a
       href={href}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      className="inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-md px-2 text-center font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-[#614e1a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#614e1a] sm:min-h-8 sm:w-auto dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-amber-300"
+      className="inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-md px-2 text-center font-medium text-gray-600 transition-colors hover:bg-amber-50 hover:text-[#614e1a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#614e1a] sm:min-h-8 sm:w-auto dark:text-slate-300 dark:hover:bg-amber-300/10 dark:hover:text-amber-300"
       aria-label={label}
     >
       {icon}

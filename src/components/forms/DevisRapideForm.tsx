@@ -10,6 +10,7 @@ import {
   getDevisGenreLabel,
   getDevisGenresByCategorie,
 } from "../../lib/devis";
+import { trackMetaEvent } from "../../lib/meta-pixel";
 import {
   CYLINDREE_OPTIONS,
   type Cylindree,
@@ -112,6 +113,17 @@ export function DevisRapideForm() {
     setPuissance("");
     setPlaces("");
     setCylindree(null);
+  };
+
+  /* Départ vers WhatsApp = prise de contact : c'est la conversion suivie par
+     Meta Ads (le montant sert à optimiser les campagnes sur la valeur). */
+  const handleDevisValide = () => {
+    trackMetaEvent("Lead", {
+      content_category: selectedCategorieLabel,
+      content_name: selectedGenre ? getDevisGenreLabel(selectedGenre.label) : undefined,
+      value: devis.result?.aPayer,
+      currency: "XOF",
+    });
   };
 
   const handleReset = () => {
@@ -276,6 +288,7 @@ export function DevisRapideForm() {
                 href={whatsappUrl}
                 target="_blank"
                 rel="noreferrer"
+                onClick={handleDevisValide}
                 className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#614e1a] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#8b7335] focus:outline-none focus:ring-2 focus:ring-[#614e1a]/40"
               >
                 <MessageCircle className="h-4 w-4" aria-hidden="true" />
