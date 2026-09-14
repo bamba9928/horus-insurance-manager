@@ -45,21 +45,21 @@ export const TARIF_CATEGORIES: TarifCategorieOption[] = [
   },
   {
     value: "CAT_02_TPC_LT3T5_FGTTE",
-    label: "CAT 02 — TPC -3T500 · Fourgonnette / Break (u2)",
+    label: "CAT 02 — TPC · Utilitaire carrosserie tourisme (Break / Fourgonnette)",
     needsPlaces: false,
     needsPuissance: true,
     needsCylindree: false,
   },
   {
     value: "CAT_02_TPC_LT3T5_CAMIONNETTE",
-    label: "CAT 02 — TPC -3T500 · Camionnette (u21)",
+    label: "CAT 02 — TPC · Autres carrosseries jusqu'à 3T500",
     needsPlaces: false,
     needsPuissance: true,
     needsCylindree: false,
   },
   {
     value: "CAT_02_TPC_GT3T5",
-    label: "CAT 02 — TPC +3T500 · Camion (u22)",
+    label: "CAT 02 — TPC · Autres carrosseries au-delà de 3T500",
     needsPlaces: false,
     needsPuissance: true,
     needsCylindree: false,
@@ -125,13 +125,14 @@ export interface CvBracket {
   rc: number;
 }
 
-/** Cylindrée CAT 5 */
-export type Cylindree = "LT_125" | "GT_125" | "SIDE_CAR";
+/** Genre CAT 5 (genres ASS : 2RCYC, 2RSCO, 2RMOT, 2RSID) */
+export type Cylindree = "CYCLOMOTEUR" | "LT_125" | "GT_125" | "SIDE_CAR";
 
 export const CYLINDREE_OPTIONS: { value: Cylindree; label: string }[] = [
-  { value: "LT_125", label: "Scooter et Vélomoteurs -125 cm³" },
-  { value: "GT_125", label: "Motocyclettes et Scooter +125 cm³" },
-  { value: "SIDE_CAR", label: "Tandem, Triporteur et Side-cars" },
+  { value: "CYCLOMOTEUR", label: "Cyclomoteurs" },
+  { value: "LT_125", label: "Scooters et vélomoteurs (jusqu'à 125 cm³)" },
+  { value: "GT_125", label: "Motocyclettes et scooters de plus de 125 cm³" },
+  { value: "SIDE_CAR", label: "Side-cars / 3 roues (toutes cylindrées)" },
 ];
 
 /** Tables RC annuel par catégorie et puissance fiscale. */
@@ -202,11 +203,12 @@ export const AUTOCAR_SURPRIME = {
   audela30: 6726,
 };
 
-/** CAT 5 — RC annuel par cylindrée */
+/** CAT 5 — RC annuel par genre (vérifié sur les propositions ASS) */
 export const CAT_05_RC: Record<Cylindree, number> = {
-  LT_125: 18780,
-  GT_125: 29448,
-  SIDE_CAR: 34021,
+  CYCLOMOTEUR: 18780,
+  LT_125: 29448,
+  GT_125: 34021,
+  SIDE_CAR: 40880,
 };
 
 /** TRICYCLE — RC annuel unique */
@@ -216,6 +218,12 @@ export const TRICYCLE_RC = 40880;
 export const BAREME_CONSTANTS = {
   /** Réduction par défaut (20 %) */
   bonusDefaut: 0.2,
+  /** Réduction par défaut CAT 02 TPC (40 %) */
+  bonusTpcDefaut: 0.4,
+  /** Réduction par défaut TPV (aucune) */
+  bonusTpvDefaut: 0,
+  /** ASS n'applique que 98 % du taux de réduction TPC (40 % → 39,2 %, soit × 0,608) */
+  facteurReductionTpc: 0.98,
   /** Taxe sur (P_Nette + Frais) */
   tauxTaxe: 0.14,
   /** Fonds de Garantie Auto (% R_Civil) */

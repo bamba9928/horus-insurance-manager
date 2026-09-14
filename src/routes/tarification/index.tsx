@@ -12,6 +12,7 @@ import {
   type Cylindree,
   computeTarif,
   formatFCFA,
+  getDefaultBonus,
   getDefaultFrais,
   TARIF_CATEGORIES,
   type TarifCategorie,
@@ -26,6 +27,7 @@ export function TarificationPage() {
   const [places, setPlaces] = useState<string>("");
   const [cylindree, setCylindree] = useState<Cylindree | null>(null);
   const [dureeMois, setDureeMois] = useState<string>("");
+  const [dureeUnite, setDureeUnite] = useState<"mois" | "jours">("mois");
   const [frais, setFrais] = useState<string>("3000");
   const [bonusPct, setBonusPct] = useState<string>("20");
 
@@ -41,8 +43,11 @@ export function TarificationPage() {
     setCategorie(v);
     setResult(null);
     setError(null);
-    // Ajuste les frais par défaut selon la catégorie (TPV = 1000)
-    if (v) setFrais(String(getDefaultFrais(v)));
+    // Ajuste frais et réduction par défaut selon la catégorie (TPV 0 %, TPC 40 %, autres 20 %)
+    if (v) {
+      setFrais(String(getDefaultFrais(v)));
+      setBonusPct(String(getDefaultBonus(v) * 100));
+    }
   };
 
   const handleCompute = () => {
@@ -65,7 +70,7 @@ export function TarificationPage() {
         ...(meta?.needsPuissance ? { puissance: Number(puissance) } : {}),
         ...(meta?.needsPlaces ? { places: Number(places) } : {}),
         ...(meta?.needsCylindree && cylindree ? { cylindree } : {}),
-        dureeMois: duree,
+        ...(dureeUnite === "jours" ? { dureeJours: duree } : { dureeMois: duree }),
         frais: fraisN,
         bonus,
       });
@@ -81,6 +86,7 @@ export function TarificationPage() {
     setPlaces("");
     setCylindree(null);
     setDureeMois("");
+    setDureeUnite("mois");
     setFrais("3000");
     setBonusPct("20");
     setResult(null);
@@ -177,18 +183,29 @@ export function TarificationPage() {
             <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor="tarif-duree" className={labelClass}>
-                  Durée (mois) *
+                  Durée *
                 </label>
-                <input
-                  id="tarif-duree"
-                  type="number"
-                  min={1}
-                  max={12}
-                  value={dureeMois}
-                  onChange={(e) => setDureeMois(e.target.value)}
-                  className={inputClass}
-                  placeholder="12"
-                />
+                <div className="flex gap-2">
+                  <input
+                    id="tarif-duree"
+                    type="number"
+                    min={1}
+                    max={dureeUnite === "jours" ? 365 : 12}
+                    value={dureeMois}
+                    onChange={(e) => setDureeMois(e.target.value)}
+                    className={inputClass}
+                    placeholder={dureeUnite === "jours" ? "20" : "12"}
+                  />
+                  <select
+                    aria-label="Unité de durée"
+                    value={dureeUnite}
+                    onChange={(e) => setDureeUnite(e.target.value as "mois" | "jours")}
+                    className={`${inputClass} w-24`}
+                  >
+                    <option value="mois">mois</option>
+                    <option value="jours">jours</option>
+                  </select>
+                </div>
               </div>
               <div>
                 <label htmlFor="tarif-bonus" className={labelClass}>
@@ -259,14 +276,19 @@ export function TarificationPage() {
             ) : (
               <div className="space-y-1.5">
                 <ResultRow label="RC Annuel (base)" value={result.rcAnnuel} muted />
-                <ResultRow label="R. Civil (prorata)" value={result.rCivil} muted />
+                <ResultRow label="RC prorata (avant réduction)" value={result.rcProrata} muted />
+                <ResultRow
+                  label={`Réduction (${Math.round(result.tauxReductionEffectif * 1000) / 10} %)`}
+                  value={result.reduction}
+                  muted
+                />
                 <div className="my-1 border-t border-gray-200 dark:border-slate-700" />
-                <ResultRow label="Prime Nette" value={result.primeNette} />
+                <ResultRow label="Prime RC / Prime Nette" value={result.primeNette} />
                 <ResultRow label="Frais" value={result.frais} />
                 <ResultRow label="Taxe (14 %)" value={result.taxe} />
                 <ResultRow label="FGA (2,5 %)" value={result.fga} />
                 {result.carteBrune > 0 && (
-                  <ResultRow label="Carte brune" value={result.carteBrune} muted />
+                  <ResultRow label="CEDEAO" value={result.carteBrune} muted />
                 )}
                 <ResultRow label="Prime Totale" value={result.primeTotale} highlight />
                 <ResultRow

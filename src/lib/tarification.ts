@@ -5,9 +5,12 @@
  * dans `tarification-bareme.ts` ; ce module ne contient que la logique
  * de calcul.
  *
- * Formules communes (toutes catégories) :
- *  - R. Civil  = ROUND(RC_annuel × coeffMensuel × mois × (1 − réduction)) pour 1 ≤ mois ≤ 11
- *                ROUND(RC_annuel × (1 − réduction))                       pour mois = 12
+ * Formules communes (alignées sur ASS — voir docs/BAREME_TARIFICATION.md) :
+ *  - Coef durée = coeffMensuel × mois (1 ≤ mois ≤ 11), 1 pour 12 mois,
+ *                 ou ROUND(jours / 365 ; 3) pour une durée en jours
+ *  - RC prorata = ROUND(RC_annuel × coef durée)
+ *  - R. Civil  = ROUND(RC prorata × (1 − réduction effective))
+ *                réduction effective = réduction × facteurReductionTpc pour les TPC
  *  - P. Nette  = R. Civil (P. Trans = 0)
  *  - Taxe      = ROUND((P_Nette + Frais) × tauxTaxe)
  *  - FGA       = ROUND(R_Civil × tauxFga)
@@ -59,17 +62,27 @@ export interface TarifInput {
   places?: number;
   /** Cylindrée — requis pour CAT 5 */
   cylindree?: Cylindree;
-  /** Durée en mois (1 à 12) */
-  dureeMois: number;
+  /** Durée en mois (1 à 12) — ignorée si dureeJours est fourni */
+  dureeMois?: number;
+  /** Durée en jours (1 à 365) — prorata ASS ROUND(jours / 365 ; 3) */
+  dureeJours?: number;
   /** Frais de police / coût de police */
   frais: number;
-  /** Réduction accordée (0.2 = 20 %) ; si non fourni, valeur par défaut du barème */
+  /** Réduction accordée (0.2 = 20 %) ; si non fourni, valeur par défaut de la catégorie */
   bonus?: number;
 }
 
 export interface TarifResult {
   /** RC annuel utilisé */
   rcAnnuel: number;
+  /** Coefficient de durée appliqué au RC annuel */
+  coefficientDuree: number;
+  /** RC au prorata de la durée, avant réduction */
+  rcProrata: number;
+  /** Montant de la réduction (RC prorata − R. Civil) */
+  reduction: number;
+  /** Taux de réduction réellement appliqué */
+  tauxReductionEffectif: number;
   /** Responsabilité civile (prorata durée + réduction) */
   rCivil: number;
   /** Prime Nette */
@@ -100,6 +113,17 @@ function isTpv(cat: TarifCategorie): boolean {
     cat === "CAT_04_TAXI_INTERURBAIN" ||
     cat === "CAT_04_AUTOCAR_MINICAR"
   );
+}
+
+function isTpc(cat: TarifCategorie): boolean {
+  return cat.startsWith("CAT_02_TPC");
+}
+
+/** Réduction par défaut selon catégorie : TPV 0 %, TPC 40 %, autres 20 %. */
+export function getDefaultBonus(cat: TarifCategorie): number {
+  if (isTpv(cat)) return BAREME_CONSTANTS.bonusTpvDefaut;
+  if (isTpc(cat)) return BAREME_CONSTANTS.bonusTpcDefaut;
+  return BAREME_CONSTANTS.bonusDefaut;
 }
 
 /** Retourne le RC annuel total (base + surprime place s'il y a lieu). */
@@ -146,22 +170,31 @@ function resolveRcAnnuel(input: TarifInput): number {
  * Tous les montants retournés sont arrondis à l'entier (FCFA).
  */
 export function computeTarif(input: TarifInput): TarifResult {
-  const { categorie, dureeMois, frais, bonus = BAREME_CONSTANTS.bonusDefaut } = input;
+  const { categorie, dureeMois, dureeJours, frais, bonus = getDefaultBonus(categorie) } = input;
 
-  if (!Number.isFinite(dureeMois) || dureeMois < 1 || dureeMois > 12)
-    throw new TarifError("Durée invalide (1 à 12 mois).");
+  let coefficientDuree: number;
+  if (dureeJours !== undefined) {
+    if (!Number.isInteger(dureeJours) || dureeJours < 1 || dureeJours > 365)
+      throw new TarifError("Durée invalide (1 à 365 jours).");
+    coefficientDuree = Math.round((dureeJours / 365) * 1000) / 1000;
+  } else {
+    if (dureeMois === undefined || !Number.isFinite(dureeMois) || dureeMois < 1 || dureeMois > 12)
+      throw new TarifError("Durée invalide (1 à 12 mois).");
+    coefficientDuree = dureeMois === 12 ? 1 : BAREME_CONSTANTS.coeffMensuel * dureeMois;
+  }
   if (!Number.isFinite(frais) || frais < 0) throw new TarifError("Frais invalide.");
   if (!Number.isFinite(bonus) || bonus < 0 || bonus > 1)
     throw new TarifError("Réduction invalide (0 à 100 %).");
 
   const rcAnnuel = resolveRcAnnuel(input);
 
-  let rCivil: number;
-  if (dureeMois === 12) {
-    rCivil = Math.round(rcAnnuel * (1 - bonus));
-  } else {
-    rCivil = Math.round(rcAnnuel * BAREME_CONSTANTS.coeffMensuel * dureeMois * (1 - bonus));
-  }
+  // ASS arrondit le prorata avant d'appliquer la réduction.
+  const rcProrata = Math.round(rcAnnuel * coefficientDuree);
+  const tauxReductionEffectif = isTpc(categorie)
+    ? bonus * BAREME_CONSTANTS.facteurReductionTpc
+    : bonus;
+  const rCivil = Math.round(rcProrata * (1 - tauxReductionEffectif));
+  const reduction = rcProrata - rCivil;
 
   const primeNette = rCivil;
 
@@ -178,6 +211,10 @@ export function computeTarif(input: TarifInput): TarifResult {
 
   return {
     rcAnnuel,
+    coefficientDuree,
+    rcProrata,
+    reduction,
+    tauxReductionEffectif,
     rCivil,
     primeNette,
     frais,
