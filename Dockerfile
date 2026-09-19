@@ -40,9 +40,17 @@ ENV NODE_ENV=production \
 COPY --from=builder /app /app
 COPY --from=builder /repo/dist-web /app/public
 
-# Les données (admin.db + bases par utilisateur) vivent dans un volume
+# Les données (admin.db + bases par utilisateur) vivent dans un volume.
+# /data appartient à "node" : un volume neuf hérite de ces droits. Un volume
+# créé par une ancienne image (root) doit être migré une fois, cf. server/README.md.
+RUN mkdir -p /data && chown node:node /data
 VOLUME /data
 EXPOSE 3000
+
+# Pas de root à l'exécution : une faille dans l'app ne donne pas root dans le
+# conteneur. Le code (/app) reste en lecture seule pour node ; seuls /data et
+# /tmp (sauvegarde/restauration) sont écrits.
+USER node
 
 # Arrêt propre : Node reçoit SIGTERM (handler dans src/index.ts).
 # tsx est appelé directement (pas "pnpm start") : sans TTY, pnpm déclenche

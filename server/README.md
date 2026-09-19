@@ -89,6 +89,20 @@ cp .env.example .env          # renseigner ADMIN_PASSWORD (DOMAIN inutile ici)
 docker compose -f docker-compose.shared-nginx.yml up -d --build
 ```
 
+### Migration : conteneur non-root
+
+Depuis que l'image tourne avec l'utilisateur `node` (et non plus root), un
+volume `horus-data` créé par une ancienne image contient des fichiers
+appartenant à root que l'app ne peut plus écrire. À faire **une seule fois**,
+avant le premier `up --build` avec la nouvelle image (remplacer `horus` par le
+nom du projet compose si différent, cf. `docker volume ls`) :
+
+```bash
+docker compose -f docker-compose.shared-nginx.yml stop app
+docker run --rm -v horus_horus-data:/data node:22-bookworm-slim chown -R node:node /data
+docker compose -f docker-compose.shared-nginx.yml up -d --build
+```
+
 Puis ajouter un site nginx dédié (nouveau fichier, sans toucher aux sites
 existants) et un certificat, par exemple `/etc/nginx/sites-available/assur-manager` :
 
