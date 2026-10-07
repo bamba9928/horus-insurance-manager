@@ -10,3 +10,9 @@ onlyBuiltDependencies:
   - "@tailwindcss/oxide-win32-x64-msvc"
   - better-sqlite3
   - "@node-rs/argon2"
+
+# Avis de sécurité critique seroval (fromJSON, confusion de type) corrigé en 1.5.3.
+# Dépendance transitive de @tanstack/router-core, qui accepte ^1.5.0.
+overrides:
+  seroval: ^1.5.3
+  seroval-plugins: ^1.5.3
