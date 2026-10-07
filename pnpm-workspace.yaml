@@ -16,3 +16,23 @@ onlyBuiltDependencies:
 overrides:
   seroval: ^1.5.3
   seroval-plugins: ^1.5.3
+
+  # Avis de sécurité sur des dépendances transitives (outillage de dev, et
+  # exceljs pour tmp/uuid/brace-expansion). Chaque règle ne vise que les
+  # versions vulnérables et reste dans la même version majeure.
+  "baseline-browser-mapping@<2.11.0": ^2.11.0
+  "brace-expansion@<1.1.21": ^1.1.21
+  "brace-expansion@>=2.0.0 <2.1.7": ^2.1.7
+  "browserslist@<4.28.7": ^4.28.7
+  "esbuild@<0.25.0": ^0.25.12
+  "fast-uri@<3.1.7": ^3.1.7
+  "js-yaml@>=4.0.0 <4.3.2": ^4.3.2
+  "nanoid@<3.3.12": ^3.3.12
+  "postcss@<8.5.23": ^8.5.23
+  "source-map-js@<1.2.2": ^1.2.2
+  "tmp@<0.2.6": ^0.2.6
+  # drizzle-kit garde sinon tsx 4.21 (esbuild 0.27, vulnérable) ; il accepte ^4.21.0.
+  "tsx@<4.23.15": ^4.23.15
+  "undici@>=7.0.0 <7.29.1": ^7.29.1
+  # exceljs n'utilise que v4(), toujours exporté en CommonJS par uuid 11.
+  "uuid@<11.1.1": ^11.1.1
