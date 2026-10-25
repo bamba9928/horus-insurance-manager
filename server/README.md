@@ -16,8 +16,10 @@ pnpm typecheck    # vérification TypeScript
 ```
 
 Au **premier démarrage**, le compte super admin est créé automatiquement.
-Sans `ADMIN_PASSWORD`, un mot de passe aléatoire est généré et affiché
-**une seule fois** dans la console.
+Sans `ADMIN_PASSWORD`, un mot de passe aléatoire est généré et écrit dans
+`$DATA_DIR/initial-admin-password.txt` (droits `0600`) : la console n'affiche
+que ce chemin, pour que le mot de passe ne reste pas dans les logs. Le fichier
+est supprimé à la première connexion réussie du super admin.
 
 ## Variables d'environnement
 
@@ -71,7 +73,8 @@ serveur, puis les sert ensemble) :
 ```bash
 cp .env.example .env          # renseigner DOMAIN + ADMIN_PASSWORD
 docker compose up -d --build
-docker compose logs app       # récupérer le mot de passe admin si généré
+# mot de passe admin généré (si ADMIN_PASSWORD est vide), avant la 1re connexion :
+docker compose exec app cat /data/initial-admin-password.txt
 ```
 
 Caddy gère le HTTPS automatiquement (Let's Encrypt) pour `DOMAIN`. Les données
