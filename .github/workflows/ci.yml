@@ -46,6 +46,14 @@ jobs:
       - name: Tests unitaires (Vitest)
         run: pnpm test
 
+      # server/ a son propre tsconfig et sa propre config Vitest : ni le
+      # tsc ni le pnpm test de la racine ne le couvrent.
+      - name: TypeScript check (serveur)
+        run: pnpm --dir server typecheck
+
+      - name: Tests serveur (Vitest)
+        run: pnpm --dir server test
+
       - name: Vérifier le build front
         run: pnpm exec vite build
 

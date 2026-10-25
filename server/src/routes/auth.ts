@@ -9,6 +9,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { z } from "zod";
 import type { AppContext } from "../app.js";
 import { CSRF_COOKIE, createCsrfToken, requireCsrf, setCsrfCookie } from "../auth/csrf.js";
+import { removeInitialPassword } from "../auth/initialPassword.js";
 import type { AuthEnv } from "../auth/middleware.js";
 import { requireAuth } from "../auth/middleware.js";
 import { getDummyHash, hashPassword, verifyPassword } from "../auth/password.js";
@@ -209,6 +210,11 @@ export function authRoutes(
       ip: key,
       success: true,
     });
+    // Le super admin s'est connecté : son mot de passe initial n'a plus à
+    // rester sur le disque.
+    if (user.role === "ADMIN" && removeInitialPassword(ctx.env.dataDir)) {
+      console.log("Fichier du mot de passe initial supprimé (première connexion du super admin).");
+    }
 
     setCookie(c, SESSION_COOKIE, token, {
       httpOnly: true,

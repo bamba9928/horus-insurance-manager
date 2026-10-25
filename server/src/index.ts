@@ -1,12 +1,13 @@
 /**
  * Point d'entrée du serveur Horus.
  * Au premier démarrage : crée le compte super admin (mot de passe depuis
- * ADMIN_PASSWORD, sinon généré et affiché une seule fois en console).
+ * ADMIN_PASSWORD, sinon généré et écrit dans DATA_DIR — voir auth/initialPassword).
  */
 
 import crypto from "node:crypto";
 import { serve } from "@hono/node-server";
 import { buildApp } from "./app.js";
+import { writeInitialPassword } from "./auth/initialPassword.js";
 import { hashPassword } from "./auth/password.js";
 import { LoginRateLimiter } from "./auth/rateLimit.js";
 import { purgeExpiredSessions } from "./auth/sessions.js";
@@ -22,6 +23,9 @@ ensureUserEmailForLogin(adminDb, env.adminLogin, env.adminEmail);
 const hasAdmin = adminDb.prepare("SELECT id FROM users WHERE role = 'ADMIN' LIMIT 1").get();
 if (!hasAdmin) {
   const password = env.adminPassword ?? crypto.randomBytes(12).toString("base64url");
+  // Écrit avant de créer le compte : si l'écriture échoue, aucun admin
+  // n'existe avec un mot de passe que personne ne connaît.
+  const passwordFile = env.adminPassword ? null : writeInitialPassword(env.dataDir, password);
   const adminId = createUser(adminDb, {
     login: env.adminEmail,
     nom: "Super administrateur",
@@ -33,9 +37,9 @@ if (!hasAdmin) {
 
   console.log("═".repeat(60));
   console.log(`Compte super admin créé : ${env.adminEmail}`);
-  if (!env.adminPassword) {
-    console.log(`Mot de passe généré : ${password}`);
-    console.log("⚠ Notez-le maintenant, il ne sera plus jamais affiché.");
+  if (passwordFile) {
+    console.log(`Mot de passe généré, enregistré dans : ${passwordFile}`);
+    console.log("Il est supprimé à la première connexion du super admin.");
   }
   console.log("═".repeat(60));
 }
