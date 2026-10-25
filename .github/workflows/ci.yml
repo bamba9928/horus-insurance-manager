@@ -10,6 +10,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Les jobs ne font que lire le dépôt : le jeton GitHub n'a pas besoin de plus.
+permissions:
+  contents: read
+
 jobs:
   lint-and-unit:
     name: Lint + TypeScript + Tests unitaires
