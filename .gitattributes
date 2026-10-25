@@ -1,0 +1,3 @@
+# Fins de ligne LF partout, y compris sur un clone Windows : sinon Biome
+# signale tous les fichiers en local (CRLF), alors que le CI Linux passe.
+* text=auto eol=lf

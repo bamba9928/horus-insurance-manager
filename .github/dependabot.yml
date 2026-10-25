@@ -1,0 +1,35 @@
+version: 2
+updates:
+  # Correctifs de sécurité regroupés en une seule PR par écosystème : des PR
+  # séparées sur le même lockfile entrent en conflit et déclenchent chacune un
+  # déploiement. open-pull-requests-limit: 0 coupe les mises à jour de version
+  # ordinaires sans toucher aux mises à jour de sécurité.
+  # / couvre aussi server/ (espace de travail pnpm, un seul pnpm-lock.yaml).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    groups:
+      securite:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: cargo
+    directory: /src-tauri
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    groups:
+      securite:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  # Actions GitHub tenues à jour, en une seule PR par mois.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
