@@ -1,0 +1,7 @@
+# Faux positifs Gitleaks vérifiés à la main (empreinte = commit:fichier:règle:ligne).
+# Mots de passe fictifs des tests du serveur, jamais utilisés en production.
+8aa6e3b7357f6000197a030b09a4fd06992187a4:server/test/server.test.ts:generic-api-key:313
+8aa6e3b7357f6000197a030b09a4fd06992187a4:server/test/server.test.ts:generic-api-key:345
+8aa6e3b7357f6000197a030b09a4fd06992187a4:server/test/server.test.ts:generic-api-key:352
+8aa6e3b7357f6000197a030b09a4fd06992187a4:server/test/server.test.ts:generic-api-key:360
+9bfaa75ec62141c7409736e5455b5bed060141b2:server/test/server.test.ts:generic-api-key:236
