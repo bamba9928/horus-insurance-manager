@@ -375,6 +375,35 @@ describe("sauvegarde / restauration", () => {
     });
     expect(res.status).toBe(400);
   });
+
+  it("passe par des dossiers temporaires privés, supprimés après usage", async () => {
+    const mkdtemp = vi.spyOn(fs, "mkdtempSync");
+    try {
+      const backup = await call("/api/backup", { cookie: cookieA });
+      expect(backup.status).toBe(200);
+      const restore = await app.request("/api/restore", {
+        method: "POST",
+        headers: {
+          cookie: cookieA,
+          "content-type": "application/octet-stream",
+          "x-csrf-token": cookieValue(cookieA, "horus_csrf") ?? "",
+        },
+        body: new Uint8Array(await backup.arrayBuffer()),
+      });
+      expect(restore.status).toBe(200);
+
+      // Un dossier mkdtemp (0700) par opération, jamais un fichier posé
+      // directement dans le /tmp partagé, et rien ne reste après la réponse.
+      const dirs = mkdtemp.mock.results.map((r) => r.value as string);
+      expect(dirs).toHaveLength(2);
+      for (const dir of dirs) {
+        expect(path.dirname(dir)).toBe(os.tmpdir());
+        expect(fs.existsSync(dir)).toBe(false);
+      }
+    } finally {
+      mkdtemp.mockRestore();
+    }
+  });
 });
 
 describe("intégrations", () => {

@@ -15,7 +15,6 @@
  * @module routes/api
  */
 
-import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -395,10 +394,17 @@ function registerBusinessRoutes(
 
   const MAX_RESTORE_BYTES = 200 * 1024 * 1024;
 
+  // Les copies de base passent par un dossier temporaire privé (mkdtemp :
+  // droits 0700, nom imprévisible) plutôt que directement dans /tmp : un autre
+  // compte du serveur ne peut ni lire la copie ni la remplacer pendant sa
+  // validation. Les fichiers -wal/-shm de SQLite y sont supprimés avec lui.
+  const makePrivateTempDir = (prefix: string) => fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+
   /** Télécharge une copie cohérente de la base de l'utilisateur. */
   app.get("/backup", async (c) => {
     const db = getDb(c);
-    const tmp = path.join(os.tmpdir(), `horus-backup-${crypto.randomBytes(8).toString("hex")}.db`);
+    const dir = makePrivateTempDir("horus-backup-");
+    const tmp = path.join(dir, "backup.db");
     try {
       await db.backup(tmp);
       const bytes = fs.readFileSync(tmp);
@@ -417,7 +423,7 @@ function registerBusinessRoutes(
         },
       });
     } finally {
-      fs.rmSync(tmp, { force: true });
+      fs.rmSync(dir, { recursive: true, force: true });
     }
   });
 
@@ -429,9 +435,11 @@ function registerBusinessRoutes(
     if (buffer.length > MAX_RESTORE_BYTES) return c.json({ error: "Fichier trop volumineux" }, 413);
 
     // Validation dans un fichier temporaire avant de toucher la vraie base.
-    const tmp = path.join(os.tmpdir(), `horus-restore-${crypto.randomBytes(8).toString("hex")}.db`);
-    fs.writeFileSync(tmp, buffer);
+    const dir = makePrivateTempDir("horus-restore-");
+    const tmp = path.join(dir, "restore.db");
     try {
+      // wx : échoue si le fichier existe déjà au lieu de l'écraser.
+      fs.writeFileSync(tmp, buffer, { mode: 0o600, flag: "wx" });
       // Ouverture + contrôles : toute erreur SQLite ⇒ fichier invalide (400).
       try {
         const candidate = new Database(tmp, { readonly: true });
@@ -467,7 +475,7 @@ function registerBusinessRoutes(
       });
       return c.json({ ok: true });
     } finally {
-      fs.rmSync(tmp, { force: true });
+      fs.rmSync(dir, { recursive: true, force: true });
     }
   });
 
