@@ -544,6 +544,160 @@ describe("vérification (proxy AAS)", () => {
   });
 });
 
+describe("souscription par attestation (proxy AAS)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const upstreamSouscription = {
+    operationStatus: "SUCCESS",
+    operationMessage: "Operation effectuée avec succès. ",
+    data: {
+      souscriptionId: 4614869,
+      attestationNumber: "SN0047A5CPB",
+      refDevis: null,
+      secureKey: "4614979071697480608",
+      police: "26422026500625101",
+      dateSouscription: "2026-10-31 09:52",
+      qrCodeValue: "NDYxNDk3OTA3MTY5NzQ4MDYwODo6U04wMDQ3QTVDUEI",
+      assure: {
+        puissanceFiscale: 9,
+        dateMiseCirculation: "2000-01-01",
+        nombrePlace: 5,
+        valeurNeuve: 0.0,
+        valeurActuelle: 0.0,
+        immatriculation: "DK2865U",
+        carburant: "Diesel",
+        category: "Véhicule Particulier",
+        modele: "PRIMERA",
+        marque: "NISSAN",
+        vin: null,
+      },
+      periodeCouverture: { dateEffet: "2026-10-31", dateExpiration: "2027-01-30", duree: 3 },
+      beneficiaire: {
+        nom: "DIOP",
+        prenom: "AMADOU",
+        cellulaire: "770000001",
+        email: "",
+        adresse: null,
+      },
+      contact: {
+        cellulaire: "(+221) 00 000 00 00",
+        email: "contact@assureur.example",
+        adresse: "Dakar",
+        fixe: "(+221) 33 000 00 01",
+      },
+      compagnie: {
+        id: 110,
+        libelle: "ASS",
+        parent: { id: 100, libelle: "Association des Assureurs du Sénégal" },
+        uoStyleDto: { colorPrimary: "#FF0000" },
+      },
+    },
+  };
+
+  it("exige une session", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const res = await app.request("/api/souscription/SN0047A5CPB");
+    expect(res.status).toBe(401);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("rejette un numéro d'attestation invalide sans appeler l'API externe", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    expect((await call("/api/souscription/SN-0047", { cookie: cookieA })).status).toBe(400);
+    expect((await call(`/api/souscription/${"A".repeat(21)}`, { cookie: cookieA })).status).toBe(
+      400,
+    );
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("relaie la souscription sans les champs techniques", async () => {
+    const fetchSpy = vi.fn(
+      async () => new Response(JSON.stringify(upstreamSouscription), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const res = await call("/api/souscription/sn0047a5cpb", { cookie: cookieA });
+    expect(res.status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "https://apiaas.diotali.com/souscriptionauto/souscription-by-attestation-number/SN0047A5CPB",
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+
+    const body = (await res.json()) as {
+      operationStatus: string;
+      data: Record<string, unknown> & {
+        police: string;
+        assure: { puissanceFiscale: number };
+        beneficiaire: { nom: string };
+        compagnie: Record<string, unknown>;
+      };
+    };
+    expect(body.operationStatus).toBe("SUCCESS");
+    expect(body.data.police).toBe("26422026500625101");
+    expect(body.data.assure.puissanceFiscale).toBe(9);
+    expect(body.data.beneficiaire.nom).toBe("DIOP");
+    expect(body.data.compagnie).toEqual({ libelle: "ASS" });
+    for (const key of ["secureKey", "qrCodeValue", "souscriptionId", "refDevis"]) {
+      expect(body.data).not.toHaveProperty(key);
+    }
+  });
+
+  it("relaie une souscription inconnue avec 200", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              operationStatus: "ERROR",
+              operationMessage: "Souscription inconnue",
+              data: null,
+            }),
+            { status: 200 },
+          ),
+      ),
+    );
+
+    const res = await call("/api/souscription/SN0000XXXXX", { cookie: cookieA });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { operationStatus: string; data: null };
+    expect(body.operationStatus).toBe("ERROR");
+    expect(body.data).toBeNull();
+  });
+
+  it("renvoie 502 si l'API externe répond en erreur ou de façon invalide", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("service indisponible", { status: 503 })),
+    );
+    expect((await call("/api/souscription/SN0047A5CPB", { cookie: cookieA })).status).toBe(502);
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ nawak: true }), { status: 200 })),
+    );
+    expect((await call("/api/souscription/SN0047A5CPB", { cookie: cookieA })).status).toBe(502);
+  });
+
+  it("plafonne le nombre de consultations par utilisateur", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify(upstreamSouscription), { status: 200 })),
+    );
+
+    for (let i = 0; i < 30; i++) {
+      expect((await call("/api/souscription/SN0047A5CPB", { cookie: cookieB })).status).toBe(200);
+    }
+    expect((await call("/api/souscription/SN0047A5CPB", { cookie: cookieB })).status).toBe(429);
+  });
+});
+
 describe("contraintes", () => {
   it("renvoie 409 sur une immatriculation en doublon", async () => {
     const clientRes = await call("/api/clients", {
@@ -823,6 +977,8 @@ describe("auto-inscription + validation admin", () => {
     const cookie = await registerAndCookie("nouveau3");
     const res = await call("/api/verify/DK1234AB", { cookie });
     expect(res.status).toBe(403);
+    const souscription = await call("/api/souscription/SN0047A5CPB", { cookie });
+    expect(souscription.status).toBe(403);
   });
 
   it("l'admin valide le compte, débloquant les fonctions sensibles", async () => {

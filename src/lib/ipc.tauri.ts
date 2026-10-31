@@ -53,6 +53,57 @@ export async function verifyContract(immatriculation: string): Promise<Verificat
   return invoke<VerificationApiResponse>("verify_contract", { immatriculation });
 }
 
+/** Détail de la souscription AAS liée à une attestation (champs utiles uniquement). */
+export interface SouscriptionData {
+  attestationNumber: string;
+  police?: string | null;
+  dateSouscription?: string | null;
+  assure?: {
+    immatriculation?: string | null;
+    marque?: string | null;
+    modele?: string | null;
+    category?: string | null;
+    carburant?: string | null;
+    puissanceFiscale?: number | null;
+    nombrePlace?: number | null;
+    dateMiseCirculation?: string | null;
+    valeurNeuve?: number | null;
+    valeurActuelle?: number | null;
+    vin?: string | null;
+  } | null;
+  periodeCouverture?: {
+    dateEffet?: string | null;
+    dateExpiration?: string | null;
+    duree?: number | null;
+  } | null;
+  beneficiaire?: {
+    nom?: string | null;
+    prenom?: string | null;
+    cellulaire?: string | null;
+    email?: string | null;
+    adresse?: string | null;
+  } | null;
+  contact?: {
+    cellulaire?: string | null;
+    email?: string | null;
+    adresse?: string | null;
+    fixe?: string | null;
+  } | null;
+  compagnie?: { libelle?: string | null } | null;
+}
+
+export interface SouscriptionApiResponse {
+  operationStatus: "SUCCESS" | "ERROR";
+  operationMessage: string;
+  data: SouscriptionData | null;
+}
+
+export async function getSouscriptionByAttestation(
+  attestationNumber: string,
+): Promise<SouscriptionApiResponse> {
+  return invoke<SouscriptionApiResponse>("get_souscription_by_attestation", { attestationNumber });
+}
+
 export async function openExternalUrl(url: string): Promise<void> {
   return invoke<void>("open_external_url", { url });
 }

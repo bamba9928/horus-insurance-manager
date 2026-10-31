@@ -20,6 +20,8 @@ export type {
   IntegrationExchangeLog,
   IntegrationOverview,
   ListParams,
+  SouscriptionApiResponse,
+  SouscriptionData,
   VerificationApiResponse,
   VerificationData,
 } from "./ipc.tauri";
@@ -31,6 +33,7 @@ export const greet = backend.greet;
 export const backupDatabase = backend.backupDatabase;
 export const restoreDatabase = backend.restoreDatabase;
 export const verifyContract = backend.verifyContract;
+export const getSouscriptionByAttestation = backend.getSouscriptionByAttestation;
 export const openExternalUrl = backend.openExternalUrl;
 
 // Clients

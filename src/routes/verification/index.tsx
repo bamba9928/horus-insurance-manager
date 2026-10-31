@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Header } from "../../components/layout";
 import { AccountPendingNotice } from "../../components/ui/AccountPendingNotice";
 import { Spinner } from "../../components/ui/Spinner";
 import { isWebMode, useAuth } from "../../lib/auth";
-import { formatDateDisplay } from "../../lib/date-utils";
-import { openExternalUrl, type VerificationData, verifyContract } from "../../lib/ipc";
+import { formatDateDisplay, formatFCFA } from "../../lib/date-utils";
+import {
+  getSouscriptionByAttestation,
+  openExternalUrl,
+  type SouscriptionData,
+  type VerificationData,
+  verifyContract,
+} from "../../lib/ipc";
 
 /** Longueur maximale de l'immatriculation saisie. */
 const IMMAT_MAX_LENGTH = 20;
@@ -41,7 +47,8 @@ function formatApiDate(value: string): string {
     return formatDateDisplay(raw);
   }
 
-  if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(raw)) {
+  const dateTime = raw.match(/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(:\d{2})?$/);
+  if (dateTime) {
     const iso = raw.replace(" ", "T");
     const date = new Date(iso);
     if (Number.isNaN(date.getTime())) return raw;
@@ -51,7 +58,7 @@ function formatApiDate(value: string): string {
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-      second: "2-digit",
+      ...(dateTime[1] ? { second: "2-digit" } : {}),
     });
   }
 
@@ -71,14 +78,50 @@ export function VerificationPage({ onBack }: { onBack?: () => void }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [result, setResult] = useState<VerificationData | null>(null);
+  const [souscription, setSouscription] = useState<SouscriptionData | null>(null);
+  const [souscriptionLoading, setSouscriptionLoading] = useState(false);
+  const [souscriptionError, setSouscriptionError] = useState<string | null>(null);
+  // Identifie la dernière vérification : une réponse de souscription arrivée
+  // après une nouvelle saisie ou une réinitialisation est ignorée.
+  const requestIdRef = useRef(0);
 
   const normalizedPlate = normalizePlate(immatriculationInput);
+  // Détail de souscription (données personnelles de l'assuré) : page du menu
+  // uniquement, jamais dans la vérification publique de la page de connexion.
+  const showSouscription = !onBack && (!isWebMode || user != null);
+
+  function clearSouscription() {
+    requestIdRef.current += 1;
+    setSouscription(null);
+    setSouscriptionLoading(false);
+    setSouscriptionError(null);
+  }
 
   function handleReset() {
     setImmatriculationInput("");
     setErrorMessage(null);
     setSuccessMessage(null);
     setResult(null);
+    clearSouscription();
+  }
+
+  async function loadSouscription(attestationNumber: string) {
+    const requestId = requestIdRef.current;
+    setSouscriptionLoading(true);
+    try {
+      const payload = await getSouscriptionByAttestation(attestationNumber);
+      if (requestId !== requestIdRef.current) return;
+      if (payload.operationStatus === "SUCCESS" && payload.data) {
+        setSouscription(payload.data);
+      } else {
+        setSouscriptionError(payload.operationMessage || "Aucune souscription trouvée.");
+      }
+    } catch (_error) {
+      if (requestId !== requestIdRef.current) return;
+      setSouscriptionError("Informations de souscription indisponibles. Réessayez plus tard.");
+    } finally {
+      if (requestId === requestIdRef.current) setSouscriptionLoading(false);
+    }
   }
 
   async function openExternalLink(url: string) {
@@ -103,6 +146,7 @@ export function VerificationPage({ onBack }: { onBack?: () => void }) {
     setErrorMessage(null);
     setSuccessMessage(null);
     setResult(null);
+    clearSouscription();
 
     try {
       const payload = await verifyContract(normalizedPlate);
@@ -110,6 +154,7 @@ export function VerificationPage({ onBack }: { onBack?: () => void }) {
       if (payload.operationStatus === "SUCCESS" && payload.data) {
         setResult(payload.data);
         setSuccessMessage(payload.operationMessage);
+        if (showSouscription) void loadSouscription(payload.data.attestationNumber);
         return;
       }
 
@@ -255,8 +300,145 @@ export function VerificationPage({ onBack }: { onBack?: () => void }) {
             </div>
           </section>
         )}
+
+        {result && showSouscription && (
+          <SouscriptionSection
+            loading={souscriptionLoading}
+            error={souscriptionError}
+            data={souscription}
+          />
+        )}
       </div>
     </>
+  );
+}
+
+/** Masque les numéros factices renvoyés par l'API, ex. « (+221) 00 000 00 00 ». */
+function displayPhone(value: string | null | undefined): string | null {
+  const digits = value?.replace(/\D/g, "").replace(/^221/, "") ?? "";
+  return /[1-9]/.test(digits) ? (value?.trim() ?? null) : null;
+}
+
+function optionalDate(value: string | null | undefined): string | null {
+  return value?.trim() ? formatApiDate(value) : null;
+}
+
+function positive(value: number | null | undefined): number | null {
+  return value != null && value > 0 ? value : null;
+}
+
+function withUnit(value: number | null | undefined, unit: string): string | null {
+  const n = positive(value);
+  return n != null ? `${n} ${unit}` : null;
+}
+
+function SouscriptionSection({
+  loading,
+  error,
+  data,
+}: {
+  loading: boolean;
+  error: string | null;
+  data: SouscriptionData | null;
+}) {
+  const assure = data?.assure;
+  const beneficiaire = data?.beneficiaire;
+  const contact = data?.contact;
+  const valeurNeuve = positive(assure?.valeurNeuve);
+  const valeurActuelle = positive(assure?.valeurActuelle);
+
+  return (
+    <section className="mt-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+        Informations de souscription
+      </h3>
+
+      {loading && (
+        <Spinner
+          logoWidth={0}
+          size={24}
+          className="py-4"
+          label="Chargement des informations de souscription..."
+        />
+      )}
+
+      {error && (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
+          {error}
+        </div>
+      )}
+
+      {data && (
+        <div className="mt-4 space-y-5">
+          <FieldGroup
+            title="Contrat"
+            fields={[
+              ["N° Police", data.police],
+              ["Date de souscription", optionalDate(data.dateSouscription)],
+              ["Durée", withUnit(data.periodeCouverture?.duree, "mois")],
+            ]}
+          />
+          <FieldGroup
+            title="Véhicule"
+            fields={[
+              ["Catégorie", assure?.category],
+              ["Carburant", assure?.carburant],
+              ["Puissance fiscale", withUnit(assure?.puissanceFiscale, "CV")],
+              ["Nombre de places", withUnit(assure?.nombrePlace, "places")],
+              ["1re mise en circulation", optionalDate(assure?.dateMiseCirculation)],
+              ["N° de châssis (VIN)", assure?.vin],
+              ["Valeur à neuf", valeurNeuve != null ? formatFCFA(valeurNeuve) : null],
+              ["Valeur actuelle", valeurActuelle != null ? formatFCFA(valeurActuelle) : null],
+            ]}
+          />
+          <FieldGroup
+            title="Assuré"
+            fields={[
+              [
+                "Nom et prénom",
+                [beneficiaire?.prenom, beneficiaire?.nom].filter(Boolean).join(" "),
+              ],
+              ["Téléphone", displayPhone(beneficiaire?.cellulaire)],
+              ["Email", beneficiaire?.email],
+              ["Adresse", beneficiaire?.adresse],
+            ]}
+          />
+          <FieldGroup
+            title="Compagnie"
+            fields={[
+              ["Compagnie", data.compagnie?.libelle],
+              ["Téléphone fixe", displayPhone(contact?.fixe)],
+              ["Téléphone portable", displayPhone(contact?.cellulaire)],
+              ["Email", contact?.email],
+              ["Adresse", contact?.adresse],
+            ]}
+          />
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Groupe de champs en lecture seule ; les valeurs vides sont masquées. */
+function FieldGroup({
+  title,
+  fields,
+}: {
+  title: string;
+  fields: Array<[label: string, value: string | null | undefined]>;
+}) {
+  const visible = fields.filter((field): field is [string, string] => Boolean(field[1]?.trim()));
+  if (visible.length === 0) return null;
+
+  return (
+    <div>
+      <h4 className="mb-2 text-sm font-semibold text-[#614e1a] dark:text-[#c2a65b]">{title}</h4>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+        {visible.map(([label, value]) => (
+          <ReadonlyField key={label} label={label} value={value} />
+        ))}
+      </div>
+    </div>
   );
 }
 
