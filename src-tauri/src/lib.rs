@@ -20,6 +20,7 @@ pub fn run() {
             commands::backup::backup_database,
             commands::backup::restore_database,
             commands::verification::verify_contract,
+            commands::verification::get_souscription_by_attestation,
             commands::external::open_external_url,
         ])
         .run(tauri::generate_context!())

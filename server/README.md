@@ -61,6 +61,7 @@ est supprimé à la première connexion réussie du super admin.
 - Dashboard : `GET /api/dashboard/{kpi,echeances30j,echeances-range,impayes,recap}`
 - Sauvegarde : `GET /api/backup`, `POST /api/restore`
 - Vérification : `GET /api/verify/:immatriculation`
+- Souscription par attestation (compte validé) : `GET /api/souscription/:attestationNumber`
 
 Sessions par cookie `httpOnly` (7 jours, glissants). Mots de passe hachés en
 argon2id. Aucune auto-inscription : seul le super admin crée les comptes.

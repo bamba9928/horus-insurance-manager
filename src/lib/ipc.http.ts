@@ -21,6 +21,7 @@ import type {
   IntegrationExchangeLog,
   IntegrationOverview,
   ListParams,
+  SouscriptionApiResponse,
   VerificationApiResponse,
 } from "./ipc.tauri";
 
@@ -141,6 +142,18 @@ export async function verifyContract(immatriculation: string): Promise<Verificat
     throw new ApiError(res.status, message);
   }
   return (await res.json()) as VerificationApiResponse;
+}
+
+/** Détail de souscription : route authentifiée (données personnelles de l'assuré). */
+export async function getSouscriptionByAttestation(
+  attestationNumber: string,
+): Promise<SouscriptionApiResponse> {
+  return request<SouscriptionApiResponse>(
+    "GET",
+    `/souscription/${encodeURIComponent(attestationNumber)}`,
+    undefined,
+    { selfScope: true },
+  );
 }
 
 export async function openExternalUrl(url: string): Promise<void> {

@@ -25,7 +25,7 @@ import type { AppContext } from "../app.js";
 import { requireCsrf, SAFE_METHODS } from "../auth/csrf.js";
 import type { AuthEnv } from "../auth/middleware.js";
 import { requireAdmin, requireApproved, requireAuth } from "../auth/middleware.js";
-import type { SlidingWindowLimiter } from "../auth/rateLimit.js";
+import { SlidingWindowLimiter } from "../auth/rateLimit.js";
 import { findUserById, recordSecurityEvent, type SafeUser, toSafeUser } from "../db/adminDb.js";
 import * as q from "../db/queries.js";
 import { closeTenantDb, openTenantDb, tenantDbPath } from "../db/tenants.js";
@@ -45,7 +45,7 @@ import {
   vehiculeCreateSchema,
   vehiculeUpdateSchema,
 } from "../schemas.js";
-import { verificationHandler } from "./verification.js";
+import { souscriptionHandler, verificationHandler } from "./verification.js";
 
 /** Contexte enrichi des routes admin cross-tenant. */
 type AdminTenantEnv = {
@@ -486,6 +486,21 @@ function registerBusinessRoutes(
     "/verify/:immatriculation",
     requireApproved(ctx.env.adminContactEmail),
     verificationHandler,
+  );
+
+  // Détail de la souscription (données personnelles de l'assuré) : comptes
+  // validés uniquement, avec un quota par utilisateur sur ce service externe.
+  const souscriptionLimiter = new SlidingWindowLimiter(30, 60_000);
+  app.get(
+    "/souscription/:attestationNumber",
+    requireApproved(ctx.env.adminContactEmail),
+    async (c, next) => {
+      if (!souscriptionLimiter.hit(`souscription:${c.get("user").id}`)) {
+        return c.json({ error: "Trop de requêtes. Réessayez dans un instant." }, 429);
+      }
+      await next();
+    },
+    souscriptionHandler,
   );
 }
 
