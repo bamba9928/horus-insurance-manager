@@ -82,6 +82,8 @@ describe("connexion", () => {
         publicSiteUrl: undefined,
         allowRegistration: true,
         adminContactEmail: "contact@horus-assur.digital",
+        horusApiUrl: "https://horus.example/api",
+        horusApiKey: undefined,
       },
       adminDb,
       rateLimiter: new LoginRateLimiter(),

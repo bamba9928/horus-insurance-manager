@@ -32,6 +32,8 @@ est supprimé à la première connexion réussie du super admin.
 | `ADMIN_CONTACT_EMAIL` | `ADMIN_EMAIL` | Email de contact affiché aux comptes à activer |
 | `ADMIN_PASSWORD` | —        | Mot de passe du super admin (sinon généré)      |
 | `ALLOW_REGISTRATION` | `true` | Active/désactive l'auto-inscription publique |
+| `HORUS_API_URL`  | `https://horus-assur.digital/api` | API Horus Assurances Digital (prime de base ASS en direct) |
+| `HORUS_API_KEY`  | —        | Clé API partenaire émise dans l'admin Horus ; absente = barème local seul |
 | `NODE_ENV`       | —        | `production` active le cookie `Secure` (HTTPS)  |
 | `COOKIE_SECURE`  | —        | Force le cookie `Secure` (`true`/`false`) — prioritaire sur `NODE_ENV` |
 | `STATIC_DIR`     | —        | Répertoire du frontend web à servir (absent = API seule) |
@@ -58,6 +60,7 @@ est supprimé à la première connexion réussie du super admin.
 - Polices : `GET/POST /api/polices`, `GET/PATCH/DELETE /api/polices/:id`, `POST /api/polices/:id/renew`
 - Paiements : `GET/POST /api/paiements`, `PATCH/DELETE /api/paiements/:id`
 - Dossier complet : `POST /api/dossiers`
+- Prime de base ASS (via Horus) : `POST /api/tarification/prime-base`
 - Dashboard : `GET /api/dashboard/{kpi,echeances30j,echeances-range,impayes,recap}`
 - Sauvegarde : `GET /api/backup`, `POST /api/restore`
 - Vérification : `GET /api/verify/:immatriculation`

@@ -27,6 +27,10 @@ export interface ServerEnv {
   allowRegistration: boolean;
   /** Email de contact affiché aux comptes en attente de validation. */
   adminContactEmail: string;
+  /** Racine de l'API Horus Assurances Digital (prime de base ASS). */
+  horusApiUrl: string;
+  /** Clé API partenaire émise dans l'admin Horus ; absente = barème local seul. */
+  horusApiKey: string | undefined;
 }
 
 function optionalEnv(value: string | undefined): string | undefined {
@@ -76,5 +80,9 @@ export function loadEnv(processEnv: NodeJS.ProcessEnv = process.env): ServerEnv 
     // Auto-inscription activée sauf si explicitement désactivée.
     allowRegistration: processEnv.ALLOW_REGISTRATION !== "false",
     adminContactEmail: processEnv.ADMIN_CONTACT_EMAIL || adminEmail,
+    horusApiUrl: (
+      optionalEnv(processEnv.HORUS_API_URL) ?? "https://horus-assur.digital/api"
+    ).replace(/\/+$/, ""),
+    horusApiKey: optionalEnv(processEnv.HORUS_API_KEY),
   };
 }

@@ -108,6 +108,33 @@ export async function openExternalUrl(url: string): Promise<void> {
   return invoke<void>("open_external_url", { url });
 }
 
+// ============ PRIME DE BASE ASS (via Horus) ============
+
+/** Demande de prime de base ASS : mêmes champs que le calcul local, durée en mois. */
+export interface AssPrimeBaseInput {
+  categorie: string;
+  puissance?: number;
+  cylindree?: string;
+  dureeMois: number;
+}
+
+/** Prime de base RÉELLE d'ASS (RC au prorata, avant réduction). */
+export interface AssPrimeBaseResult {
+  primeBase: number;
+  genre: string;
+  source: "ASS";
+}
+
+/**
+ * Version bureau : pas de serveur pour joindre Horus, le barème local fait
+ * foi. `null` = « pas de tarif ASS en direct ».
+ */
+export async function getAssPrimeBase(
+  _input: AssPrimeBaseInput,
+): Promise<AssPrimeBaseResult | null> {
+  return null;
+}
+
 // ============ CLIENTS ============
 
 /** Paramètres de pagination et recherche */

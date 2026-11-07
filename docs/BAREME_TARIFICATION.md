@@ -29,6 +29,7 @@ Statut : ✅ vérifié sur les données ASS · ⚠️ incohérent ou trop peu de
 | **Taxe** | `ROUND((Prime RC nette + Prime A.G + Frais) × 14 %)` | ✅ 1 958 cas |
 | **FGA** | `ROUND(Prime RC nette × 2,5 %)` (pas sur A.G) | ✅ |
 | **CEDEAO** | 300 hors TPV · **0 pour TPV** · compté une seule fois | ✅ |
+| Arrondis | **au pair**, sur valeur EXACTE (528/528 cas « ,5 » de taxe, relevé du 07/11/2026) : 640,5 → 640, 641,5 → 642. Pas de multiplication par un taux décimal (`4575 × 0,14` vaut 640,50000000000006 en flottant) | ✅ |
 | **Prime Totale** | `Prime RC nette + Prime A.G + Frais + Taxe + FGA + CEDEAO` | ✅ 1 958 cas |
 | Commission | TPV : 8 %, 9 % ou 10 % de la Prime RC nette (selon apporteur) · hors TPV : variable (≈ 20–22 % du net), règle non déterminée | ⚠️ |
 
@@ -189,6 +190,19 @@ FGA **277** · CEDEAO **300** · **Total 14 368** ✅
 API 18 451 − remise 4 083 = **14 368** = guichet ✅
 
 Tests : `tests/unit/tarification.test.ts` rejoue les décomptes ASS du §4.
+
+**Source unique (07/11/2026)** : en version web, la page Tarification relève la **prime de base**
+(RC au prorata, avant réduction) chez ASS en direct, via Horus (`POST /api/tarification/prime-base`,
+clé `HORUS_API_KEY`). Réduction, frais, taxe et FGA restent les règles ci-dessus. Un écart avec
+le barème local est signalé à l'écran : c'est le signal pour mettre à jour les tables du §2.
+Non couverts en direct (barème local) : TPV, durées en jours, version bureau.
+
+**Commission réellement versée par ASS** (back-office, 07/11/2026) : 20 % de la prime nette
+(CEDEAO exclue), TPC compris ; 8 % TPV. Depuis le 01/11/2026, les contrats émis par l'API
+(Horus) sont commissionnés sur la prime **brute**.
+
+**Durée en jours** : aucun contrat à la journée n'a été émis via Horus à ce jour ; au guichet,
+le coût de police reste 3 000 F (10 cas sur 12).
 
 ## 6. Points encore ouverts ⚠️
 - Taxi inter-urbain 7 places (191 651 vs 216 139) et taxi 6 CV à 128 938.

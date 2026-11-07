@@ -1,12 +1,19 @@
 /**
  * Page Tarification — calcule le tarif d'une police selon la grille
  * assurance auto Sénégal.
+ *
+ * La prime de base (RC au prorata, avant réduction) est relevée chez ASS en
+ * direct, via Horus, quand c'est possible : c'est elle qui dérive quand ASS
+ * change ses tables. Réduction, frais, taxe et FGA restent les règles du
+ * guichet. Sans réponse d'ASS (version bureau, TPV, durée en jours, Horus
+ * injoignable), le barème local sert d'estimation, signalée comme telle.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Header } from "../../components/layout";
 import { SearchableSelect } from "../../components/ui/SearchableSelect";
+import { getAssPrimeBase } from "../../lib/ipc";
 import {
   CYLINDREE_OPTIONS,
   type Cylindree,
@@ -33,6 +40,11 @@ export function TarificationPage() {
 
   const [result, setResult] = useState<TarifResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Statut de la prime de base ASS : en cours, relevée, indisponible, erreur.
+  const [assStatus, setAssStatus] = useState<"idle" | "loading" | "ok" | "local" | "error">("idle");
+  const [assError, setAssError] = useState<string | null>(null);
+  // Ignore la réponse d'un calcul précédent si l'utilisateur a relancé entre-temps.
+  const computeId = useRef(0);
 
   const meta = useMemo(
     () => TARIF_CATEGORIES.find((c) => c.value === categorie) ?? null,
@@ -50,9 +62,12 @@ export function TarificationPage() {
     }
   };
 
-  const handleCompute = () => {
+  const handleCompute = async () => {
+    const id = ++computeId.current;
     setError(null);
     setResult(null);
+    setAssStatus("idle");
+    setAssError(null);
     if (!categorie) {
       setError("Sélectionnez une catégorie.");
       return;
@@ -64,19 +79,46 @@ export function TarificationPage() {
     const duree = Number(dureeMois);
     const fraisN = Number(frais);
     const bonus = Number(bonusPct) / 100;
+    const tarifInput = {
+      categorie,
+      ...(meta?.needsPuissance ? { puissance: Number(puissance) } : {}),
+      ...(meta?.needsPlaces ? { places: Number(places) } : {}),
+      ...(meta?.needsCylindree && cylindree ? { cylindree } : {}),
+      ...(dureeUnite === "jours" ? { dureeJours: duree } : { dureeMois: duree }),
+      frais: fraisN,
+      bonus,
+    };
     try {
-      const r = computeTarif({
-        categorie,
-        ...(meta?.needsPuissance ? { puissance: Number(puissance) } : {}),
-        ...(meta?.needsPlaces ? { places: Number(places) } : {}),
-        ...(meta?.needsCylindree && cylindree ? { cylindree } : {}),
-        ...(dureeUnite === "jours" ? { dureeJours: duree } : { dureeMois: duree }),
-        frais: fraisN,
-        bonus,
-      });
-      setResult(r);
+      setResult(computeTarif(tarifInput));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur de calcul.");
+      return;
+    }
+
+    // ASS ne tarifie en ligne que des durées en mois.
+    if (dureeUnite !== "mois") {
+      setAssStatus("local");
+      return;
+    }
+    setAssStatus("loading");
+    try {
+      const ass = await getAssPrimeBase({
+        categorie,
+        ...(meta?.needsPuissance ? { puissance: Number(puissance) } : {}),
+        ...(meta?.needsCylindree && cylindree ? { cylindree } : {}),
+        dureeMois: duree,
+      });
+      if (id !== computeId.current) return;
+      if (!ass) {
+        setAssStatus("local");
+        return;
+      }
+      setResult(computeTarif({ ...tarifInput, rcProrataAss: ass.primeBase }));
+      setAssStatus("ok");
+    } catch (e) {
+      if (id !== computeId.current) return;
+      setAssStatus("error");
+      setAssError(e instanceof Error ? e.message : "Tarif ASS injoignable.");
     }
   };
 
@@ -91,6 +133,9 @@ export function TarificationPage() {
     setBonusPct("20");
     setResult(null);
     setError(null);
+    setAssStatus("idle");
+    setAssError(null);
+    computeId.current += 1;
   };
 
   const inputClass =
@@ -243,7 +288,7 @@ export function TarificationPage() {
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={handleCompute}
+                onClick={() => void handleCompute()}
                 className="rounded-lg bg-[#614e1a] px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#8b7335]"
               >
                 Valider le calcul
@@ -275,8 +320,17 @@ export function TarificationPage() {
               </p>
             ) : (
               <div className="space-y-1.5">
-                <ResultRow label="RC Annuel (base)" value={result.rcAnnuel} muted />
-                <ResultRow label="RC prorata (avant réduction)" value={result.rcProrata} muted />
+                <SourceNotice result={result} status={assStatus} error={assError} />
+                <ResultRow label="RC Annuel (barème)" value={result.rcAnnuel} muted />
+                <ResultRow
+                  label={
+                    result.source === "ASS"
+                      ? "Prime de base ASS (avant réduction)"
+                      : "RC prorata (avant réduction)"
+                  }
+                  value={result.rcProrata}
+                  muted
+                />
                 <ResultRow
                   label={`Réduction (${Math.round(result.tauxReductionEffectif * 1000) / 10} %)`}
                   value={result.reduction}
@@ -308,6 +362,61 @@ export function TarificationPage() {
       </div>
     </>
   );
+}
+
+/** Indique d'où vient la prime de base, et signale un barème local périmé. */
+function SourceNotice({
+  result,
+  status,
+  error,
+}: {
+  result: TarifResult;
+  status: "idle" | "loading" | "ok" | "local" | "error";
+  error: string | null;
+}) {
+  const base = "mb-2 rounded-lg px-3 py-2 text-xs";
+  if (status === "loading") {
+    return (
+      <p className={`${base} bg-gray-50 text-gray-600 dark:bg-slate-700/50 dark:text-slate-300`}>
+        Vérification de la prime de base auprès d'ASS…
+      </p>
+    );
+  }
+  if (result.source === "ASS") {
+    const gap = result.rcProrata - result.rcProrataBareme;
+    return (
+      <div className="space-y-1">
+        <p
+          className={`${base} bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-200`}
+        >
+          Prime de base relevée chez ASS en direct (via Horus).
+        </p>
+        {gap !== 0 && (
+          <p
+            className={`${base} bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200`}
+          >
+            Le barème local donnait {formatFCFA(result.rcProrataBareme)} FCFA ({gap > 0 ? "+" : ""}
+            {formatFCFA(gap)} FCFA chez ASS) : barème à mettre à jour.
+          </p>
+        )}
+      </div>
+    );
+  }
+  if (status === "error") {
+    return (
+      <p className={`${base} bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200`}>
+        Tarif ASS injoignable ({error}) : estimation sur le barème local.
+      </p>
+    );
+  }
+  if (status === "local") {
+    return (
+      <p className={`${base} bg-gray-50 text-gray-600 dark:bg-slate-700/50 dark:text-slate-300`}>
+        Estimation sur le barème local (tarif ASS en direct indisponible pour ce cas).
+      </p>
+    );
+  }
+  return null;
 }
 
 interface ResultRowProps {
