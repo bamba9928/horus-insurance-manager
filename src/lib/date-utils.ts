@@ -5,7 +5,16 @@
  * @module date-utils
  */
 
-import { addMonths, differenceInDays, format, isValid, parseISO, subDays } from "date-fns";
+import {
+  addMonths,
+  differenceInCalendarDays,
+  differenceInDays,
+  format,
+  isSameDay,
+  isValid,
+  parseISO,
+  subDays,
+} from "date-fns";
 import { fr } from "date-fns/locale";
 
 /** Timezone du Sénégal */
@@ -124,4 +133,49 @@ export function deduireDureeMois(dateEffet: string, dateEcheance: string): numbe
   }
 
   return meilleur;
+}
+
+/** Jour d'une date d'API (« AAAA-MM-JJ », avec ou sans heure), ou null. */
+function parseApiDay(value: string | null | undefined): Date | null {
+  const day = value?.trim().slice(0, 10);
+  if (!day || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+  const date = parseISO(day);
+  return isValid(date) ? date : null;
+}
+
+/**
+ * Durée lisible d'une couverture lue chez un assureur (API AAS Diotali).
+ *
+ * Le champ `duree` de cette API n'a pas d'unité fiable : selon la compagnie,
+ * il compte des mois (3) ou des jours (31). Affiché tel quel avec « mois », un
+ * contrat d'un mois apparaissait en « 31 mois ». Les dates d'effet et
+ * d'expiration font donc foi : un nombre entier de mois si la période en
+ * couvre un (fin le même jour, ou la veille), sinon le nombre de jours,
+ * bornes comprises. Sans dates, `duree` ne sert qu'en repli : jusqu'à 12 on
+ * lit des mois, au-delà des jours.
+ *
+ * @example
+ * coverageDuration("2026-10-12", "2026-11-11", 31) // → "1 mois"
+ * coverageDuration("2026-10-12", "2026-10-26", 15) // → "15 jours"
+ */
+export function coverageDuration(
+  dateEffet: string | null | undefined,
+  dateExpiration: string | null | undefined,
+  duree?: number | null,
+): string | null {
+  const effet = parseApiDay(dateEffet);
+  const fin = parseApiDay(dateExpiration);
+  if (effet && fin && fin >= effet) {
+    for (let mois = 1; mois <= 36; mois++) {
+      const terme = addMonths(effet, mois);
+      if (isSameDay(terme, fin) || isSameDay(subDays(terme, 1), fin)) return `${mois} mois`;
+      if (subDays(terme, 1) > fin) break;
+    }
+    const jours = differenceInCalendarDays(fin, effet) + 1;
+    return `${jours} jour${jours > 1 ? "s" : ""}`;
+  }
+  if (duree != null && duree > 0) {
+    return duree <= 12 ? `${duree} mois` : `${duree} jour${duree > 1 ? "s" : ""}`;
+  }
+  return null;
 }

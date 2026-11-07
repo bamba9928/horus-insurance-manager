@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calcEcheance,
+  coverageDuration,
   deduireDureeMois,
   formatDateDisplay,
   formatDateISO,
@@ -145,5 +146,35 @@ describe("deduireDureeMois", () => {
 
   it("ramène un écart d'environ 2 ans à 12 mois", () => {
     expect(deduireDureeMois("2025-01-15", "2027-01-14")).toBe(12);
+  });
+});
+
+describe("coverageDuration — durée d'une couverture lue chez l'assureur", () => {
+  it("un contrat d'un mois n'apparaît plus en « 31 mois »", () => {
+    expect(coverageDuration("2026-10-12", "2026-11-11", 31)).toBe("1 mois");
+  });
+
+  it("compte les mois entiers, fin la veille ou le jour même", () => {
+    expect(coverageDuration("2026-10-31", "2027-01-30", 3)).toBe("3 mois");
+    expect(coverageDuration("2026-01-15", "2027-01-15", null)).toBe("12 mois");
+  });
+
+  it("compte les jours, bornes comprises, hors mois entier", () => {
+    expect(coverageDuration("2026-10-12", "2026-10-26", 15)).toBe("15 jours");
+    expect(coverageDuration("2026-10-12", "2026-10-12", 1)).toBe("1 jour");
+  });
+
+  it("accepte des dates avec heure", () => {
+    expect(coverageDuration("2026-10-12 00:00:00", "2026-11-11 23:59:59", 31)).toBe("1 mois");
+  });
+
+  it("sans dates, lit `duree` en mois jusqu'à 12, en jours au-delà", () => {
+    expect(coverageDuration(null, null, 3)).toBe("3 mois");
+    expect(coverageDuration(undefined, "", 31)).toBe("31 jours");
+    expect(coverageDuration(null, null, null)).toBeNull();
+  });
+
+  it("ignore une période incohérente (fin avant l'effet)", () => {
+    expect(coverageDuration("2026-11-11", "2026-10-12", 31)).toBe("31 jours");
   });
 });

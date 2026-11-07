@@ -3,7 +3,7 @@ import { Header } from "../../components/layout";
 import { AccountPendingNotice } from "../../components/ui/AccountPendingNotice";
 import { Spinner } from "../../components/ui/Spinner";
 import { isWebMode, useAuth } from "../../lib/auth";
-import { formatDateDisplay, formatFCFA } from "../../lib/date-utils";
+import { coverageDuration, formatDateDisplay, formatFCFA } from "../../lib/date-utils";
 import {
   getSouscriptionByAttestation,
   openExternalUrl,
@@ -375,7 +375,22 @@ function SouscriptionSection({
             fields={[
               ["N° Police", data.police],
               ["Date de souscription", optionalDate(data.dateSouscription)],
-              ["Durée", withUnit(data.periodeCouverture?.duree, "mois")],
+              [
+                "Période",
+                data.periodeCouverture?.dateEffet && data.periodeCouverture?.dateExpiration
+                  ? `du ${optionalDate(data.periodeCouverture.dateEffet)} au ${optionalDate(
+                      data.periodeCouverture.dateExpiration,
+                    )}`
+                  : null,
+              ],
+              [
+                "Durée",
+                coverageDuration(
+                  data.periodeCouverture?.dateEffet,
+                  data.periodeCouverture?.dateExpiration,
+                  data.periodeCouverture?.duree,
+                ),
+              ],
             ]}
           />
           <FieldGroup
