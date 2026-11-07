@@ -13,6 +13,8 @@ import * as tauri from "./ipc.tauri";
 
 // Types canoniques (identiques quel que soit le backend).
 export type {
+  AssPrimeBaseInput,
+  AssPrimeBaseResult,
   DashboardKPI,
   DashboardRecapRow,
   EcheanceRow,
@@ -35,6 +37,7 @@ export const restoreDatabase = backend.restoreDatabase;
 export const verifyContract = backend.verifyContract;
 export const getSouscriptionByAttestation = backend.getSouscriptionByAttestation;
 export const openExternalUrl = backend.openExternalUrl;
+export const getAssPrimeBase = backend.getAssPrimeBase;
 
 // Clients
 export const listClients = backend.listClients;

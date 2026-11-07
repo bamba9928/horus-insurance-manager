@@ -70,9 +70,20 @@ export interface TarifInput {
   frais: number;
   /** Réduction accordée (0.2 = 20 %) ; si non fourni, valeur par défaut de la catégorie */
   bonus?: number;
+  /**
+   * Prime de base RÉELLE d'ASS (RC au prorata, avant réduction), lue via
+   * Horus. Fournie, elle remplace celle du barème local : c'est la donnée qui
+   * dérive quand ASS change ses tables. Réduction, frais, taxe et FGA restent
+   * calculés ici avec les règles du guichet.
+   */
+  rcProrataAss?: number;
 }
 
 export interface TarifResult {
+  /** Origine de la prime de base : relevée chez ASS, ou barème local. */
+  source: "ASS" | "BAREME";
+  /** Prime de base selon le barème local, pour signaler un écart avec ASS. */
+  rcProrataBareme: number;
   /** RC annuel utilisé */
   rcAnnuel: number;
   /** Coefficient de durée appliqué au RC annuel */
@@ -169,47 +180,87 @@ function resolveRcAnnuel(input: TarifInput): number {
  * Calcule le tarif complet.
  * Tous les montants retournés sont arrondis à l'entier (FCFA).
  */
-export function computeTarif(input: TarifInput): TarifResult {
-  const { categorie, dureeMois, dureeJours, frais, bonus = getDefaultBonus(categorie) } = input;
+/**
+ * Arrondi d'un rapport d'entiers positifs au plus proche, les « ,5 » allant au
+ * nombre PAIR — exactement comme ASS.
+ *
+ * Relevé sur 1 688 contrats ASS (2026-11-07) : sur les 528 dont la taxe tombe
+ * sur ,5, ASS arrondit 528 fois au pair (527 vers le bas, 1 vers le haut). Il
+ * calcule aussi en valeur EXACTE : `Math.round(4575 * 0.14)` donne 641 (le
+ * flottant vaut 640,50000000000006) quand ASS facture 640. D'où des entiers
+ * de bout en bout plutôt que des multiplications par des taux décimaux.
+ */
+export function roundHalfEven(numerator: number, denominator: number): number {
+  const quotient = Math.floor(numerator / denominator);
+  const remainder = numerator - quotient * denominator;
+  if (remainder * 2 > denominator) return quotient + 1;
+  if (remainder * 2 < denominator) return quotient;
+  return quotient % 2 === 0 ? quotient : quotient + 1;
+}
 
-  let coefficientDuree: number;
+/** Taux exprimé en millièmes (0,2 → 200), pour calculer en entiers. */
+function toMillis(rate: number): number {
+  return Math.round(rate * 1000);
+}
+
+export function computeTarif(input: TarifInput): TarifResult {
+  const { categorie, dureeMois, dureeJours, bonus = getDefaultBonus(categorie) } = input;
+
+  // Coefficient de durée sous forme de fraction exacte (numérateur / dénominateur).
+  let durationNum: number;
+  let durationDen: number;
   if (dureeJours !== undefined) {
     if (!Number.isInteger(dureeJours) || dureeJours < 1 || dureeJours > 365)
       throw new TarifError("Durée invalide (1 à 365 jours).");
-    coefficientDuree = Math.round((dureeJours / 365) * 1000) / 1000;
+    // ROUND(jours / 365 ; 3) : jamais un « ,5 » exact, Math.round suffit.
+    durationNum = Math.round((dureeJours * 1000) / 365);
+    durationDen = 1000;
   } else {
-    if (dureeMois === undefined || !Number.isFinite(dureeMois) || dureeMois < 1 || dureeMois > 12)
+    if (dureeMois === undefined || !Number.isInteger(dureeMois) || dureeMois < 1 || dureeMois > 12)
       throw new TarifError("Durée invalide (1 à 12 mois).");
-    coefficientDuree = dureeMois === 12 ? 1 : BAREME_CONSTANTS.coeffMensuel * dureeMois;
+    // 8,75 % par mois = 875 / 10 000 ; 12 mois = 100 %.
+    durationNum = dureeMois === 12 ? 1 : toMillis(BAREME_CONSTANTS.coeffMensuel * 10) * dureeMois;
+    durationDen = dureeMois === 12 ? 1 : 10_000;
   }
-  if (!Number.isFinite(frais) || frais < 0) throw new TarifError("Frais invalide.");
+  const coefficientDuree = durationNum / durationDen;
+  if (!Number.isFinite(input.frais) || input.frais < 0) throw new TarifError("Frais invalide.");
   if (!Number.isFinite(bonus) || bonus < 0 || bonus > 1)
     throw new TarifError("Réduction invalide (0 à 100 %).");
+  const frais = Math.round(input.frais);
 
   const rcAnnuel = resolveRcAnnuel(input);
 
   // ASS arrondit le prorata avant d'appliquer la réduction.
-  const rcProrata = Math.round(rcAnnuel * coefficientDuree);
-  const tauxReductionEffectif = isTpc(categorie)
-    ? bonus * BAREME_CONSTANTS.facteurReductionTpc
-    : bonus;
-  const rCivil = Math.round(rcProrata * (1 - tauxReductionEffectif));
+  const rcProrataBareme = roundHalfEven(rcAnnuel * durationNum, durationDen);
+  const fromAss = input.rcProrataAss !== undefined;
+  if (fromAss && (!Number.isInteger(input.rcProrataAss) || (input.rcProrataAss ?? 0) <= 0))
+    throw new TarifError("Prime de base ASS invalide.");
+  const rcProrata = fromAss ? (input.rcProrataAss as number) : rcProrataBareme;
+
+  // Réduction effective en millièmes : TPC à 98 % du taux affiché (40 % → 392).
+  const reductionMillis = isTpc(categorie)
+    ? Math.round(toMillis(bonus) * BAREME_CONSTANTS.facteurReductionTpc)
+    : toMillis(bonus);
+  const tauxReductionEffectif = reductionMillis / 1000;
+  const rCivil = roundHalfEven(rcProrata * (1000 - reductionMillis), 1000);
   const reduction = rcProrata - rCivil;
 
   const primeNette = rCivil;
 
-  const taxe = Math.round((primeNette + frais) * BAREME_CONSTANTS.tauxTaxe);
-  const fga = Math.round(rCivil * BAREME_CONSTANTS.tauxFga);
+  const taxe = roundHalfEven((primeNette + frais) * toMillis(BAREME_CONSTANTS.tauxTaxe), 1000);
+  const fga = roundHalfEven(rCivil * toMillis(BAREME_CONSTANTS.tauxFga), 1000);
 
   const tpv = isTpv(categorie);
   const carteBrune = tpv ? 0 : BAREME_CONSTANTS.carteBrune;
   const tauxCommission = tpv ? BAREME_CONSTANTS.commissionTpv : BAREME_CONSTANTS.commissionStandard;
 
   const primeTotale = primeNette + frais + taxe + fga + carteBrune;
-  const commission = Math.round(rCivil * tauxCommission);
+  const commission = roundHalfEven(rCivil * toMillis(tauxCommission), 1000);
   const netAVerser = primeTotale - frais - commission;
 
   return {
+    source: fromAss ? "ASS" : "BAREME",
+    rcProrataBareme,
     rcAnnuel,
     coefficientDuree,
     rcProrata,

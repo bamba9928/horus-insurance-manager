@@ -14,6 +14,8 @@ import type { Police, PoliceCreate, PoliceUpdate } from "../schemas/police";
 import type { Vehicule, VehiculeCreate, VehiculeUpdate } from "../schemas/vehicule";
 import { csrfHeaders } from "./csrf";
 import type {
+  AssPrimeBaseInput,
+  AssPrimeBaseResult,
   DashboardKPI,
   DashboardRecapRow,
   EcheanceRow,
@@ -127,6 +129,25 @@ export async function restoreDatabase(bytes: Uint8Array): Promise<string> {
   });
   if (!res.ok) throw new ApiError(res.status, `Erreur ${res.status}`);
   return "Base restaurée";
+}
+
+/**
+ * Prime de base RÉELLE d'ASS, lue via Horus par le serveur. `null` quand le
+ * serveur n'a pas de clé Horus (503) ou que la catégorie n'est pas tarifée
+ * en ligne (422) : le barème local fait alors foi. Les autres erreurs
+ * remontent, pour être signalées à l'utilisateur.
+ */
+export async function getAssPrimeBase(
+  input: AssPrimeBaseInput,
+): Promise<AssPrimeBaseResult | null> {
+  try {
+    return await request<AssPrimeBaseResult>("POST", "/tarification/prime-base", input, {
+      selfScope: true,
+    });
+  } catch (err) {
+    if (err instanceof ApiError && (err.status === 503 || err.status === 422)) return null;
+    throw err;
+  }
 }
 
 export async function verifyContract(immatriculation: string): Promise<VerificationApiResponse> {

@@ -108,6 +108,8 @@ beforeAll(async () => {
       publicSiteUrl: undefined,
       allowRegistration: true,
       adminContactEmail: "contact@horus-assur.digital",
+      horusApiUrl: "https://horus.example/api",
+      horusApiKey: undefined,
     },
     adminDb,
     rateLimiter: new LoginRateLimiter(),
@@ -1037,5 +1039,31 @@ describe("auto-inscription + validation admin", () => {
       }),
     });
     expect(res.status).toBe(409);
+  });
+});
+
+describe("prime de base ASS via Horus", () => {
+  it("exige une session", async () => {
+    const res = await app.request("/api/tarification/prime-base", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ categorie: "CAT_01_VP", puissance: 9, dureeMois: 1 }),
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it("répond not_configured sans clé Horus, sans appel sortant", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const res = await call("/api/tarification/prime-base", {
+      method: "POST",
+      cookie: cookieA,
+      body: { categorie: "CAT_01_VP", puissance: 9, dureeMois: 1 },
+    });
+
+    expect(res.status).toBe(503);
+    expect(((await res.json()) as { code: string }).code).toBe("not_configured");
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });

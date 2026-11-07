@@ -23,6 +23,9 @@ services:
       ADMIN_CONTACT_EMAIL: ${ADMIN_CONTACT_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-true}
+      # Prime de base ASS en direct via Horus (vide = bareme local).
+      HORUS_API_URL: ${HORUS_API_URL:-https://horus-assur.digital/api}
+      HORUS_API_KEY: ${HORUS_API_KEY:-}
     volumes:
       - horus-data:/data
     ports:

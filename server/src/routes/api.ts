@@ -45,6 +45,7 @@ import {
   vehiculeCreateSchema,
   vehiculeUpdateSchema,
 } from "../schemas.js";
+import { primeBaseHandler } from "./primeBase.js";
 import { souscriptionHandler, verificationHandler } from "./verification.js";
 
 /** Contexte enrichi des routes admin cross-tenant. */
@@ -526,6 +527,21 @@ export function apiRoutes(ctx: AppContext, mutationLimiter: SlidingWindowLimiter
   app.use("*", requireCsrf);
   app.use("*", mutationRateLimit(mutationLimiter));
   registerBusinessRoutes(app, ctx, (c) => selfDb(ctx, c), { includeOperations: true });
+
+  // Prime de base ASS en direct via Horus (source unique du barème). Chaque
+  // appel part vers l'API ASS : quota par utilisateur.
+  const primeBaseLimiter = new SlidingWindowLimiter(20, 60_000);
+  app.post(
+    "/tarification/prime-base",
+    requireApproved(ctx.env.adminContactEmail),
+    async (c, next) => {
+      if (!primeBaseLimiter.hit(`prime-base:${c.get("user").id}`)) {
+        return c.json({ error: "Trop de tarifications. Réessayez dans un instant." }, 429);
+      }
+      await next();
+    },
+    primeBaseHandler(ctx.env),
+  );
   return app;
 }
 

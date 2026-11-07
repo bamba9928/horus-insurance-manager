@@ -335,3 +335,58 @@ describe("getDefaultFrais", () => {
     expect(getDefaultFrais("TRICYCLE")).toBe(3000);
   });
 });
+
+describe("arrondi exact comme ASS (au pair, sans flottant)", () => {
+  it("roundHalfEven arrondit les « ,5 » au nombre pair", async () => {
+    const { roundHalfEven } = await import("../../src/lib/tarification");
+    expect(roundHalfEven(6405, 10)).toBe(640); // 640,5 -> 640
+    expect(roundHalfEven(6415, 10)).toBe(642); // 641,5 -> 642
+    expect(roundHalfEven(6404, 10)).toBe(640);
+    expect(roundHalfEven(6406, 10)).toBe(641);
+  });
+
+  it("VP 7–10 CV, 1 mois, frais 2 000 : 6 744 F comme ASS (taxe 780,5 -> 780)", () => {
+    const r = computeTarif({ categorie: "CAT_01_VP", puissance: 9, dureeMois: 1, frais: 2000 });
+    expect(r.rCivil).toBe(3575);
+    expect(r.taxe).toBe(780);
+    expect(r.primeTotale).toBe(6744);
+  });
+
+  it("VP 7–10 CV, 1 mois, frais 1 000 : 5 604 F comme ASS (taxe 640,5 -> 640)", () => {
+    // Math.round(4575 * 0.14) donnait 641 : le flottant vaut 640,50000000000006.
+    const r = computeTarif({ categorie: "CAT_01_VP", puissance: 9, dureeMois: 1, frais: 1000 });
+    expect(r.taxe).toBe(640);
+    expect(r.primeTotale).toBe(5604);
+  });
+});
+
+describe("prime de base relevée chez ASS (via Horus)", () => {
+  it("remplace celle du barème et garde les règles du guichet", () => {
+    const local = computeTarif({ categorie: "CAT_01_VP", puissance: 9, dureeMois: 1, frais: 3000 });
+    const ass = computeTarif({
+      categorie: "CAT_01_VP",
+      puissance: 9,
+      dureeMois: 1,
+      frais: 3000,
+      rcProrataAss: 4500,
+    });
+
+    expect(local.source).toBe("BAREME");
+    expect(ass.source).toBe("ASS");
+    expect(ass.rcProrata).toBe(4500);
+    expect(ass.rcProrataBareme).toBe(local.rcProrata);
+    expect(ass.rCivil).toBe(3600); // 4 500 × 0,8
+  });
+
+  it("refuse une prime de base ASS invalide", () => {
+    expect(() =>
+      computeTarif({
+        categorie: "CAT_01_VP",
+        puissance: 9,
+        dureeMois: 1,
+        frais: 3000,
+        rcProrataAss: 0,
+      }),
+    ).toThrow(TarifError);
+  });
+});
