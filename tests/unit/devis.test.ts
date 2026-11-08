@@ -63,7 +63,7 @@ describe("computeDevisRapide", () => {
     expect(devis.bonus).toBe(0);
     expect(devis.frais).toBe(2000);
     expect(devis.remiseAPayer).toBe(0);
-    expect(devis.aPayer).toBe(172323);
+    expect(devis.aPayer).toBe(173763);
   });
 });
 

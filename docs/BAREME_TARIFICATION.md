@@ -24,11 +24,11 @@ Statut : ✅ vérifié sur les données ASS · ⚠️ incohérent ou trop peu de
 | RC prorata (champ ASS « prime_rc ») | `ROUND(RC annuelle × coefficient)` | ✅ |
 | **Prime RC nette** | `ROUND(RC prorata × coef. réduction)` — voir §3 | ✅ |
 | Réduction (affichée) | `RC prorata − Prime RC nette` | ✅ |
-| Prime A.G (garanties annexes) | somme des garanties optionnelles (0 si RC seule) | ✅ |
+| Prime A.G (garanties annexes) | somme des garanties optionnelles (0 si RC seule) · TPV : **Individuelle Conducteur 1 000, fixe** quelle que soit la durée (Pool TPV, confirmé le 08/11/2026) | ✅ |
 | Coût de la police (frais) | saisi : 3 000 standard · TPV : **2 000 par défaut, modifiable** (vu chez ASS : 0 / 1 000 / 2 000) · TPC souvent 1 000 | ✅ |
 | **Taxe** | `ROUND((Prime RC nette + Prime A.G + Frais) × 14 %)` | ✅ 1 958 cas |
 | **FGA** | `ROUND(Prime RC nette × 2,5 %)` (pas sur A.G) | ✅ |
-| **CEDEAO** | 300 hors TPV · **0 pour TPV** · compté une seule fois | ✅ |
+| **CEDEAO** (carte brune) | **300, fixe, TPV compris** (Pool TPV, confirmé le 08/11/2026 ; ASS : 0 pour TPV) · compté une seule fois | ✅ |
 | Arrondis | **au pair**, sur valeur EXACTE (528/528 cas « ,5 » de taxe, relevé du 07/11/2026) : 640,5 → 640, 641,5 → 642. Pas de multiplication par un taux décimal (`4575 × 0,14` vaut 640,50000000000006 en flottant) | ✅ |
 | **Prime Totale** | `Prime RC nette + Prime A.G + Frais + Taxe + FGA + CEDEAO` | ✅ 1 958 cas |
 | Commission | TPV : 8 %, 9 % ou 10 % de la Prime RC nette (selon apporteur) · hors TPV : variable (≈ 20–22 % du net), règle non déterminée | ⚠️ |
@@ -111,14 +111,15 @@ Un seul modèle pour tout le TPV : RC annuelle = **base (CV)** + **surprime (pla
 | 6 | Taxi 6 places | 74 064 |
 | 7 | Taxi inter-urbain | 98 552 |
 | 8 | Taxi inter-urbain | 131 402 |
-| 9 – 20 | Minicar | forfait 20 × 9 415 = 188 300, quel que soit le nombre de places |
+| 9 – 20 | Minicar | forfait 188 274 (Pool TPV), quel que soit le nombre de places |
 | 21 et + | Autocar | `min(places − 1 ; 30) × 9 415 + max(0 ; places − 31) × 6 726` |
 
 Moins de 4 places : hors barème.
 
 Vérifié chez ASS : taxi 4/5 places 5 – 7 CV = 145 960 ✅ · 8 – 10 CV = 196 133 ✅ ·
 autocar 10 CV/30 pl = 440 795 ✅ · 9 CV/38 pl = 497 292 ✅.
-Valeurs du courtier sans cas ASS relevé : base 2 CV, minicar 9 à 20 places ⚠️.
+Minicar : relevé sur le Pool TPV à 15 places, sur 1, 6 et 12 mois ✅ (la grille Excel indiquait 188 300).
+Valeur du courtier sans cas réel relevé : base 2 CV ⚠️.
 
 ### CAT 05 — Deux et trois roues ✅ (**corrigé par rapport à Horus**)
 | Genre ASS | Code | RC annuelle |
@@ -168,7 +169,17 @@ FGA **277** · CEDEAO **300** · **Total 14 368** ✅
 208 597 × ROUND(20/365 ; 3) = 208 597 × 0,055 = **11 473** → × 0,608 = **6 976** ✅
 
 ### E — Taxi 7 CV, 1 mois (TPV)
-145 960 × 0,0875 = **12 772** · réduction 0 · CEDEAO 0 ✅
+145 960 × 0,0875 = **12 772** · réduction 0 · CEDEAO 0 ✅ (décompte ASS ; le Pool TPV ajoute la carte
+brune de 300 et l'Individuelle Conducteur de 1 000)
+
+### G — Minicar 15 places, 12 CV, 1 mois (simulation Pool TPV)
+RC **36 084** + Individuelle Conducteur 1 000 = net **37 084** · frais 2 000 ·
+Taxe (37 084 + 2 000) × 14 % = **5 472** · FGA 36 084 × 2,5 % = **902** · carte brune **300** ·
+**Total 45 758** ✅
+
+### H — Minicar 15 places, 10 CV (simulations Pool TPV, sans Individuelle Conducteur)
+12 mois : RC **356 034** · frais 2 000 · Taxe **50 125** · FGA **8 901** · carte brune **300** · **Total 417 360** ✅
+6 mois : RC **186 918** · frais 2 000 · Taxe **26 449** · FGA **4 673** · carte brune **300** · **Total 220 340** ✅
 
 ### F — VP 11 CV, 12 mois, réduction 40 %, + A.G
 65 677 × 0,6 = **39 406** · A.G : personnes transportées 4 500 × 0,6 = 2 700 + bris de glace 10 000 ✅
@@ -186,7 +197,8 @@ FGA **277** · CEDEAO **300** · **Total 14 368** ✅
 | Devis public TPV : 0 % de réduction, sans remise de 2 000 | ✅ | — | — |
 | Durée en jours `ROUND(jours/365 ; 3)` | ✅ (page Tarification) | ✅ | ASS |
 | Arrondi du prorata avant réduction | ✅ | ✅ | ASS |
-| Taxe incluant la Prime A.G | — (A.G non gérée) | — | ASS |
+| TPV : Individuelle Conducteur 1 000 et carte brune 300, fixes (Pool TPV) | ✅ | — | — |
+| Taxe incluant la Prime A.G | ✅ TPV · — ailleurs (A.G non gérée) | — | ASS |
 
 « ASS » : Horus Assurances Digital ne calcule pas la prime lui-même, il reçoit la ventilation
 (`PrimeRC`, `Taxe`, `Reduction`, `Cedeao`…) directement de l'API ASS.
@@ -215,6 +227,7 @@ le coût de police reste 3 000 F (10 cas sur 12).
 - Taxi : 191 651, vu une fois chez ASS sur un « 7/8 places », est le tarif 6 places en 5 – 7 CV ;
   128 938, vu sur 9 propositions « 6 CV », est le tarif 4/5 places en 3 – 4 CV. Puissance ou places
   saisies à vérifier sur ces dossiers.
-- Base 2 CV et minicar 9 à 20 places : à recouper avec un devis ASS réel.
+- Base 2 CV : à recouper avec une simulation réelle.
+- Minicar 9 à 20 places : forfait de 188 274 vérifié à 15 places seulement ; à recouper à 9 et 20 places.
 - Règle de commission hors TPV.
 - Scooter commercial (35 398) et catégories 06 à 10.

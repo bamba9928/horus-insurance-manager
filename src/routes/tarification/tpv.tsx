@@ -210,10 +210,13 @@ export function TarificationTpvPage() {
                 )}
                 <ResultRow label="RC Annuel (barème)" value={result.rcAnnuel} muted />
                 <div className="my-1 border-t border-gray-200 dark:border-slate-700" />
-                <ResultRow label="Prime RC / Prime Nette" value={result.primeNette} />
+                <ResultRow label="Prime RC" value={result.rCivil} />
+                <ResultRow label="Individuelle Conducteur" value={result.individuelleConducteur} />
+                <ResultRow label="Prime Nette" value={result.primeNette} />
                 <ResultRow label="Frais" value={result.frais} />
                 <ResultRow label="Taxe (14 %)" value={result.taxe} />
                 <ResultRow label="FGA (2,5 %)" value={result.fga} />
+                <ResultRow label="Carte brune" value={result.carteBrune} />
                 <ResultRow label="Prime Totale" value={result.primeTotale} highlight />
                 <ResultRow
                   label={`Commission (${Math.round(result.tauxCommission * 100)} %)`}

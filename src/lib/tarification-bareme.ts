@@ -183,7 +183,7 @@ export const BAREME_CONSTANTS = {
   tauxFga: 0.025,
   /** Coefficient mensuel pour le prorata 1..11 mois */
   coeffMensuel: 0.0875,
-  /** Carte brune (hors TPV) */
+  /** Carte brune (CEDEAO), fixe, TPV compris */
   carteBrune: 300,
   /** Taux commission standard */
   commissionStandard: 0.2,

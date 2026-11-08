@@ -32,10 +32,13 @@ export const TPV_SURPRIME_TAXI: Readonly<Record<number, number>> = {
   8: 131402,
 };
 
-/** Minicar : surprime forfaitaire, quel que soit le nombre réel de places. */
+/**
+ * Minicar : surprime forfaitaire, quel que soit le nombre réel de places.
+ * Relevée sur le Pool TPV ; la grille du courtier indiquait 20 × 9 415 = 188 300.
+ */
 export const TPV_MINICAR = {
   placesMax: 20,
-  placesForfait: 20,
+  surprime: 188274,
 };
 
 /** Surprime autocar, par passager (places − 1). */
@@ -45,6 +48,9 @@ export const TPV_SURPRIME_PLACE = {
   /** Par passager au-delà de 30. */
   audela30: 6726,
 };
+
+/** Individuelle Conducteur : prime fixe, quelle que soit la durée (Pool TPV). */
+export const TPV_INDIVIDUELLE_CONDUCTEUR = 1000;
 
 /** Libellés affichés selon le nombre de places (bornes inclusives). */
 export const TPV_SEGMENTS: { min: number; max?: number; label: string }[] = [
