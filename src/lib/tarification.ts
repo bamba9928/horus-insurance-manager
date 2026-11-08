@@ -145,9 +145,7 @@ export function getDefaultBonus(cat: TarifCategorie): number {
 function resolveSurprimeTpv(places: number): number {
   const surprimeTaxi = TPV_SURPRIME_TAXI[places];
   if (surprimeTaxi !== undefined) return surprimeTaxi;
-  if (places <= TPV_MINICAR.placesMax) {
-    return TPV_MINICAR.placesForfait * TPV_SURPRIME_PLACE.jusqua30;
-  }
+  if (places <= TPV_MINICAR.placesMax) return TPV_MINICAR.surprime;
   const surprime30 = Math.min(places - 1, 30) * TPV_SURPRIME_PLACE.jusqua30;
   const surprimeExtra = Math.max(0, places - 31) * TPV_SURPRIME_PLACE.audela30;
   return surprime30 + surprimeExtra;

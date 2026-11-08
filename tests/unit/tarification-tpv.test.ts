@@ -14,9 +14,6 @@ const GRILLE_RC: [places: number, rc: number[]][] = [
   [6, [158800, 174629, 191651, 241824, 298174, 335896]],
   [7, [183288, 199117, 216139, 266312, 322662, 360384]],
   [8, [216138, 231967, 248989, 299162, 355512, 393234]],
-  [9, [273036, 288865, 305887, 356060, 412410, 450132]],
-  [15, [273036, 288865, 305887, 356060, 412410, 450132]],
-  [20, [273036, 288865, 305887, 356060, 412410, 450132]],
   [25, [310696, 326525, 343547, 393720, 450070, 487792]],
   [32, [373912, 389741, 406763, 456936, 513286, 551008]],
   [35, [394090, 409919, 426941, 477114, 533464, 571186]],
@@ -25,13 +22,20 @@ const GRILLE_RC: [places: number, rc: number[]][] = [
   [60, [562240, 578069, 595091, 645264, 701614, 739336]],
 ];
 
+/** Minicar 9 à 20 places : base de la grille + forfait de 188 274 relevé sur le Pool TPV. */
+const RC_MINICAR = [273010, 288839, 305861, 356034, 412384, 450106];
+
 describe("TPV — grille RC annuelle du courtier", () => {
   it.each(GRILLE_RC)("%i places", (places, attendus) => {
     expect(LIGNES_CV.map((cv) => tpv(cv, places).rcAnnuel)).toEqual(attendus);
   });
 
-  it("le forfait minicar rejoint le calcul par passager à 21 places", () => {
-    expect(tpv(9, 21).rcAnnuel).toBe(tpv(9, 20).rcAnnuel);
+  it.each([9, 15, 20])("minicar %i places : forfait du Pool TPV", (places) => {
+    expect(LIGNES_CV.map((cv) => tpv(cv, places).rcAnnuel)).toEqual(RC_MINICAR);
+  });
+
+  it("passe au calcul par passager à partir de 21 places", () => {
+    expect(tpv(9, 21).rcAnnuel).toBe(167760 + 20 * 9415);
     expect(tpv(9, 22).rcAnnuel).toBe(tpv(9, 21).rcAnnuel + 9415);
   });
 
@@ -53,11 +57,11 @@ describe("TPV — décompte par durée (frais 2000)", () => {
 
   it("minicar 8 à 10 CV, 6 mois", () => {
     const r = tpv(9, 15, 6);
-    expect(r.rCivil).toBe(186932);
-    expect(r.primeNette).toBe(187932);
-    expect(r.taxe).toBe(26590);
+    expect(r.rCivil).toBe(186918);
+    expect(r.primeNette).toBe(187918);
+    expect(r.taxe).toBe(26589);
     expect(r.fga).toBe(4673);
-    expect(r.primeTotale).toBe(221495);
+    expect(r.primeTotale).toBe(221480);
   });
 
   it("autocar 32 places, 17 CV et plus, 5 mois", () => {
@@ -71,20 +75,25 @@ describe("TPV — décompte par durée (frais 2000)", () => {
 });
 
 describe("TPV — alignement sur le Pool TPV", () => {
-  it("rejoue le décompte d'une simulation Pool à partir de sa prime RC", () => {
-    const r = computeTarif({
-      categorie: "CAT_04_TPV",
-      puissance: 12,
-      places: 15,
-      dureeMois: 1,
-      frais: 2000,
-      rcProrataAss: 36084,
-    });
+  it("retombe sur le décompte Pool du minicar 12 CV, 15 places, 1 mois", () => {
+    const r = tpv(12, 15, 1);
+    expect(r.rCivil).toBe(36084);
     expect(r.primeNette).toBe(37084);
     expect(r.taxe).toBe(5472);
     expect(r.fga).toBe(902);
     expect(r.carteBrune).toBe(300);
     expect(r.primeTotale).toBe(45758);
+  });
+
+  // Simulations Pool sans Individuelle Conducteur : l'application la compte toujours (1 000 + 140 de taxe).
+  it.each([
+    [1, 31153, 38873],
+    [6, 186918, 220340],
+    [12, 356034, 417360],
+  ])("minicar 10 CV, 15 places, %i mois : RC et total du Pool", (mois, rc, totalPool) => {
+    const r = tpv(10, 15, mois);
+    expect(r.rCivil).toBe(rc);
+    expect(r.primeTotale).toBe(totalPool + 1140);
   });
 
   it.each([1, 6, 12])("Individuelle Conducteur et carte brune fixes sur %i mois", (mois) => {

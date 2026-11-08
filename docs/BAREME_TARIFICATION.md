@@ -111,14 +111,15 @@ Un seul modèle pour tout le TPV : RC annuelle = **base (CV)** + **surprime (pla
 | 6 | Taxi 6 places | 74 064 |
 | 7 | Taxi inter-urbain | 98 552 |
 | 8 | Taxi inter-urbain | 131 402 |
-| 9 – 20 | Minicar | forfait 20 × 9 415 = 188 300, quel que soit le nombre de places |
+| 9 – 20 | Minicar | forfait 188 274 (Pool TPV), quel que soit le nombre de places |
 | 21 et + | Autocar | `min(places − 1 ; 30) × 9 415 + max(0 ; places − 31) × 6 726` |
 
 Moins de 4 places : hors barème.
 
 Vérifié chez ASS : taxi 4/5 places 5 – 7 CV = 145 960 ✅ · 8 – 10 CV = 196 133 ✅ ·
 autocar 10 CV/30 pl = 440 795 ✅ · 9 CV/38 pl = 497 292 ✅.
-Valeurs du courtier sans cas ASS relevé : base 2 CV, minicar 9 à 20 places ⚠️.
+Minicar : relevé sur le Pool TPV à 15 places, sur 1, 6 et 12 mois ✅ (la grille Excel indiquait 188 300).
+Valeur du courtier sans cas réel relevé : base 2 CV ⚠️.
 
 ### CAT 05 — Deux et trois roues ✅ (**corrigé par rapport à Horus**)
 | Genre ASS | Code | RC annuelle |
@@ -176,6 +177,10 @@ RC **36 084** + Individuelle Conducteur 1 000 = net **37 084** · frais 2 000 ·
 Taxe (37 084 + 2 000) × 14 % = **5 472** · FGA 36 084 × 2,5 % = **902** · carte brune **300** ·
 **Total 45 758** ✅
 
+### H — Minicar 15 places, 10 CV (simulations Pool TPV, sans Individuelle Conducteur)
+12 mois : RC **356 034** · frais 2 000 · Taxe **50 125** · FGA **8 901** · carte brune **300** · **Total 417 360** ✅
+6 mois : RC **186 918** · frais 2 000 · Taxe **26 449** · FGA **4 673** · carte brune **300** · **Total 220 340** ✅
+
 ### F — VP 11 CV, 12 mois, réduction 40 %, + A.G
 65 677 × 0,6 = **39 406** · A.G : personnes transportées 4 500 × 0,6 = 2 700 + bris de glace 10 000 ✅
 
@@ -223,8 +228,6 @@ le coût de police reste 3 000 F (10 cas sur 12).
   128 938, vu sur 9 propositions « 6 CV », est le tarif 4/5 places en 3 – 4 CV. Puissance ou places
   saisies à vérifier sur ces dossiers.
 - Base 2 CV : à recouper avec une simulation réelle.
-- Minicar 9 à 20 places : forfait confirmé par le Pool TPV, mais RC 2 FCFA plus basse sur 1 mois
-  (36 084 contre 36 086 en 12 CV, 31 153 contre 31 155 en 8 à 10 CV). Une simulation sur 12 mois
-  donnera le RC annuel exact.
+- Minicar 9 à 20 places : forfait de 188 274 vérifié à 15 places seulement ; à recouper à 9 et 20 places.
 - Règle de commission hors TPV.
 - Scooter commercial (35 398) et catégories 06 à 10.
