@@ -5,13 +5,16 @@
  * La prime de base (RC au prorata, avant réduction) est relevée chez ASS en
  * direct, via Horus, quand c'est possible : c'est elle qui dérive quand ASS
  * change ses tables. Réduction, frais, taxe et FGA restent les règles du
- * guichet. Sans réponse d'ASS (version bureau, TPV, durée en jours, Horus
+ * guichet. Sans réponse d'ASS (version bureau, durée en jours, Horus
  * injoignable), le barème local sert d'estimation, signalée comme telle.
+ *
+ * Le TPV a sa propre page : `routes/tarification/tpv.tsx`.
  */
 
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Header } from "../../components/layout";
+import { ResultRow } from "../../components/ui/ResultRow";
 import { SearchableSelect } from "../../components/ui/SearchableSelect";
 import { getAssPrimeBase } from "../../lib/ipc";
 import {
@@ -21,17 +24,19 @@ import {
   formatFCFA,
   getDefaultBonus,
   getDefaultFrais,
+  isTpv,
   TARIF_CATEGORIES,
   type TarifCategorie,
   type TarifResult,
 } from "../../lib/tarification";
+
+const CATEGORIES_GENERALES = TARIF_CATEGORIES.filter((c) => !isTpv(c.value));
 
 export function TarificationPage() {
   const { t } = useTranslation();
 
   const [categorie, setCategorie] = useState<TarifCategorie | null>(null);
   const [puissance, setPuissance] = useState<string>("");
-  const [places, setPlaces] = useState<string>("");
   const [cylindree, setCylindree] = useState<Cylindree | null>(null);
   const [dureeMois, setDureeMois] = useState<string>("");
   const [dureeUnite, setDureeUnite] = useState<"mois" | "jours">("mois");
@@ -47,7 +52,7 @@ export function TarificationPage() {
   const computeId = useRef(0);
 
   const meta = useMemo(
-    () => TARIF_CATEGORIES.find((c) => c.value === categorie) ?? null,
+    () => CATEGORIES_GENERALES.find((c) => c.value === categorie) ?? null,
     [categorie],
   );
 
@@ -55,7 +60,7 @@ export function TarificationPage() {
     setCategorie(v);
     setResult(null);
     setError(null);
-    // Ajuste frais et réduction par défaut selon la catégorie (TPV 0 %, TPC 40 %, autres 20 %)
+    // Ajuste frais et réduction par défaut selon la catégorie (TPC 40 %, autres 20 %)
     if (v) {
       setFrais(String(getDefaultFrais(v)));
       setBonusPct(String(getDefaultBonus(v) * 100));
@@ -82,7 +87,6 @@ export function TarificationPage() {
     const tarifInput = {
       categorie,
       ...(meta?.needsPuissance ? { puissance: Number(puissance) } : {}),
-      ...(meta?.needsPlaces ? { places: Number(places) } : {}),
       ...(meta?.needsCylindree && cylindree ? { cylindree } : {}),
       ...(dureeUnite === "jours" ? { dureeJours: duree } : { dureeMois: duree }),
       frais: fraisN,
@@ -125,7 +129,6 @@ export function TarificationPage() {
   const handleReset = () => {
     setCategorie(null);
     setPuissance("");
-    setPlaces("");
     setCylindree(null);
     setDureeMois("");
     setDureeUnite("mois");
@@ -162,7 +165,7 @@ export function TarificationPage() {
                 id="tarif-cat"
                 value={categorie}
                 onChange={(v) => handleCategorieChange(v as TarifCategorie | null)}
-                options={TARIF_CATEGORIES.map((c) => ({ value: c.value, label: c.label }))}
+                options={CATEGORIES_GENERALES.map((c) => ({ value: c.value, label: c.label }))}
                 placeholder="— Sélectionner une catégorie —"
               />
             </div>
@@ -188,38 +191,16 @@ export function TarificationPage() {
               <div className="mb-3">
                 <label htmlFor="tarif-puiss" className={labelClass}>
                   Puissance fiscale (CV) *
-                  {meta.maxCV !== undefined && (
-                    <span className="ml-1 text-xs text-gray-500">(max {meta.maxCV} CV)</span>
-                  )}
                 </label>
                 <input
                   id="tarif-puiss"
                   type="number"
                   min={1}
-                  max={meta.maxCV ?? 100}
+                  max={100}
                   value={puissance}
                   onChange={(e) => setPuissance(e.target.value)}
                   className={inputClass}
                   placeholder="7"
-                />
-              </div>
-            )}
-
-            {/* Nombre de places (CAT 4 Autocar/Minicar) */}
-            {meta?.needsPlaces && (
-              <div className="mb-3">
-                <label htmlFor="tarif-places" className={labelClass}>
-                  Nombre de places *
-                </label>
-                <input
-                  id="tarif-places"
-                  type="number"
-                  min={2}
-                  max={100}
-                  value={places}
-                  onChange={(e) => setPlaces(e.target.value)}
-                  className={inputClass}
-                  placeholder="32"
                 />
               </div>
             )}
@@ -417,29 +398,4 @@ function SourceNotice({
     );
   }
   return null;
-}
-
-interface ResultRowProps {
-  label: string;
-  value: number;
-  muted?: boolean;
-  highlight?: boolean;
-  variant?: "success";
-}
-
-function ResultRow({ label, value, muted, highlight, variant }: ResultRowProps) {
-  const base = "flex items-center justify-between rounded-lg px-3 py-1.5 text-sm transition-colors";
-  const tone = muted
-    ? "bg-gray-50 text-gray-600 dark:bg-slate-700/50 dark:text-slate-400"
-    : highlight
-      ? variant === "success"
-        ? "bg-green-50 text-green-800 font-semibold dark:bg-green-900/30 dark:text-green-200"
-        : "bg-[#614e1a]/10 text-[#614e1a] font-semibold dark:bg-[#d4b85a]/10 dark:text-[#d4b85a]"
-      : "bg-white text-gray-900 dark:bg-slate-800 dark:text-slate-100";
-  return (
-    <div className={`${base} ${tone}`}>
-      <span>{label}</span>
-      <span className="font-mono tabular-nums">{formatFCFA(value)} FCFA</span>
-    </div>
-  );
 }

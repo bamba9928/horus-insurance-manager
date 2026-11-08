@@ -52,9 +52,7 @@ describe("toHorusPayload", () => {
   });
 
   it("TPV et catégories inconnues ne sont pas tarifés en ligne", () => {
-    expect(
-      toHorusPayload({ categorie: "CAT_04_TAXI_URBAIN", puissance: 7, dureeMois: 1 }),
-    ).toBeNull();
+    expect(toHorusPayload({ categorie: "CAT_04_TPV", puissance: 7, dureeMois: 1 })).toBeNull();
     expect(toHorusPayload({ categorie: "CAT_01_VP", dureeMois: 1 })).toBeNull();
   });
 });
@@ -89,7 +87,7 @@ describe("primeBaseHandler", () => {
     vi.stubGlobal("fetch", fetchSpy);
 
     const res = await post(appWith(ENV), {
-      categorie: "CAT_04_TAXI_URBAIN",
+      categorie: "CAT_04_TPV",
       puissance: 7,
       dureeMois: 1,
     });

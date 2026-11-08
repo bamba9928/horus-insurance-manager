@@ -16,9 +16,7 @@ export type TarifCategorie =
   | "CAT_02_TPC_GT3T5"
   | "CAT_03_TPM_LT3T5"
   | "CAT_03_TPM_GT3T5"
-  | "CAT_04_TAXI_URBAIN"
-  | "CAT_04_TAXI_INTERURBAIN"
-  | "CAT_04_AUTOCAR_MINICAR"
+  | "CAT_04_TPV"
   | "CAT_05_2R"
   | "TRICYCLE";
 
@@ -31,8 +29,6 @@ export interface TarifCategorieOption {
   needsPuissance: boolean;
   /** Requiert cylindrée (CAT 5) ? */
   needsCylindree: boolean;
-  /** Plafond CV (ex: CAT 4 Taxi limité à 16 CV) */
-  maxCV?: number;
 }
 
 export const TARIF_CATEGORIES: TarifCategorieOption[] = [
@@ -79,24 +75,8 @@ export const TARIF_CATEGORIES: TarifCategorieOption[] = [
     needsCylindree: false,
   },
   {
-    value: "CAT_04_TAXI_URBAIN",
-    label: "CAT 04 — TPV · Taxi Urbain (4/5 places)",
-    needsPlaces: false,
-    needsPuissance: true,
-    needsCylindree: false,
-    maxCV: 16,
-  },
-  {
-    value: "CAT_04_TAXI_INTERURBAIN",
-    label: "CAT 04 — TPV · Taxi Inter-Urbain (7/8 places)",
-    needsPlaces: false,
-    needsPuissance: true,
-    needsCylindree: false,
-    maxCV: 16,
-  },
-  {
-    value: "CAT_04_AUTOCAR_MINICAR",
-    label: "CAT 04 — TPV · Autocar / Minicar",
+    value: "CAT_04_TPV",
+    label: "CAT 04 — TPV · Taxi, minicar, autocar",
     needsPlaces: true,
     needsPuissance: true,
     needsCylindree: false,
@@ -174,33 +154,6 @@ export const RC_TABLES: Partial<Record<TarifCategorie, CvBracket[]>> = {
     { min: 11, max: 16, rc: 285510 },
     { min: 17, rc: 331336 },
   ],
-  CAT_04_TAXI_URBAIN: [
-    { min: 5, max: 7, rc: 145960 },
-    { min: 8, max: 10, rc: 196133 },
-    { min: 11, max: 16, rc: 252483 },
-  ],
-  CAT_04_TAXI_INTERURBAIN: [
-    { min: 5, max: 7, rc: 216139 },
-    { min: 8, max: 10, rc: 266312 },
-    { min: 11, max: 16, rc: 322662 },
-  ],
-};
-
-/** Base RC par puissance pour CAT 4 Autocar/Minicar (à additionner avec surprime places) */
-export const AUTOCAR_BASE_RC: CvBracket[] = [
-  { min: 2, max: 4, rc: 100565 },
-  { min: 5, max: 7, rc: 117587 },
-  { min: 8, max: 10, rc: 167760 },
-  { min: 11, max: 16, rc: 224110 },
-  { min: 17, rc: 261832 },
-];
-
-/** Surprimes Autocar/Minicar par passager. */
-export const AUTOCAR_SURPRIME = {
-  /** Par passager jusqu'à 30 (places − 1, plafonné). */
-  jusqua30: 9415,
-  /** Par passager au-delà de 30. */
-  audela30: 6726,
 };
 
 /** CAT 5 — RC annuel par genre (vérifié sur les propositions ASS) */

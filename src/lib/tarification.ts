@@ -18,7 +18,8 @@
  *  - COM       = ROUND(R_Civil × taux_commission)
  *  - NAV       = Prime T. − Frais − COM
  *
- * Spécificités TPV (CAT 4 Taxi / Autocar / Minicar) :
+ * Spécificités TPV (CAT 4 Taxi / Minicar / Autocar, barème dans `tarification-tpv.ts`) :
+ *  - RC annuel : base selon la puissance + surprime selon les places
  *  - Commission : commissionTpv (vs commissionStandard ailleurs)
  *  - Pas de carte brune
  *  - Frais par défaut : fraisTpvDefaut
@@ -27,17 +28,21 @@
  */
 
 import {
-  AUTOCAR_BASE_RC,
-  AUTOCAR_SURPRIME,
   BAREME_CONSTANTS,
   CAT_05_RC,
   type CvBracket,
   type Cylindree,
   RC_TABLES,
-  TARIF_CATEGORIES,
   type TarifCategorie,
   TRICYCLE_RC,
 } from "./tarification-bareme";
+import {
+  TPV_BASE_RC,
+  TPV_MINICAR,
+  TPV_PLACES_MIN,
+  TPV_SURPRIME_PLACE,
+  TPV_SURPRIME_TAXI,
+} from "./tarification-tpv";
 
 export {
   CYLINDREE_OPTIONS,
@@ -58,7 +63,7 @@ export interface TarifInput {
   categorie: TarifCategorie;
   /** Puissance fiscale en CV — requis si needsPuissance */
   puissance?: number;
-  /** Nombre de places — requis pour CAT 4 Autocar/Minicar */
+  /** Nombre de places — requis pour le TPV */
   places?: number;
   /** Cylindrée — requis pour CAT 5 */
   cylindree?: Cylindree;
@@ -118,12 +123,8 @@ export interface TarifResult {
 
 export class TarifError extends Error {}
 
-function isTpv(cat: TarifCategorie): boolean {
-  return (
-    cat === "CAT_04_TAXI_URBAIN" ||
-    cat === "CAT_04_TAXI_INTERURBAIN" ||
-    cat === "CAT_04_AUTOCAR_MINICAR"
-  );
+export function isTpv(cat: TarifCategorie): boolean {
+  return cat === "CAT_04_TPV";
 }
 
 function isTpc(cat: TarifCategorie): boolean {
@@ -137,6 +138,18 @@ export function getDefaultBonus(cat: TarifCategorie): number {
   return BAREME_CONSTANTS.bonusDefaut;
 }
 
+/** Surprime TPV : forfait taxi (4 à 8 places), forfait minicar (9 à 20), puis par passager. */
+function resolveSurprimeTpv(places: number): number {
+  const surprimeTaxi = TPV_SURPRIME_TAXI[places];
+  if (surprimeTaxi !== undefined) return surprimeTaxi;
+  if (places <= TPV_MINICAR.placesMax) {
+    return TPV_MINICAR.placesForfait * TPV_SURPRIME_PLACE.jusqua30;
+  }
+  const surprime30 = Math.min(places - 1, 30) * TPV_SURPRIME_PLACE.jusqua30;
+  const surprimeExtra = Math.max(0, places - 31) * TPV_SURPRIME_PLACE.audela30;
+  return surprime30 + surprimeExtra;
+}
+
 /** Retourne le RC annuel total (base + surprime place s'il y a lieu). */
 function resolveRcAnnuel(input: TarifInput): number {
   const { categorie, puissance, places, cylindree } = input;
@@ -148,28 +161,18 @@ function resolveRcAnnuel(input: TarifInput): number {
     return CAT_05_RC[cylindree];
   }
 
-  if (categorie === "CAT_04_AUTOCAR_MINICAR") {
+  if (isTpv(categorie)) {
     if (puissance == null || puissance <= 0) throw new TarifError("Puissance fiscale requise.");
-    if (places == null || places <= 0)
-      throw new TarifError("Nombre de places requis pour Autocar/Minicar.");
-    const bracket = findBracket(AUTOCAR_BASE_RC, puissance);
-    if (!bracket) throw new TarifError(`Aucune tranche définie pour ${puissance} CV (Autocar).`);
-    const passagers = Math.max(0, places - 1);
-    const surprime30 = Math.min(passagers, 30) * AUTOCAR_SURPRIME.jusqua30;
-    const surprimeExtra = Math.max(0, places - 31) * AUTOCAR_SURPRIME.audela30;
-    return bracket.rc + surprime30 + surprimeExtra;
+    if (places == null || !Number.isInteger(places) || places < TPV_PLACES_MIN)
+      throw new TarifError(`Nombre de places requis pour le TPV (minimum ${TPV_PLACES_MIN}).`);
+    const bracket = findBracket(TPV_BASE_RC, puissance);
+    if (!bracket) throw new TarifError(`Aucune tranche définie pour ${puissance} CV (TPV).`);
+    return bracket.rc + resolveSurprimeTpv(places);
   }
 
   const table = RC_TABLES[categorie];
   if (!table) throw new TarifError(`Catégorie non tarifée : ${categorie}`);
   if (puissance == null || puissance <= 0) throw new TarifError("Puissance fiscale requise.");
-
-  const meta = TARIF_CATEGORIES.find((c) => c.value === categorie);
-  if (meta?.maxCV !== undefined && puissance > meta.maxCV) {
-    throw new TarifError(
-      `Puissance ${puissance} CV hors barème — ${meta.label} est limité à ${meta.maxCV} CV.`,
-    );
-  }
 
   const bracket = findBracket(table, puissance);
   if (!bracket) throw new TarifError(`Aucune tranche définie pour ${puissance} CV.`);
