@@ -157,6 +157,8 @@ const resources = {
       tarification: {
         title: "Tarification",
         button: "TARIFICATION",
+        tpvTitle: "Tarification TPV",
+        tpvButton: "TPV",
       },
       parametres: {
         assureurs: {
@@ -344,6 +346,8 @@ const resources = {
       tarification: {
         title: "Pricing",
         button: "PRICING",
+        tpvTitle: "TPV pricing",
+        tpvButton: "TPV",
       },
       parametres: {
         assureurs: {

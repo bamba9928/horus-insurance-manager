@@ -166,8 +166,9 @@ describe("computeTarif — décomptes réels ASS", () => {
 
   it("Taxi 7 CV, 1 mois — pas de réduction ni CEDEAO", () => {
     const r = computeTarif({
-      categorie: "CAT_04_TAXI_URBAIN",
+      categorie: "CAT_04_TPV",
       puissance: 7,
+      places: 5,
       dureeMois: 1,
       frais: 1000,
     });
@@ -193,7 +194,7 @@ describe("computeTarif — décomptes réels ASS", () => {
 
 describe("getDefaultBonus", () => {
   it("TPV 0 %, TPC 40 %, autres 20 %", () => {
-    expect(getDefaultBonus("CAT_04_TAXI_URBAIN")).toBe(0);
+    expect(getDefaultBonus("CAT_04_TPV")).toBe(0);
     expect(getDefaultBonus("CAT_02_TPC_GT3T5")).toBe(0.4);
     expect(getDefaultBonus("CAT_01_VP")).toBe(0.2);
   });
@@ -202,8 +203,9 @@ describe("getDefaultBonus", () => {
 describe("computeTarif — TPV (commission 8%, pas de carte brune)", () => {
   it("Taxi urbain 7 CV — applique commission 8% et carte brune 0", () => {
     const r = computeTarif({
-      categorie: "CAT_04_TAXI_URBAIN",
+      categorie: "CAT_04_TPV",
       puissance: 7,
+      places: 5,
       dureeMois: 12,
       frais: 1000,
     });
@@ -214,9 +216,9 @@ describe("computeTarif — TPV (commission 8%, pas de carte brune)", () => {
     expect(r.commission).toBe(11677);
   });
 
-  it("Autocar/Minicar additionne base CV + surprime places", () => {
+  it("Autocar additionne base CV + surprime places", () => {
     const r = computeTarif({
-      categorie: "CAT_04_AUTOCAR_MINICAR",
+      categorie: "CAT_04_TPV",
       puissance: 7,
       places: 25,
       dureeMois: 12,
@@ -230,7 +232,7 @@ describe("computeTarif — TPV (commission 8%, pas de carte brune)", () => {
 
   it("Autocar > 31 places utilise le tarif réduit au-delà de 30", () => {
     const r = computeTarif({
-      categorie: "CAT_04_AUTOCAR_MINICAR",
+      categorie: "CAT_04_TPV",
       puissance: 7,
       places: 50,
       dureeMois: 12,
@@ -300,33 +302,21 @@ describe("computeTarif — erreurs", () => {
     );
   });
 
-  it("exige un nombre de places pour Autocar/Minicar", () => {
+  it("exige un nombre de places pour le TPV", () => {
     expect(() =>
       computeTarif({
-        categorie: "CAT_04_AUTOCAR_MINICAR",
+        categorie: "CAT_04_TPV",
         puissance: 7,
         dureeMois: 12,
         frais: 1000,
       }),
     ).toThrow(TarifError);
   });
-
-  it("rejette une puissance hors plafond CV pour Taxi", () => {
-    expect(() =>
-      computeTarif({
-        categorie: "CAT_04_TAXI_URBAIN",
-        puissance: 17,
-        dureeMois: 12,
-        frais: 1000,
-      }),
-    ).toThrow(/16 CV/);
-  });
 });
 
 describe("getDefaultFrais", () => {
   it("retourne 2000 pour les TPV", () => {
-    expect(getDefaultFrais("CAT_04_TAXI_URBAIN")).toBe(2000);
-    expect(getDefaultFrais("CAT_04_AUTOCAR_MINICAR")).toBe(2000);
+    expect(getDefaultFrais("CAT_04_TPV")).toBe(2000);
   });
 
   it("retourne 3000 pour les autres catégories", () => {

@@ -17,6 +17,7 @@ import {
   TARIF_CATEGORIES,
   type TarifCategorie,
 } from "../../lib/tarification";
+import { TPV_PLACES_MIN } from "../../lib/tarification-tpv";
 import { DUREES_MOIS } from "../../schemas/police";
 import { SearchableSelect } from "../ui/SearchableSelect";
 
@@ -191,15 +192,12 @@ export function DevisRapideForm() {
               <div>
                 <label htmlFor="devis-puissance" className={labelClass}>
                   Puissance fiscale *
-                  {selectedGenre.maxCV !== undefined && (
-                    <span className="ml-1 text-xs text-gray-500">(max {selectedGenre.maxCV})</span>
-                  )}
                 </label>
                 <input
                   id="devis-puissance"
                   type="number"
                   min={1}
-                  max={selectedGenre.maxCV ?? 100}
+                  max={100}
                   value={puissance}
                   onChange={(event) => setPuissance(event.target.value)}
                   className={inputClass}
@@ -216,7 +214,7 @@ export function DevisRapideForm() {
                 <input
                   id="devis-places"
                   type="number"
-                  min={2}
+                  min={TPV_PLACES_MIN}
                   max={100}
                   value={places}
                   onChange={(event) => setPlaces(event.target.value)}

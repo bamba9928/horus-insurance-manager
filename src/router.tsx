@@ -16,6 +16,7 @@ import { ParametresPage } from "./routes/parametres/index";
 import { PolicesPage } from "./routes/polices/index";
 import { ProfilePage } from "./routes/profil";
 import { TarificationPage } from "./routes/tarification/index";
+import { TarificationTpvPage } from "./routes/tarification/tpv";
 import { VehiculesPage } from "./routes/vehicules/index";
 import { VerificationPage } from "./routes/verification/index";
 
@@ -87,6 +88,12 @@ const tarificationRoute = createRoute({
   component: TarificationPage,
 });
 
+const tarificationTpvRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/tarification/tpv",
+  component: TarificationTpvPage,
+});
+
 // Administration des comptes (mode web, super admin) ; inoffensive en desktop.
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -107,6 +114,7 @@ const routeTree = rootRoute.addChildren([
   parametresRoute,
   profileRoute,
   tarificationRoute,
+  tarificationTpvRoute,
   adminRoute,
 ]);
 

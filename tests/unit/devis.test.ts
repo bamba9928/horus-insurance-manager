@@ -51,6 +51,20 @@ describe("computeDevisRapide", () => {
     expect(devis.remiseAPayer).toBe(0);
     expect(devis.aPayer).toBe(devis.tarif.primeTotale);
   });
+
+  it("n'applique ni réduction ni remise au TPV, avec 2000 FCFA de frais", () => {
+    const devis = computeDevisRapide({
+      genre: "CAT_04_TPV",
+      puissance: 7,
+      places: 5,
+      dureeMois: 12,
+    });
+
+    expect(devis.bonus).toBe(0);
+    expect(devis.frais).toBe(2000);
+    expect(devis.remiseAPayer).toBe(0);
+    expect(devis.aPayer).toBe(172323);
+  });
 });
 
 describe("DEVIS_CATEGORY_GROUPS", () => {
@@ -70,8 +84,8 @@ describe("getDevisGenreLabel", () => {
     expect(getDevisGenreLabel("CAT 01 — Véhicule Particulier (VP)")).toBe(
       "Véhicule Particulier (VP)",
     );
-    expect(getDevisGenreLabel("CAT 04 — TPV · Taxi Urbain (4/5 places)")).toBe(
-      "TPV · Taxi Urbain (4/5 places)",
+    expect(getDevisGenreLabel("CAT 04 — TPV · Taxi, minicar, autocar")).toBe(
+      "TPV · Taxi, minicar, autocar",
     );
     expect(getDevisGenreLabel("Tricycle (CAT 5)")).toBe("Tricycle");
   });

@@ -148,6 +148,14 @@ const ROUTE_SEO: Record<string, SeoRoute> = {
     robots: NOINDEX_ROBOTS,
     keywords: ["tarification assurance auto", "calcul devis auto", ...COMMON_KEYWORDS],
   },
+  "/tarification/tpv": {
+    title: `Tarification TPV | ${APP_NAME}`,
+    description:
+      "Calculateur authentifié du tarif transport de personnes : taxi, minicar, autocar.",
+    canonicalPath: "/tarification/tpv",
+    robots: NOINDEX_ROBOTS,
+    keywords: ["tarification TPV", "assurance taxi", "assurance autocar", ...COMMON_KEYWORDS],
+  },
   "/admin": {
     title: `Administration | ${APP_NAME}`,
     description: "Console privée d'administration des comptes Horus Assurances Manager.",

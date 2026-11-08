@@ -25,7 +25,7 @@ Statut : ✅ vérifié sur les données ASS · ⚠️ incohérent ou trop peu de
 | **Prime RC nette** | `ROUND(RC prorata × coef. réduction)` — voir §3 | ✅ |
 | Réduction (affichée) | `RC prorata − Prime RC nette` | ✅ |
 | Prime A.G (garanties annexes) | somme des garanties optionnelles (0 si RC seule) | ✅ |
-| Coût de la police (frais) | saisi : 3 000 standard · TPV souvent 0 / 1 000 / 2 000 · TPC souvent 1 000 | ✅ |
+| Coût de la police (frais) | saisi : 3 000 standard · TPV : **2 000 par défaut, modifiable** (vu chez ASS : 0 / 1 000 / 2 000) · TPC souvent 1 000 | ✅ |
 | **Taxe** | `ROUND((Prime RC nette + Prime A.G + Frais) × 14 %)` | ✅ 1 958 cas |
 | **FGA** | `ROUND(Prime RC nette × 2,5 %)` (pas sur A.G) | ✅ |
 | **CEDEAO** | 300 hors TPV · **0 pour TPV** · compté une seule fois | ✅ |
@@ -90,30 +90,35 @@ Bornes CV inclusives. « et + » = sans plafond.
 | 11 – 16 | 285 510 |
 | 17 et + | 331 336 |
 
-### CAT 04 — TPV · Transport de personnes 0 à 8 places (Taxi) — code `TPV8`
-| CV | RC annuelle | Statut |
-|---|---|---|
-| 5 – 7 | 145 960 | ✅ |
-| 8 – 10 | 196 133 | ✅ |
-| 11 – 16 | 252 483 | ⚠️ |
-| Taxi inter-urbain 7/8 places, 5 – 7 CV | 216 139 (Horus) · **191 651 vu une fois dans ASS** | ⚠️ |
-| 8 – 10 / 11 – 16 inter-urbain | 266 312 / 322 662 | ⚠️ |
+### CAT 04 — TPV · Transport de personnes — codes `TPV8` et `TPV9`
+Grille du courtier (`TARIFICATION.xlsx`, onglets « cat 4 TAXI », « cat 4 autocar » et
+« Calcule RC CAT4 »), confirmée le 08/11/2026.
 
-> ⚠️ 9 propositions taxi 6 CV à 128 938 : tarif spécial non identifié.
-
-### CAT 04 — TPV · 9 places et plus (Autocar / Minicar) — code `TPV9` ✅
-RC annuelle = **base (CV)** + **surprime places**
+Un seul modèle pour tout le TPV : RC annuelle = **base (CV)** + **surprime (places)**.
 
 | CV | Base RC |
 |---|---|
-| 2 – 4 | 100 565 |
+| 2 | 84 736 |
+| 3 – 4 | 100 565 |
 | 5 – 7 | 117 587 |
 | 8 – 10 | 167 760 |
 | 11 – 16 | 224 110 |
 | 17 et + | 261 832 |
 
-Surprime : `min(places − 1 ; 30) × 9 415 + max(0 ; places − 31) × 6 726`
-(✅ 10 CV/30 pl = 440 795 · 9 CV/38 pl = 497 292)
+| Places | Segment | Surprime |
+|---|---|---|
+| 4 – 5 | Taxi urbain | 28 373 |
+| 6 | Taxi 6 places | 74 064 |
+| 7 | Taxi inter-urbain | 98 552 |
+| 8 | Taxi inter-urbain | 131 402 |
+| 9 – 20 | Minicar | forfait 20 × 9 415 = 188 300, quel que soit le nombre de places |
+| 21 et + | Autocar | `min(places − 1 ; 30) × 9 415 + max(0 ; places − 31) × 6 726` |
+
+Moins de 4 places : hors barème.
+
+Vérifié chez ASS : taxi 4/5 places 5 – 7 CV = 145 960 ✅ · 8 – 10 CV = 196 133 ✅ ·
+autocar 10 CV/30 pl = 440 795 ✅ · 9 CV/38 pl = 497 292 ✅.
+Valeurs du courtier sans cas ASS relevé : base 2 CV, minicar 9 à 20 places ⚠️.
 
 ### CAT 05 — Deux et trois roues ✅ (**corrigé par rapport à Horus**)
 | Genre ASS | Code | RC annuelle |
@@ -177,6 +182,8 @@ FGA **277** · CEDEAO **300** · **Total 14 368** ✅
 | CAT 05 : 4 genres ASS (18 780 / 29 448 / 34 021 / 40 880) | ✅ | ✅ | ASS |
 | CAT 02 : 3 sous-catégories aux libellés ASS | ✅ | ✅ | ASS |
 | Réduction par défaut : TPV 0 %, TPC 40 % (× 0,98 → × 0,608), autres 20 % | ✅ | ✅ | ASS |
+| TPV : base CV + surprime places, page dédiée `/tarification/tpv` | ✅ | ✅ | ASS |
+| Devis public TPV : 0 % de réduction, sans remise de 2 000 | ✅ | — | — |
 | Durée en jours `ROUND(jours/365 ; 3)` | ✅ (page Tarification) | ✅ | ASS |
 | Arrondi du prorata avant réduction | ✅ | ✅ | ASS |
 | Taxe incluant la Prime A.G | — (A.G non gérée) | — | ASS |
@@ -205,6 +212,9 @@ Non couverts en direct (barème local) : TPV, durées en jours, version bureau.
 le coût de police reste 3 000 F (10 cas sur 12).
 
 ## 6. Points encore ouverts ⚠️
-- Taxi inter-urbain 7 places (191 651 vs 216 139) et taxi 6 CV à 128 938.
+- Taxi : 191 651, vu une fois chez ASS sur un « 7/8 places », est le tarif 6 places en 5 – 7 CV ;
+  128 938, vu sur 9 propositions « 6 CV », est le tarif 4/5 places en 3 – 4 CV. Puissance ou places
+  saisies à vérifier sur ces dossiers.
+- Base 2 CV et minicar 9 à 20 places : à recouper avec un devis ASS réel.
 - Règle de commission hors TPV.
 - Scooter commercial (35 398) et catégories 06 à 10.

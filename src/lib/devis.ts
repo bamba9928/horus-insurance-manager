@@ -5,8 +5,15 @@
  * ajustements demandés pour un devis client simplifié.
  */
 
-import { computeTarif, getDefaultFrais, TARIF_CATEGORIES, type TarifResult } from "./tarification";
-import { BAREME_CONSTANTS, type Cylindree, type TarifCategorie } from "./tarification-bareme";
+import {
+  computeTarif,
+  getDefaultBonus,
+  getDefaultFrais,
+  isTpv,
+  TARIF_CATEGORIES,
+  type TarifResult,
+} from "./tarification";
+import type { Cylindree, TarifCategorie } from "./tarification-bareme";
 
 export const DEVIS_WHATSAPP_PHONE = "221773409658";
 
@@ -29,7 +36,7 @@ export const DEVIS_CATEGORY_GROUPS = [
   {
     value: "CAT_04",
     label: "TPV",
-    genres: ["CAT_04_TAXI_URBAIN", "CAT_04_TAXI_INTERURBAIN", "CAT_04_AUTOCAR_MINICAR"],
+    genres: ["CAT_04_TPV"],
   },
   {
     value: "CAT_05",
@@ -87,9 +94,9 @@ export function getDevisCommercialParams(genre: TarifCategorie, dureeMois: numbe
   const isTpc = isTpcCategorie(genre);
   return {
     isTpc,
-    bonus: isTpc ? 0.3 : BAREME_CONSTANTS.bonusDefaut,
+    bonus: isTpc ? 0.3 : getDefaultBonus(genre),
     frais: isTpc ? 3000 : getDefaultFrais(genre),
-    remiseAPayer: !isTpc && dureeMois > 3 ? 2000 : 0,
+    remiseAPayer: !isTpc && !isTpv(genre) && dureeMois > 3 ? 2000 : 0,
   };
 }
 
