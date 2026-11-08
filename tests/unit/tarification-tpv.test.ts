@@ -41,26 +41,69 @@ describe("TPV — grille RC annuelle du courtier", () => {
   });
 });
 
-describe("TPV — décompte par durée (frais 2000, comme la grille)", () => {
+describe("TPV — décompte par durée (frais 2000)", () => {
   it("taxi urbain 5 à 7 CV, 1 mois", () => {
     const r = tpv(6, 5, 1);
-    expect(r.primeNette).toBe(12772);
-    expect(r.taxe).toBe(2068);
-    expect(r.primeTotale).toBe(17159);
+    expect(r.rCivil).toBe(12772);
+    expect(r.primeNette).toBe(13772);
+    expect(r.taxe).toBe(2208);
+    expect(r.fga).toBe(319);
+    expect(r.primeTotale).toBe(18599);
   });
 
   it("minicar 8 à 10 CV, 6 mois", () => {
     const r = tpv(9, 15, 6);
-    expect(r.primeNette).toBe(186932);
-    expect(r.taxe).toBe(26450);
-    expect(r.primeTotale).toBe(220055);
+    expect(r.rCivil).toBe(186932);
+    expect(r.primeNette).toBe(187932);
+    expect(r.taxe).toBe(26590);
+    expect(r.fga).toBe(4673);
+    expect(r.primeTotale).toBe(221495);
   });
 
   it("autocar 32 places, 17 CV et plus, 5 mois", () => {
     const r = tpv(18, 32, 5);
-    expect(r.primeNette).toBe(241066);
-    expect(r.taxe).toBe(34029);
-    expect(r.primeTotale).toBe(283122);
+    expect(r.rCivil).toBe(241066);
+    expect(r.primeNette).toBe(242066);
+    expect(r.taxe).toBe(34169);
+    expect(r.fga).toBe(6027);
+    expect(r.primeTotale).toBe(284562);
+  });
+});
+
+describe("TPV — alignement sur le Pool TPV", () => {
+  it("rejoue le décompte d'une simulation Pool à partir de sa prime RC", () => {
+    const r = computeTarif({
+      categorie: "CAT_04_TPV",
+      puissance: 12,
+      places: 15,
+      dureeMois: 1,
+      frais: 2000,
+      rcProrataAss: 36084,
+    });
+    expect(r.primeNette).toBe(37084);
+    expect(r.taxe).toBe(5472);
+    expect(r.fga).toBe(902);
+    expect(r.carteBrune).toBe(300);
+    expect(r.primeTotale).toBe(45758);
+  });
+
+  it.each([1, 6, 12])("Individuelle Conducteur et carte brune fixes sur %i mois", (mois) => {
+    const r = tpv(6, 5, mois);
+    expect(r.individuelleConducteur).toBe(1000);
+    expect(r.primeNette).toBe(r.rCivil + 1000);
+    expect(r.carteBrune).toBe(300);
+  });
+
+  it("n'ajoute pas d'Individuelle Conducteur hors TPV", () => {
+    const r = computeTarif({ categorie: "CAT_01_VP", puissance: 7, dureeMois: 12, frais: 3000 });
+    expect(r.individuelleConducteur).toBe(0);
+    expect(r.primeNette).toBe(r.rCivil);
+  });
+
+  it("calcule la commission sur la RC seule", () => {
+    const r = tpv(6, 5);
+    expect(r.commission).toBe(11677);
+    expect(r.netAVerser).toBe(r.primeTotale - r.frais - r.commission);
   });
 });
 
@@ -72,10 +115,9 @@ describe("TPV — règles", () => {
     expect(avecFrais.primeTotale - sansFrais.primeTotale).toBe(2000 + 280);
   });
 
-  it("n'applique ni réduction ni CEDEAO, commission 8 %", () => {
+  it("n'applique pas de réduction, commission 8 %", () => {
     const r = tpv(6, 5);
     expect(r.reduction).toBe(0);
-    expect(r.carteBrune).toBe(0);
     expect(r.tauxCommission).toBe(0.08);
   });
 

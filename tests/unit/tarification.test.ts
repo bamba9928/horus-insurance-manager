@@ -164,7 +164,7 @@ describe("computeTarif — décomptes réels ASS", () => {
     expect(r.rCivil).toBe(39406);
   });
 
-  it("Taxi 7 CV, 1 mois — pas de réduction ni CEDEAO", () => {
+  it("Taxi 7 CV, 1 mois — pas de réduction, carte brune 300", () => {
     const r = computeTarif({
       categorie: "CAT_04_TPV",
       puissance: 7,
@@ -174,7 +174,7 @@ describe("computeTarif — décomptes réels ASS", () => {
     });
     expect(r.rcProrata).toBe(12772);
     expect(r.rCivil).toBe(12772);
-    expect(r.carteBrune).toBe(0);
+    expect(r.carteBrune).toBe(300);
   });
 
   it("Moto > 125 cm³, 6 mois", () => {
@@ -200,8 +200,8 @@ describe("getDefaultBonus", () => {
   });
 });
 
-describe("computeTarif — TPV (commission 8%, pas de carte brune)", () => {
-  it("Taxi urbain 7 CV — applique commission 8% et carte brune 0", () => {
+describe("computeTarif — TPV (commission 8%, carte brune 300)", () => {
+  it("Taxi urbain 7 CV — applique commission 8% et carte brune 300", () => {
     const r = computeTarif({
       categorie: "CAT_04_TPV",
       puissance: 7,
@@ -211,7 +211,7 @@ describe("computeTarif — TPV (commission 8%, pas de carte brune)", () => {
     });
     expect(r.rcAnnuel).toBe(145960);
     expect(r.rCivil).toBe(145960);
-    expect(r.carteBrune).toBe(0);
+    expect(r.carteBrune).toBe(300);
     expect(r.tauxCommission).toBe(0.08);
     expect(r.commission).toBe(11677);
   });
@@ -227,7 +227,7 @@ describe("computeTarif — TPV (commission 8%, pas de carte brune)", () => {
     // base 117587 + (25-1) × 9415 = 117587 + 225960 = 343547
     expect(r.rcAnnuel).toBe(343547);
     expect(r.tauxCommission).toBe(0.08);
-    expect(r.carteBrune).toBe(0);
+    expect(r.carteBrune).toBe(300);
   });
 
   it("Autocar > 31 places utilise le tarif réduit au-delà de 30", () => {

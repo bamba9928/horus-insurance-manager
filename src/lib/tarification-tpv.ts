@@ -46,6 +46,9 @@ export const TPV_SURPRIME_PLACE = {
   audela30: 6726,
 };
 
+/** Individuelle Conducteur : prime fixe, quelle que soit la durée (Pool TPV). */
+export const TPV_INDIVIDUELLE_CONDUCTEUR = 1000;
+
 /** Libellés affichés selon le nombre de places (bornes inclusives). */
 export const TPV_SEGMENTS: { min: number; max?: number; label: string }[] = [
   { min: 4, max: 5, label: "Taxi urbain" },

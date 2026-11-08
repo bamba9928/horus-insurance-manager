@@ -17,7 +17,7 @@ test("calcule un minicar depuis la page TPV, frais par défaut 2000", async ({ p
 
   await expect(page.getByText("Minicar", { exact: true })).toBeVisible();
   await expect(page.getByText(/356\s060 FCFA/)).toHaveCount(2);
-  await expect(page.getByText(/417\s090 FCFA/)).toBeVisible();
+  await expect(page.getByText(/418\s530 FCFA/)).toBeVisible();
 });
 
 test("les frais restent modifiables", async ({ page }) => {
@@ -28,7 +28,7 @@ test("les frais restent modifiables", async ({ page }) => {
   await page.getByLabel(/frais/i).fill("1000");
   await page.getByRole("button", { name: /valider le calcul/i }).click();
 
-  await expect(page.getByText(/16\s019 FCFA/)).toBeVisible();
+  await expect(page.getByText(/17\s459 FCFA/)).toBeVisible();
 });
 
 test("la liste générale ne propose plus le TPV", async ({ page }) => {

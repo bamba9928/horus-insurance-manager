@@ -11,7 +11,7 @@
  *  - RC prorata = ROUND(RC_annuel × coef durée)
  *  - R. Civil  = ROUND(RC prorata × (1 − réduction effective))
  *                réduction effective = réduction × facteurReductionTpc pour les TPC
- *  - P. Nette  = R. Civil (P. Trans = 0)
+ *  - P. Nette  = R. Civil + Individuelle Conducteur (TPV uniquement)
  *  - Taxe      = ROUND((P_Nette + Frais) × tauxTaxe)
  *  - FGA       = ROUND(R_Civil × tauxFga)
  *  - Prime T.  = P_Nette + Frais + Taxe + FGA + Carte brune
@@ -21,7 +21,7 @@
  * Spécificités TPV (CAT 4 Taxi / Minicar / Autocar, barème dans `tarification-tpv.ts`) :
  *  - RC annuel : base selon la puissance + surprime selon les places
  *  - Commission : commissionTpv (vs commissionStandard ailleurs)
- *  - Pas de carte brune
+ *  - Individuelle Conducteur fixe : dans la prime nette et la taxe, pas dans le FGA
  *  - Frais par défaut : fraisTpvDefaut
  *
  * @module lib/tarification
@@ -38,6 +38,7 @@ import {
 } from "./tarification-bareme";
 import {
   TPV_BASE_RC,
+  TPV_INDIVIDUELLE_CONDUCTEUR,
   TPV_MINICAR,
   TPV_PLACES_MIN,
   TPV_SURPRIME_PLACE,
@@ -101,6 +102,8 @@ export interface TarifResult {
   tauxReductionEffectif: number;
   /** Responsabilité civile (prorata durée + réduction) */
   rCivil: number;
+  /** Individuelle Conducteur (TPV), incluse dans la prime nette ; 0 ailleurs */
+  individuelleConducteur: number;
   /** Prime Nette */
   primeNette: number;
   /** Frais (coût police) */
@@ -248,13 +251,14 @@ export function computeTarif(input: TarifInput): TarifResult {
   const rCivil = roundHalfEven(rcProrata * (1000 - reductionMillis), 1000);
   const reduction = rcProrata - rCivil;
 
-  const primeNette = rCivil;
+  const tpv = isTpv(categorie);
+  const individuelleConducteur = tpv ? TPV_INDIVIDUELLE_CONDUCTEUR : 0;
+  const primeNette = rCivil + individuelleConducteur;
 
   const taxe = roundHalfEven((primeNette + frais) * toMillis(BAREME_CONSTANTS.tauxTaxe), 1000);
   const fga = roundHalfEven(rCivil * toMillis(BAREME_CONSTANTS.tauxFga), 1000);
 
-  const tpv = isTpv(categorie);
-  const carteBrune = tpv ? 0 : BAREME_CONSTANTS.carteBrune;
+  const carteBrune = BAREME_CONSTANTS.carteBrune;
   const tauxCommission = tpv ? BAREME_CONSTANTS.commissionTpv : BAREME_CONSTANTS.commissionStandard;
 
   const primeTotale = primeNette + frais + taxe + fga + carteBrune;
@@ -270,6 +274,7 @@ export function computeTarif(input: TarifInput): TarifResult {
     reduction,
     tauxReductionEffectif,
     rCivil,
+    individuelleConducteur,
     primeNette,
     frais,
     taxe,
