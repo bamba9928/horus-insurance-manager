@@ -130,6 +130,40 @@ describe("TPV — règles", () => {
     expect(r.tauxCommission).toBe(0.08);
   });
 
+  it.each([
+    [0.09, 13136],
+    [0.1, 14596],
+    [0.085, 12407],
+    [0, 0],
+  ])("applique la commission saisie (%s)", (tauxCommission, attendu) => {
+    const r = computeTarif({
+      categorie: "CAT_04_TPV",
+      puissance: 6,
+      places: 5,
+      dureeMois: 12,
+      frais: 2000,
+      tauxCommission,
+    });
+    expect(r.tauxCommission).toBe(tauxCommission);
+    expect(r.commission).toBe(attendu);
+    expect(r.netAVerser).toBe(r.primeTotale - r.frais - attendu);
+    // Le taux ne touche ni la prime ni les taxes.
+    expect(r.primeTotale).toBe(tpv(6, 5).primeTotale);
+  });
+
+  it.each([-0.01, 1.5, Number.NaN, 0.0825])("refuse la commission %s", (tauxCommission) => {
+    expect(() =>
+      computeTarif({
+        categorie: "CAT_04_TPV",
+        puissance: 6,
+        places: 5,
+        dureeMois: 12,
+        frais: 2000,
+        tauxCommission,
+      }),
+    ).toThrow(/Commission invalide/);
+  });
+
   it.each([3, 0, 4.5])("refuse %s places", (places) => {
     expect(() => tpv(6, places)).toThrow(TarifError);
   });
