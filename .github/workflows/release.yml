@@ -81,6 +81,6 @@ jobs:
 
             **Installation Windows :**
             - `*_x64-setup.exe` (NSIS) — recommandé pour la plupart des utilisateurs
-            - `*_x64_en-US.msi` (MSI) — pour les déploiements MSI en entreprise
+            - `*_x64_fr-FR.msi` (MSI) — pour les déploiements MSI en entreprise
           releaseDraft: true
           prerelease: false
