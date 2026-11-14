@@ -14,12 +14,12 @@
  *  - P. Nette  = R. Civil + Individuelle Conducteur (TPV uniquement)
  *  - Taxe      = ROUND((P_Nette + Frais) × tauxTaxe)
  *  - FGA       = ROUND(R_Civil × tauxFga)
- *  - Prime T.  = P_Nette + Frais + Taxe + FGA + Carte brune
- *  - COM       = ROUND(R_Civil × taux_commission)
- *  - NAV       = Prime T. − Frais − COM
+ *  - Prime T.  = P_Nette + Frais + Taxe + FGA + Carte brune (CEDEAO 300, facultative)
+ *  - COM       = ROUND(P_Nette × taux_commission)
+ *  - NAV       = Prime T. − (COM + Frais)
  *
  * Spécificités TPV (CAT 4 Taxi / Minicar / Autocar, barème dans `tarification-tpv.ts`) :
- *  - RC annuel : base selon la puissance + surprime selon les places
+ *  - RC annuel : base selon la puissance (tranches selon la famille taxi / car) + surprime selon les places
  *  - Commission : `tauxCommission` saisi, sinon commissionTpv (vs commissionStandard ailleurs)
  *  - Individuelle Conducteur fixe : dans la prime nette et la taxe, pas dans le FGA
  *  - Frais par défaut : fraisTpvDefaut
@@ -38,11 +38,13 @@ import {
 } from "./tarification-bareme";
 import {
   TPV_BASE_RC,
+  TPV_FAMILLE_PLACES_MAX_TAXI,
   TPV_INDIVIDUELLE_CONDUCTEUR,
   TPV_MINICAR,
   TPV_PLACES_MIN,
   TPV_SURPRIME_PLACE,
   TPV_SURPRIME_TAXI,
+  type TpvFamille,
 } from "./tarification-tpv";
 
 export {
@@ -66,6 +68,8 @@ export interface TarifInput {
   puissance?: number;
   /** Nombre de places — requis pour le TPV */
   places?: number;
+  /** Famille de genre TPV (tranches de puissance) ; par défaut taxi jusqu'à 9 places, car au-delà */
+  familleTpv?: TpvFamille;
   /** Cylindrée — requis pour CAT 5 */
   cylindree?: Cylindree;
   /** Durée en mois (1 à 12) — ignorée si dureeJours est fourni */
@@ -76,6 +80,11 @@ export interface TarifInput {
   frais: number;
   /** Réduction accordée (0.2 = 20 %) ; si non fourni, valeur par défaut de la catégorie */
   bonus?: number;
+  /**
+   * Carte brune CEDEAO (300 FCFA), facultative, ajoutée au TTC.
+   * Cochée par défaut, comme sur le Pool TPV (`carteBrune: true`).
+   */
+  carteBrune?: boolean;
   /**
    * Prime de base RÉELLE d'ASS (RC au prorata, avant réduction), lue via
    * Horus. Fournie, elle remplace celle du barème local : c'est la donnée qui
@@ -146,7 +155,7 @@ export function getDefaultBonus(cat: TarifCategorie): number {
   return BAREME_CONSTANTS.bonusDefaut;
 }
 
-/** Surprime TPV : forfait taxi (4 à 8 places), forfait minicar (9 à 20), puis par passager. */
+/** Surprime TPV : forfait taxi (4 à 9 places), forfait minicar (10 à 20), puis par passager. */
 function resolveSurprimeTpv(places: number): number {
   const surprimeTaxi = TPV_SURPRIME_TAXI[places];
   if (surprimeTaxi !== undefined) return surprimeTaxi;
@@ -171,7 +180,8 @@ function resolveRcAnnuel(input: TarifInput): number {
     if (puissance == null || puissance <= 0) throw new TarifError("Puissance fiscale requise.");
     if (places == null || !Number.isInteger(places) || places < TPV_PLACES_MIN)
       throw new TarifError(`Nombre de places requis pour le TPV (minimum ${TPV_PLACES_MIN}).`);
-    const bracket = findBracket(TPV_BASE_RC, puissance);
+    const famille = input.familleTpv ?? (places <= TPV_FAMILLE_PLACES_MAX_TAXI ? "TAXI" : "CAR");
+    const bracket = findBracket(TPV_BASE_RC[famille], puissance);
     if (!bracket) throw new TarifError(`Aucune tranche définie pour ${puissance} CV (TPV).`);
     return bracket.rc + resolveSurprimeTpv(places);
   }
@@ -280,10 +290,12 @@ export function computeTarif(input: TarifInput): TarifResult {
   const taxe = roundHalfEven((primeNette + frais) * toMillis(BAREME_CONSTANTS.tauxTaxe), 1000);
   const fga = roundHalfEven(rCivil * toMillis(BAREME_CONSTANTS.tauxFga), 1000);
 
-  const carteBrune = BAREME_CONSTANTS.carteBrune;
+  const carteBrune = input.carteBrune === false ? 0 : BAREME_CONSTANTS.carteBrune;
   const primeTotale = primeNette + frais + taxe + fga + carteBrune;
-  const commission = roundHalfEven(rCivil * toMillis(tauxCommission), 1000);
-  const netAVerser = primeTotale - frais - commission;
+  // Commission = taux × prime nette (Individuelle Conducteur comprise pour le TPV).
+  const commission = roundHalfEven(primeNette * toMillis(tauxCommission), 1000);
+  // Net à verser à la compagnie : le TTC moins ce que garde l'intermédiaire (commission + frais).
+  const netAVerser = primeTotale - (commission + frais);
 
   return {
     source: fromAss ? "ASS" : "BAREME",

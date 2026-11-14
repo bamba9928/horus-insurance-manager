@@ -4,6 +4,22 @@ Tous les changements notables de ce projet sont documentés ici.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et le versionnage suit [SemVer](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+### Modifié
+
+- **Tarification TPV** : barème recalé sur des simulations Pool TPV (12 genres,
+  2 à 30 CV, 4 à 45 places). Les tranches de puissance dépendent du genre
+  (taxi / VTC : 3-6, 7-10, 11-14, 15-23, 24+ ; car / bus : 3-4, 5-7, 8-10,
+  11-16, 17+), choisi sur la page TPV. Surprimes taxi corrigées (4 places
+  28 243, 6 : 49 278, 7 : 74 064, 8 : 98 552, 9 : 131 402) ; forfait minicar
+  à partir de 10 places.
+- **Commission** : taux × prime nette (Individuelle Conducteur comprise pour
+  le TPV), au lieu de la RC seule.
+- **Carte brune CEDEAO** : 300 FCFA désormais facultatifs (case cochée par
+  défaut), ajoutés au TTC.
+- **Net à verser** : `TTC − (commission + frais)`, documenté et testé.
+
 ## [0.2.0] — 2026-11-14
 
 ### Ajouté

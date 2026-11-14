@@ -19,7 +19,12 @@ import {
   type TarifResult,
 } from "../../lib/tarification";
 import { BAREME_CONSTANTS } from "../../lib/tarification-bareme";
-import { TPV_PLACES_MIN, TPV_SEGMENTS } from "../../lib/tarification-tpv";
+import {
+  TPV_FAMILLES,
+  TPV_PLACES_MIN,
+  TPV_SEGMENTS,
+  type TpvFamille,
+} from "../../lib/tarification-tpv";
 
 const CATEGORIE_TPV = "CAT_04_TPV";
 const FRAIS_DEFAUT = String(getDefaultFrais(CATEGORIE_TPV));
@@ -45,10 +50,12 @@ export function TarificationTpvPage() {
 
   const [puissance, setPuissance] = useState("");
   const [places, setPlaces] = useState("");
+  const [famille, setFamille] = useState<TpvFamille | "">("");
   const [duree, setDuree] = useState("");
   const [dureeUnite, setDureeUnite] = useState<"mois" | "jours">("mois");
   const [frais, setFrais] = useState(FRAIS_DEFAUT);
   const [commission, setCommission] = useState(COMMISSION_DEFAUT);
+  const [carteBrune, setCarteBrune] = useState(true);
 
   const [result, setResult] = useState<TarifResult | null>(null);
   const [segment, setSegment] = useState<string | null>(null);
@@ -76,12 +83,14 @@ export function TarificationTpvPage() {
           categorie: CATEGORIE_TPV,
           puissance: Number(puissance),
           places: nbPlaces,
+          ...(famille ? { familleTpv: famille } : {}),
           ...(dureeUnite === "jours"
             ? { dureeJours: Number(duree) }
             : { dureeMois: Number(duree) }),
           frais: Number(frais),
           // Saisi en %, arrondi au millième pour neutraliser l'erreur flottante (8.1 / 100).
           tauxCommission: Math.round(Number(commission.replace(",", ".")) * 10) / 1000,
+          carteBrune,
         }),
       );
       setSegment(findSegmentLabel(nbPlaces));
@@ -93,10 +102,12 @@ export function TarificationTpvPage() {
   const handleReset = () => {
     setPuissance("");
     setPlaces("");
+    setFamille("");
     setDuree("");
     setDureeUnite("mois");
     setFrais(FRAIS_DEFAUT);
     setCommission(COMMISSION_DEFAUT);
+    setCarteBrune(true);
     setResult(null);
     setSegment(null);
     setError(null);
@@ -112,6 +123,25 @@ export function TarificationTpvPage() {
             <h3 className="mb-3 text-base font-semibold text-gray-900 dark:text-slate-100">
               Taxi, minicar, autocar
             </h3>
+
+            <div className="mb-3">
+              <label htmlFor="tpv-famille" className={labelClass}>
+                Genre
+              </label>
+              <select
+                id="tpv-famille"
+                value={famille}
+                onChange={(e) => setFamille(e.target.value as TpvFamille | "")}
+                className={inputClass}
+              >
+                <option value="">Selon le nombre de places (taxi jusqu'à 9)</option>
+                {TPV_FAMILLES.map((f) => (
+                  <option key={f.value} value={f.value}>
+                    {f.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="mb-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
@@ -209,6 +239,17 @@ export function TarificationTpvPage() {
               </div>
             </div>
 
+            <label className="mb-4 flex items-center gap-2 text-sm text-gray-700 dark:text-slate-200">
+              <input
+                id="tpv-carte-brune"
+                type="checkbox"
+                checked={carteBrune}
+                onChange={(e) => setCarteBrune(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 accent-[#614e1a]"
+              />
+              Carte brune CEDEAO (+300 FCFA sur le TTC)
+            </label>
+
             <div className="flex gap-3">
               <button
                 type="button"
@@ -257,7 +298,9 @@ export function TarificationTpvPage() {
                 <ResultRow label="Frais" value={result.frais} />
                 <ResultRow label="Taxe (14 %)" value={result.taxe} />
                 <ResultRow label="FGA (2,5 %)" value={result.fga} />
-                <ResultRow label="Carte brune" value={result.carteBrune} />
+                {result.carteBrune > 0 && (
+                  <ResultRow label="Carte brune CEDEAO" value={result.carteBrune} />
+                )}
                 <ResultRow label="Prime Totale" value={result.primeTotale} highlight />
                 <ResultRow
                   label={`Commission (${formatPercent(result.tauxCommission)})`}

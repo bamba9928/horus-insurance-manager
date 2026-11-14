@@ -28,7 +28,21 @@ test("les frais restent modifiables", async ({ page }) => {
   await page.getByLabel(/frais/i).fill("1000");
   await page.getByRole("button", { name: /valider le calcul/i }).click();
 
-  await expect(page.getByText(/17\s459 FCFA/)).toBeVisible();
+  // Taxi 6 CV (tranche 3 à 6), 5 places, 1 mois : RC 11 282 + IC 1 000 + frais 1 000 + taxe 1 859 + FGA 282 + CEDEAO 300.
+  await expect(page.getByText(/15\s723 FCFA/)).toBeVisible();
+});
+
+test("la carte brune CEDEAO est facultative", async ({ page }) => {
+  await page.goto("/tarification/tpv");
+  await page.getByLabel(/puissance fiscale/i).fill("6");
+  await page.getByLabel(/nombre de places/i).fill("5");
+  await page.getByLabel(/^durée/i).fill("1");
+  await page.getByLabel(/frais/i).fill("1000");
+  await page.getByLabel(/carte brune cedeao/i).uncheck();
+  await page.getByRole("button", { name: /valider le calcul/i }).click();
+
+  await expect(page.getByText(/15\s423 FCFA/)).toBeVisible();
+  await expect(page.getByText("Carte brune CEDEAO", { exact: true })).toHaveCount(0);
 });
 
 test("la commission est paramétrable, 8 % par défaut", async ({ page }) => {
@@ -41,7 +55,8 @@ test("la commission est paramétrable, 8 % par défaut", async ({ page }) => {
   await page.getByRole("button", { name: /valider le calcul/i }).click();
 
   await expect(page.getByText("Commission (10 %)")).toBeVisible();
-  await expect(page.getByText(/14\s596 FCFA/)).toBeVisible();
+  // 10 % × prime nette (128 938 + 1 000).
+  await expect(page.getByText(/12\s994 FCFA/)).toBeVisible();
 
   await page.getByRole("button", { name: /réinitialiser/i }).click();
   await expect(page.getByLabel(/commission/i)).toHaveValue("8");
