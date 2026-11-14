@@ -19,6 +19,9 @@ et le versionnage suit [SemVer](https://semver.org/lang/fr/).
 - **Carte brune CEDEAO** : 300 FCFA désormais facultatifs (case cochée par
   défaut), ajoutés au TTC.
 - **Net à verser** : `TTC − (commission + frais)`, documenté et testé.
+- **Frais TPV** (coût de police) : 1 000 FCFA par défaut au lieu de 2 000,
+  toujours modifiables (page TPV et devis rapide).
+- **Libellé TPV** : genre car sous 10 places affiché « Car / minibus ».
 
 ## [0.2.0] — 2026-11-14
 

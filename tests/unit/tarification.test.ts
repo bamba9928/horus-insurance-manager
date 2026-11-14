@@ -315,8 +315,8 @@ describe("computeTarif — erreurs", () => {
 });
 
 describe("getDefaultFrais", () => {
-  it("retourne 2000 pour les TPV", () => {
-    expect(getDefaultFrais("CAT_04_TPV")).toBe(2000);
+  it("retourne 1000 pour les TPV", () => {
+    expect(getDefaultFrais("CAT_04_TPV")).toBe(1000);
   });
 
   it("retourne 3000 pour les autres catégories", () => {
