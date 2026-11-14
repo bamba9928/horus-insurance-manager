@@ -1,6 +1,6 @@
 {
   "name": "assurauto-manager",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Horus Assurances Manager - Application de gestion pour courtage en assurance auto",
   "type": "module",
   "scripts": {

@@ -4,7 +4,17 @@ Tous les changements notables de ce projet sont documentés ici.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et le versionnage suit [SemVer](https://semver.org/lang/fr/).
 
-## [Non publié]
+## [0.2.0] — 2026-11-14
+
+### Ajouté
+
+- **Tarification TPV** (CAT 04) : page dédiée taxis / minicars / autocars,
+  alignée sur la grille Cat. 4 et le Pool TPV (surprimes par places,
+  Individuelle Conducteur, carte brune 300).
+- **Tarification** : prime de base ASS récupérée en direct, arrondis exacts
+  au pair alignés sur les décomptes ASS.
+- **Vérification** : détail de souscription AAS affiché.
+- Navigation mobile et écran de connexion améliorés.
 
 ### Modifié
 
@@ -12,6 +22,21 @@ et le versionnage suit [SemVer](https://semver.org/lang/fr/).
   saisit sur la page TPV (8 % par défaut, 8 / 9 / 10 % suggérés selon
   l'apporteur, au dixième de point près) ; `computeTarif` accepte un
   `tauxCommission` optionnel et refuse un taux hors 0–100 %.
+
+### Corrigé
+
+- Surprime minicar relevée sur le Pool TPV.
+- Durée de couverture de la vérification calculée sur les dates.
+- Sauvegarde : copies de base via un dossier temporaire privé.
+
+### Sécurité
+
+- Le mot de passe admin généré n'apparaît plus dans les logs.
+- Conteneur Docker exécuté avec l'utilisateur `node`.
+- CI : Gitleaks (pre-commit et workflow) et Trivy, actions épinglées par SHA,
+  jeton GitHub restreint à `contents: read`.
+- Dépendances mises à jour pour corriger les avis de sécurité (Tauri, Vite,
+  Playwright, hono, seroval, zod, vitest, undici, rustls…).
 
 ## [0.1.0] — 2026-04-18
 
