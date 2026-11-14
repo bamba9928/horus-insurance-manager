@@ -42,6 +42,7 @@ export function TarificationPage() {
   const [dureeUnite, setDureeUnite] = useState<"mois" | "jours">("mois");
   const [frais, setFrais] = useState<string>("3000");
   const [bonusPct, setBonusPct] = useState<string>("20");
+  const [carteBrune, setCarteBrune] = useState(true);
 
   const [result, setResult] = useState<TarifResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -91,6 +92,7 @@ export function TarificationPage() {
       ...(dureeUnite === "jours" ? { dureeJours: duree } : { dureeMois: duree }),
       frais: fraisN,
       bonus,
+      carteBrune,
     };
     try {
       setResult(computeTarif(tarifInput));
@@ -134,6 +136,7 @@ export function TarificationPage() {
     setDureeUnite("mois");
     setFrais("3000");
     setBonusPct("20");
+    setCarteBrune(true);
     setResult(null);
     setError(null);
     setAssStatus("idle");
@@ -265,6 +268,17 @@ export function TarificationPage() {
                 placeholder="3000"
               />
             </div>
+
+            <label className="mb-4 flex items-center gap-2 text-sm text-gray-700 dark:text-slate-200">
+              <input
+                id="tarif-carte-brune"
+                type="checkbox"
+                checked={carteBrune}
+                onChange={(e) => setCarteBrune(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 accent-[#614e1a]"
+              />
+              Carte brune CEDEAO (+300 FCFA sur le TTC)
+            </label>
 
             <div className="flex gap-3">
               <button

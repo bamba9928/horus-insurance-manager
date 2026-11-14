@@ -28,10 +28,11 @@ Statut : ✅ vérifié sur les données ASS · ⚠️ incohérent ou trop peu de
 | Coût de la police (frais) | saisi : 3 000 standard · TPV : **2 000 par défaut, modifiable** (vu chez ASS : 0 / 1 000 / 2 000) · TPC souvent 1 000 | ✅ |
 | **Taxe** | `ROUND((Prime RC nette + Prime A.G + Frais) × 14 %)` | ✅ 1 958 cas |
 | **FGA** | `ROUND(Prime RC nette × 2,5 %)` (pas sur A.G) | ✅ |
-| **CEDEAO** (carte brune) | **300, fixe, TPV compris** (Pool TPV, confirmé le 08/11/2026 ; ASS : 0 pour TPV) · compté une seule fois | ✅ |
+| **CEDEAO** (carte brune) | **300, facultative** (case cochée par défaut, comme sur le Pool TPV), ajoutée au TTC · compté une seule fois | ✅ |
 | Arrondis | **au pair**, sur valeur EXACTE (528/528 cas « ,5 » de taxe, relevé du 07/11/2026) : 640,5 → 640, 641,5 → 642. Pas de multiplication par un taux décimal (`4575 × 0,14` vaut 640,50000000000006 en flottant) | ✅ |
 | **Prime Totale** | `Prime RC nette + Prime A.G + Frais + Taxe + FGA + CEDEAO` | ✅ 1 958 cas |
-| Commission | TPV : 8 %, 9 % ou 10 % de la Prime RC nette (selon apporteur) — **saisi sur la page TPV, 8 % par défaut** · hors TPV : variable (≈ 20–22 % du net), règle non déterminée | ⚠️ |
+| Commission | **taux × Prime nette** (TPV : RC + Individuelle Conducteur) · TPV : 8 %, 9 % ou 10 % (selon apporteur) — **saisi sur la page TPV, 8 % par défaut** · hors TPV : variable (≈ 20–22 % du net), règle non déterminée | ⚠️ |
+| **Net à verser** | `Prime Totale (TTC) − (Commission + Frais)` | ✅ |
 
 ---
 
@@ -95,31 +96,36 @@ Grille du courtier (`TARIFICATION.xlsx`, onglets « cat 4 TAXI », « cat 4 auto
 « Calcule RC CAT4 »), confirmée le 08/11/2026.
 
 Un seul modèle pour tout le TPV : RC annuelle = **base (CV)** + **surprime (places)**.
+Le **genre** Pool fixe les tranches de puissance ; les montants et les surprimes sont les mêmes.
+Relevé sur le Pool TPV (préprod) le 14/11/2026 : 12 genres, 2 à 30 CV, 4 à 45 places.
 
-| CV | Base RC |
-|---|---|
-| 2 | 84 736 |
-| 3 – 4 | 100 565 |
-| 5 – 7 | 117 587 |
-| 8 – 10 | 167 760 |
-| 11 – 16 | 224 110 |
-| 17 et + | 261 832 |
-
-| Places | Segment | Surprime |
+| Base RC | Taxi / VTC (TAXI-JAUNE NOIR, TAXI-INTER-URBAIN, VTC) | Car / bus (MINI-CAR, MINI-BUS, CAR RAPIDE, NDIAGA NDIAYE, TATA, ASHOK LEYLAND, BUS INTER-URBAIN, BRT, DEM DIKK) |
 |---|---|---|
-| 4 – 5 | Taxi urbain | 28 373 |
-| 6 | Taxi 6 places | 74 064 |
-| 7 | Taxi inter-urbain | 98 552 |
-| 8 | Taxi inter-urbain | 131 402 |
-| 9 – 20 | Minicar | forfait 188 274 (Pool TPV), quel que soit le nombre de places |
+| 84 736 | 2 CV | 2 CV |
+| 100 565 | 3 – 6 CV | 3 – 4 CV |
+| 117 587 | 7 – 10 CV | 5 – 7 CV |
+| 167 760 | 11 – 14 CV | 8 – 10 CV |
+| 224 110 | 15 – 23 CV | 11 – 16 CV |
+| 261 832 | 24 CV et + | 17 CV et + |
+
+Sans genre choisi, l'application prend Taxi / VTC jusqu'à 9 places et Car / bus au-delà.
+
+| Places (conducteur compris) | Segment | Surprime |
+|---|---|---|
+| 4 | Taxi urbain | 28 243 |
+| 5 | Taxi urbain | 28 373 |
+| 6 | Taxi 6 places | 49 278 |
+| 7 | Taxi inter-urbain | 74 064 |
+| 8 | Taxi inter-urbain | 98 552 |
+| 9 | Taxi inter-urbain | 131 402 |
+| 10 – 20 | Minicar | forfait 188 274, quel que soit le nombre de places |
 | 21 et + | Autocar | `min(places − 1 ; 30) × 9 415 + max(0 ; places − 31) × 6 726` |
 
-Moins de 4 places : hors barème.
+Moins de 4 places : hors barème. La grille Excel du courtier décalait les surprimes taxi d'une
+place (6 → 74 064 …) et les tranches taxi (3 – 4, 5 – 7…) : corrigé le 14/11/2026.
 
-Vérifié chez ASS : taxi 4/5 places 5 – 7 CV = 145 960 ✅ · 8 – 10 CV = 196 133 ✅ ·
-autocar 10 CV/30 pl = 440 795 ✅ · 9 CV/38 pl = 497 292 ✅.
-Minicar : relevé sur le Pool TPV à 15 places, sur 1, 6 et 12 mois ✅ (la grille Excel indiquait 188 300).
-Valeur du courtier sans cas réel relevé : base 2 CV ⚠️.
+Pool TPV envoie au calcul `puissance`, `nbPlaces`, `genre` et `carteBrune` (true/false) ;
+la réponse (`/core/employee/policies/preview`) détaille TCA, FGA et carte brune, sans commission.
 
 ### CAT 05 — Deux et trois roues ✅ (**corrigé par rapport à Horus**)
 | Genre ASS | Code | RC annuelle |
@@ -172,6 +178,9 @@ FGA **277** · CEDEAO **300** · **Total 14 368** ✅
 145 960 × 0,0875 = **12 772** · réduction 0 · CEDEAO 0 ✅ (décompte ASS ; le Pool TPV ajoute la carte
 brune de 300 et l'Individuelle Conducteur de 1 000)
 
+### E bis — Taxi jaune-noir 5 CV, 5 places, 1 mois (simulation Pool TPV, sans Individuelle Conducteur)
+128 938 × 0,0875 = RC **11 282** · frais 2 000 · TCA **1 859** · FGA **282** · carte brune **300** · **Total 15 723** ✅
+
 ### G — Minicar 15 places, 12 CV, 1 mois (simulation Pool TPV)
 RC **36 084** + Individuelle Conducteur 1 000 = net **37 084** · frais 2 000 ·
 Taxe (37 084 + 2 000) × 14 % = **5 472** · FGA 36 084 × 2,5 % = **902** · carte brune **300** ·
@@ -197,7 +206,9 @@ Taxe (37 084 + 2 000) × 14 % = **5 472** · FGA 36 084 × 2,5 % = **902** · ca
 | Devis public TPV : 0 % de réduction, sans remise de 2 000 | ✅ | — | — |
 | Durée en jours `ROUND(jours/365 ; 3)` | ✅ (page Tarification) | ✅ | ASS |
 | Arrondi du prorata avant réduction | ✅ | ✅ | ASS |
-| TPV : Individuelle Conducteur 1 000 et carte brune 300, fixes (Pool TPV) | ✅ | — | — |
+| TPV : Individuelle Conducteur 1 000, fixe (Pool TPV) | ✅ | — | — |
+| Carte brune CEDEAO 300 facultative (case à cocher) | ✅ | — | — |
+| TPV : tranches de puissance selon le genre (taxi / car) | ✅ | — | — |
 | Taxe incluant la Prime A.G | ✅ TPV · — ailleurs (A.G non gérée) | — | ASS |
 
 « ASS » : Horus Assurances Digital ne calcule pas la prime lui-même, il reçoit la ventilation
@@ -224,10 +235,6 @@ Non couverts en direct (barème local) : TPV, durées en jours, version bureau.
 le coût de police reste 3 000 F (10 cas sur 12).
 
 ## 6. Points encore ouverts ⚠️
-- Taxi : 191 651, vu une fois chez ASS sur un « 7/8 places », est le tarif 6 places en 5 – 7 CV ;
-  128 938, vu sur 9 propositions « 6 CV », est le tarif 4/5 places en 3 – 4 CV. Puissance ou places
-  saisies à vérifier sur ces dossiers.
-- Base 2 CV : à recouper avec une simulation réelle.
-- Minicar 9 à 20 places : forfait de 188 274 vérifié à 15 places seulement ; à recouper à 9 et 20 places.
 - Règle de commission hors TPV.
+- TPV : durées autres que 1 mois et 12 mois non re-simulées sur le Pool depuis le 14/11/2026.
 - Scooter commercial (35 398) et catégories 06 à 10.

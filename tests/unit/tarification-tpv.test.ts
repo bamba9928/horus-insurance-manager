@@ -1,58 +1,101 @@
 import { describe, expect, it } from "vitest";
 import { computeTarif, TarifError } from "../../src/lib/tarification";
+import type { TpvFamille } from "../../src/lib/tarification-tpv";
 
 const tpv = (puissance: number, places: number, dureeMois = 12, frais = 2000) =>
   computeTarif({ categorie: "CAT_04_TPV", puissance, places, dureeMois, frais });
 
-/** Une puissance par ligne de la grille : 2 | 2 à 4 | 5 à 7 | 8 à 10 | 11 à 16 | 17 et plus. */
-const LIGNES_CV = [2, 3, 6, 9, 13, 18];
+const rcPool = (familleTpv: TpvFamille, puissance: number, places: number) =>
+  computeTarif({
+    categorie: "CAT_04_TPV",
+    familleTpv,
+    puissance,
+    places,
+    dureeMois: 12,
+    frais: 2000,
+  }).rcAnnuel;
 
-/** RC annuel relevé dans TARIFICATION.xlsx, par nombre de places puis ligne de puissance. */
-const GRILLE_RC: [places: number, rc: number[]][] = [
-  [4, [113109, 128938, 145960, 196133, 252483, 290205]],
-  [5, [113109, 128938, 145960, 196133, 252483, 290205]],
-  [6, [158800, 174629, 191651, 241824, 298174, 335896]],
-  [7, [183288, 199117, 216139, 266312, 322662, 360384]],
-  [8, [216138, 231967, 248989, 299162, 355512, 393234]],
-  [25, [310696, 326525, 343547, 393720, 450070, 487792]],
-  [32, [373912, 389741, 406763, 456936, 513286, 551008]],
-  [35, [394090, 409919, 426941, 477114, 533464, 571186]],
-  [40, [427720, 443549, 460571, 510744, 567094, 604816]],
-  [42, [441172, 457001, 474023, 524196, 580546, 618268]],
-  [60, [562240, 578069, 595091, 645264, 701614, 739336]],
+/**
+ * Prime nette RC sur 12 mois relevée sur le Pool TPV (préprod) le 14/11/2026,
+ * sans garantie annexe : [puissance, places, prime Pool].
+ * Taxi = genres TAXI-JAUNE NOIR, TAXI-INTER-URBAIN, VTC.
+ */
+const POOL_TAXI: [cv: number, places: number, rc: number][] = [
+  [2, 5, 113109],
+  [3, 5, 128938],
+  [5, 5, 128938],
+  [6, 5, 128938],
+  [7, 5, 145960],
+  [10, 5, 145960],
+  [11, 5, 196133],
+  [14, 5, 196133],
+  [15, 5, 252483],
+  [23, 5, 252483],
+  [24, 5, 290205],
+  [30, 5, 290205],
+  [5, 4, 128808],
+  [5, 6, 149843],
+  [7, 6, 166865],
+  [5, 7, 174629],
+  [5, 8, 199117],
+  [5, 9, 231967],
+  [7, 9, 248989],
+  [11, 9, 299162],
+  [5, 10, 288839],
+  [5, 20, 288839],
+  [10, 15, 305861],
+  [12, 15, 356034],
+  [5, 21, 288865],
+  [8, 21, 305887],
+  [5, 25, 326525],
+  [16, 25, 450070],
+  [24, 25, 487792],
+  [5, 30, 373600],
+  [5, 31, 383015],
+  [5, 32, 389741],
+  [5, 45, 477179],
+  [17, 45, 600724],
 ];
 
-/** Minicar 9 à 20 places : base de la grille + forfait de 188 274 relevé sur le Pool TPV. */
-const RC_MINICAR = [273010, 288839, 305861, 356034, 412384, 450106];
+/** Car = MINI-CAR, MINI-BUS, CAR RAPIDE, NDIAGA NDIAYE, TATA, ASHOK LEYLAND, bus. */
+const POOL_CAR: [cv: number, places: number, rc: number][] = [
+  [5, 5, 145960],
+  [8, 5, 196133],
+  [15, 5, 252483],
+  [5, 6, 166865],
+  [5, 15, 305861],
+  [7, 15, 305861],
+  [10, 15, 356034],
+  [11, 15, 412384],
+  [12, 15, 412384],
+  [15, 15, 412384],
+  [24, 15, 450106],
+];
 
-describe("TPV — grille RC annuelle du courtier", () => {
-  it.each(GRILLE_RC)("%i places", (places, attendus) => {
-    expect(LIGNES_CV.map((cv) => tpv(cv, places).rcAnnuel)).toEqual(attendus);
+describe("TPV — RC annuelle relevée sur le Pool TPV", () => {
+  it.each(POOL_TAXI)("taxi %i CV, %i places", (cv, places, rc) => {
+    expect(rcPool("TAXI", cv, places)).toBe(rc);
   });
 
-  it.each([9, 15, 20])("minicar %i places : forfait du Pool TPV", (places) => {
-    expect(LIGNES_CV.map((cv) => tpv(cv, places).rcAnnuel)).toEqual(RC_MINICAR);
+  it.each(POOL_CAR)("car %i CV, %i places", (cv, places, rc) => {
+    expect(rcPool("CAR", cv, places)).toBe(rc);
   });
 
-  it("passe au calcul par passager à partir de 21 places", () => {
-    expect(tpv(9, 21).rcAnnuel).toBe(167760 + 20 * 9415);
-    expect(tpv(9, 22).rcAnnuel).toBe(tpv(9, 21).rcAnnuel + 9415);
-  });
-
-  it("sépare 2 CV de la tranche 3 à 4 CV", () => {
-    expect(tpv(2, 5).rcAnnuel).toBe(84736 + 28373);
-    expect(tpv(4, 5).rcAnnuel).toBe(100565 + 28373);
+  it("prend la famille taxi jusqu'à 9 places, car au-delà", () => {
+    expect(tpv(5, 9).rcAnnuel).toBe(rcPool("TAXI", 5, 9));
+    expect(tpv(5, 10).rcAnnuel).toBe(rcPool("CAR", 5, 10));
   });
 });
 
 describe("TPV — décompte par durée (frais 2000)", () => {
-  it("taxi urbain 5 à 7 CV, 1 mois", () => {
-    const r = tpv(6, 5, 1);
-    expect(r.rCivil).toBe(12772);
-    expect(r.primeNette).toBe(13772);
-    expect(r.taxe).toBe(2208);
-    expect(r.fga).toBe(319);
-    expect(r.primeTotale).toBe(18599);
+  // Pool, taxi 5 CV, 5 places, 1 mois : RC 11 282, TCA 1 859, FGA 282, total 15 723 (sans Individuelle Conducteur).
+  it("taxi 5 CV, 5 places, 1 mois", () => {
+    const r = tpv(5, 5, 1);
+    expect(r.rCivil).toBe(11282);
+    expect(r.primeNette).toBe(12282);
+    expect(r.taxe).toBe(1999);
+    expect(r.fga).toBe(282);
+    expect(r.primeTotale).toBe(15723 + 1140);
   });
 
   it("minicar 8 à 10 CV, 6 mois", () => {
@@ -109,10 +152,33 @@ describe("TPV — alignement sur le Pool TPV", () => {
     expect(r.primeNette).toBe(r.rCivil);
   });
 
-  it("calcule la commission sur la RC seule", () => {
-    const r = tpv(6, 5);
-    expect(r.commission).toBe(11677);
-    expect(r.netAVerser).toBe(r.primeTotale - r.frais - r.commission);
+  it("calcule la commission sur la prime nette (RC + Individuelle Conducteur)", () => {
+    const r = tpv(7, 5);
+    expect(r.primeNette).toBe(146960);
+    expect(r.commission).toBe(11757); // 146 960 × 8 %
+  });
+
+  it("net à verser = TTC − (commission + frais), frais 2 000", () => {
+    const r = tpv(7, 5);
+    expect(r.frais).toBe(2000);
+    expect(r.primeTotale).toBe(173763);
+    expect(r.netAVerser).toBe(173763 - (11757 + 2000));
+  });
+
+  it("carte brune CEDEAO facultative : 300 de plus sur le TTC si cochée", () => {
+    const avec = tpv(7, 5);
+    const sans = computeTarif({
+      categorie: "CAT_04_TPV",
+      puissance: 7,
+      places: 5,
+      dureeMois: 12,
+      frais: 2000,
+      carteBrune: false,
+    });
+    expect(sans.carteBrune).toBe(0);
+    expect(avec.carteBrune).toBe(300);
+    expect(avec.primeTotale - sans.primeTotale).toBe(300);
+    expect(avec.netAVerser - sans.netAVerser).toBe(300);
   });
 });
 
@@ -130,10 +196,11 @@ describe("TPV — règles", () => {
     expect(r.tauxCommission).toBe(0.08);
   });
 
+  // Taux × prime nette : 6 CV taxi, 5 places → 128 938 + Individuelle Conducteur 1 000 = 129 938.
   it.each([
-    [0.09, 13136],
-    [0.1, 14596],
-    [0.085, 12407],
+    [0.09, 11694],
+    [0.1, 12994],
+    [0.085, 11045],
     [0, 0],
   ])("applique la commission saisie (%s)", (tauxCommission, attendu) => {
     const r = computeTarif({

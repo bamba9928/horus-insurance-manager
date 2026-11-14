@@ -213,7 +213,7 @@ describe("computeTarif — TPV (commission 8%, carte brune 300)", () => {
     expect(r.rCivil).toBe(145960);
     expect(r.carteBrune).toBe(300);
     expect(r.tauxCommission).toBe(0.08);
-    expect(r.commission).toBe(11677);
+    expect(r.commission).toBe(11757); // (145 960 + 1 000) × 8 %
   });
 
   it("Autocar additionne base CV + surprime places", () => {
