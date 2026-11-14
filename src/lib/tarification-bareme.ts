@@ -187,8 +187,10 @@ export const BAREME_CONSTANTS = {
   carteBrune: 300,
   /** Taux commission standard */
   commissionStandard: 0.2,
-  /** Taux commission TPV */
+  /** Taux commission TPV par défaut ; ajustable au calcul (8, 9 ou 10 % selon l'apporteur). */
   commissionTpv: 0.08,
+  /** Taux de commission TPV proposés à la saisie (§ docs/BAREME_TARIFICATION.md). */
+  commissionTpvOptions: [0.08, 0.09, 0.1] as readonly number[],
   /** Frais de police par défaut (hors TPV) */
   fraisStandardDefaut: 3000,
   /** Frais de police par défaut (TPV) */

@@ -4,6 +4,15 @@ Tous les changements notables de ce projet sont documentés ici.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et le versionnage suit [SemVer](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+### Modifié
+
+- **Tarification TPV** : le taux de commission n'est plus figé à 8 %. Il se
+  saisit sur la page TPV (8 % par défaut, 8 / 9 / 10 % suggérés selon
+  l'apporteur, au dixième de point près) ; `computeTarif` accepte un
+  `tauxCommission` optionnel et refuse un taux hors 0–100 %.
+
 ## [0.1.0] — 2026-04-18
 
 Première version publique. L'application couvre l'ensemble du cycle métier

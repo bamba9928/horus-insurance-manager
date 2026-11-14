@@ -31,7 +31,7 @@ Statut : ✅ vérifié sur les données ASS · ⚠️ incohérent ou trop peu de
 | **CEDEAO** (carte brune) | **300, fixe, TPV compris** (Pool TPV, confirmé le 08/11/2026 ; ASS : 0 pour TPV) · compté une seule fois | ✅ |
 | Arrondis | **au pair**, sur valeur EXACTE (528/528 cas « ,5 » de taxe, relevé du 07/11/2026) : 640,5 → 640, 641,5 → 642. Pas de multiplication par un taux décimal (`4575 × 0,14` vaut 640,50000000000006 en flottant) | ✅ |
 | **Prime Totale** | `Prime RC nette + Prime A.G + Frais + Taxe + FGA + CEDEAO` | ✅ 1 958 cas |
-| Commission | TPV : 8 %, 9 % ou 10 % de la Prime RC nette (selon apporteur) · hors TPV : variable (≈ 20–22 % du net), règle non déterminée | ⚠️ |
+| Commission | TPV : 8 %, 9 % ou 10 % de la Prime RC nette (selon apporteur) — **saisi sur la page TPV, 8 % par défaut** · hors TPV : variable (≈ 20–22 % du net), règle non déterminée | ⚠️ |
 
 ---
 

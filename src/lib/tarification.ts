@@ -20,7 +20,7 @@
  *
  * Spécificités TPV (CAT 4 Taxi / Minicar / Autocar, barème dans `tarification-tpv.ts`) :
  *  - RC annuel : base selon la puissance + surprime selon les places
- *  - Commission : commissionTpv (vs commissionStandard ailleurs)
+ *  - Commission : `tauxCommission` saisi, sinon commissionTpv (vs commissionStandard ailleurs)
  *  - Individuelle Conducteur fixe : dans la prime nette et la taxe, pas dans le FGA
  *  - Frais par défaut : fraisTpvDefaut
  *
@@ -83,6 +83,11 @@ export interface TarifInput {
    * calculés ici avec les règles du guichet.
    */
   rcProrataAss?: number;
+  /**
+   * Taux de commission (0.08 = 8 %), au millième près ; si non fourni, taux
+   * par défaut de la catégorie (TPV : 8 %, autres : 20 %).
+   */
+  tauxCommission?: number;
 }
 
 export interface TarifResult {
@@ -202,13 +207,24 @@ export function roundHalfEven(numerator: number, denominator: number): number {
   return quotient % 2 === 0 ? quotient : quotient + 1;
 }
 
+/** Taux de commission par défaut selon catégorie : TPV 8 %, autres 20 %. */
+export function getDefaultCommission(cat: TarifCategorie): number {
+  return isTpv(cat) ? BAREME_CONSTANTS.commissionTpv : BAREME_CONSTANTS.commissionStandard;
+}
+
 /** Taux exprimé en millièmes (0,2 → 200), pour calculer en entiers. */
 function toMillis(rate: number): number {
   return Math.round(rate * 1000);
 }
 
 export function computeTarif(input: TarifInput): TarifResult {
-  const { categorie, dureeMois, dureeJours, bonus = getDefaultBonus(categorie) } = input;
+  const {
+    categorie,
+    dureeMois,
+    dureeJours,
+    bonus = getDefaultBonus(categorie),
+    tauxCommission = getDefaultCommission(categorie),
+  } = input;
 
   // Coefficient de durée sous forme de fraction exacte (numérateur / dénominateur).
   let durationNum: number;
@@ -230,6 +246,14 @@ export function computeTarif(input: TarifInput): TarifResult {
   if (!Number.isFinite(input.frais) || input.frais < 0) throw new TarifError("Frais invalide.");
   if (!Number.isFinite(bonus) || bonus < 0 || bonus > 1)
     throw new TarifError("Réduction invalide (0 à 100 %).");
+  // Le calcul se fait en millièmes : un taux plus fin (8,25 %) serait arrondi en silence.
+  if (
+    !Number.isFinite(tauxCommission) ||
+    tauxCommission < 0 ||
+    tauxCommission > 1 ||
+    Math.abs(tauxCommission * 1000 - toMillis(tauxCommission)) > 1e-6
+  )
+    throw new TarifError("Commission invalide (0 à 100 %, au dixième de point près).");
   const frais = Math.round(input.frais);
 
   const rcAnnuel = resolveRcAnnuel(input);
@@ -257,8 +281,6 @@ export function computeTarif(input: TarifInput): TarifResult {
   const fga = roundHalfEven(rCivil * toMillis(BAREME_CONSTANTS.tauxFga), 1000);
 
   const carteBrune = BAREME_CONSTANTS.carteBrune;
-  const tauxCommission = tpv ? BAREME_CONSTANTS.commissionTpv : BAREME_CONSTANTS.commissionStandard;
-
   const primeTotale = primeNette + frais + taxe + fga + carteBrune;
   const commission = roundHalfEven(rCivil * toMillis(tauxCommission), 1000);
   const netAVerser = primeTotale - frais - commission;

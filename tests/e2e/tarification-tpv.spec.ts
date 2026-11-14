@@ -31,6 +31,22 @@ test("les frais restent modifiables", async ({ page }) => {
   await expect(page.getByText(/17\s459 FCFA/)).toBeVisible();
 });
 
+test("la commission est paramétrable, 8 % par défaut", async ({ page }) => {
+  await page.goto("/tarification/tpv");
+  await expect(page.getByLabel(/commission/i)).toHaveValue("8");
+  await page.getByLabel(/puissance fiscale/i).fill("6");
+  await page.getByLabel(/nombre de places/i).fill("5");
+  await page.getByLabel(/^durée/i).fill("12");
+  await page.getByLabel(/commission/i).fill("10");
+  await page.getByRole("button", { name: /valider le calcul/i }).click();
+
+  await expect(page.getByText("Commission (10 %)")).toBeVisible();
+  await expect(page.getByText(/14\s596 FCFA/)).toBeVisible();
+
+  await page.getByRole("button", { name: /réinitialiser/i }).click();
+  await expect(page.getByLabel(/commission/i)).toHaveValue("8");
+});
+
 test("la liste générale ne propose plus le TPV", async ({ page }) => {
   await page.goto("/tarification");
   await page.locator("#tarif-cat").click();

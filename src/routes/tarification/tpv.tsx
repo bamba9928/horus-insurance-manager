@@ -4,18 +4,30 @@
  *
  * RC annuelle = base selon la puissance + surprime selon le nombre de places.
  * Le calcul reste celui de `computeTarif`. ASS ne tarifant pas le TPV en ligne,
- * le barème local est ici la seule source.
+ * le barème local est ici la seule source. Le taux de commission est saisi
+ * (8 % par défaut ; 8, 9 ou 10 % selon l'apporteur).
  */
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Header } from "../../components/layout";
 import { ResultRow } from "../../components/ui/ResultRow";
-import { computeTarif, getDefaultFrais, type TarifResult } from "../../lib/tarification";
+import {
+  computeTarif,
+  getDefaultCommission,
+  getDefaultFrais,
+  type TarifResult,
+} from "../../lib/tarification";
+import { BAREME_CONSTANTS } from "../../lib/tarification-bareme";
 import { TPV_PLACES_MIN, TPV_SEGMENTS } from "../../lib/tarification-tpv";
 
 const CATEGORIE_TPV = "CAT_04_TPV";
 const FRAIS_DEFAUT = String(getDefaultFrais(CATEGORIE_TPV));
+/** Taux en points de pourcentage (0.08 → "8"), arrondi au dixième pour éviter 8.000000001. */
+const toPercent = (rate: number) => String(Math.round(rate * 1000) / 10);
+const COMMISSION_DEFAUT = toPercent(getDefaultCommission(CATEGORIE_TPV));
+const formatPercent = (rate: number) =>
+  `${(rate * 100).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`;
 
 const inputClass =
   "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none";
@@ -36,6 +48,7 @@ export function TarificationTpvPage() {
   const [duree, setDuree] = useState("");
   const [dureeUnite, setDureeUnite] = useState<"mois" | "jours">("mois");
   const [frais, setFrais] = useState(FRAIS_DEFAUT);
+  const [commission, setCommission] = useState(COMMISSION_DEFAUT);
 
   const [result, setResult] = useState<TarifResult | null>(null);
   const [segment, setSegment] = useState<string | null>(null);
@@ -52,6 +65,10 @@ export function TarificationTpvPage() {
       setError("Indiquez les frais.");
       return;
     }
+    if (commission.trim() === "") {
+      setError("Indiquez le taux de commission.");
+      return;
+    }
     const nbPlaces = Number(places);
     try {
       setResult(
@@ -63,6 +80,8 @@ export function TarificationTpvPage() {
             ? { dureeJours: Number(duree) }
             : { dureeMois: Number(duree) }),
           frais: Number(frais),
+          // Saisi en %, arrondi au millième pour neutraliser l'erreur flottante (8.1 / 100).
+          tauxCommission: Math.round(Number(commission.replace(",", ".")) * 10) / 1000,
         }),
       );
       setSegment(findSegmentLabel(nbPlaces));
@@ -77,6 +96,7 @@ export function TarificationTpvPage() {
     setDuree("");
     setDureeUnite("mois");
     setFrais(FRAIS_DEFAUT);
+    setCommission(COMMISSION_DEFAUT);
     setResult(null);
     setSegment(null);
     setError(null);
@@ -166,6 +186,27 @@ export function TarificationTpvPage() {
                   className={inputClass}
                 />
               </div>
+              <div>
+                <label htmlFor="tpv-commission" className={labelClass}>
+                  Commission (%) *
+                </label>
+                <input
+                  id="tpv-commission"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.1}
+                  list="tpv-commission-options"
+                  value={commission}
+                  onChange={(e) => setCommission(e.target.value)}
+                  className={inputClass}
+                />
+                <datalist id="tpv-commission-options">
+                  {BAREME_CONSTANTS.commissionTpvOptions.map((rate) => (
+                    <option key={rate} value={toPercent(rate)} />
+                  ))}
+                </datalist>
+              </div>
             </div>
 
             <div className="flex gap-3">
@@ -219,7 +260,7 @@ export function TarificationTpvPage() {
                 <ResultRow label="Carte brune" value={result.carteBrune} />
                 <ResultRow label="Prime Totale" value={result.primeTotale} highlight />
                 <ResultRow
-                  label={`Commission (${Math.round(result.tauxCommission * 100)} %)`}
+                  label={`Commission (${formatPercent(result.tauxCommission)})`}
                   value={result.commission}
                 />
                 <ResultRow
