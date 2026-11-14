@@ -92,3 +92,22 @@ export const TPV_SEGMENTS: { min: number; max?: number; label: string }[] = [
   { min: 10, max: 20, label: "Minicar" },
   { min: 21, label: "Autocar" },
 ];
+
+/** Libellé d'un car / bus de moins de 10 places (les libellés taxi ne s'y appliquent pas). */
+export const TPV_LABEL_CAR_PETIT = "Car / minibus";
+
+/** Famille retenue : celle choisie, sinon taxi jusqu'à 9 places et car au-delà. */
+export function resolveFamilleTpv(places: number, famille?: TpvFamille): TpvFamille {
+  return famille ?? (places <= TPV_FAMILLE_PLACES_MAX_TAXI ? "TAXI" : "CAR");
+}
+
+/** Libellé affiché selon le nombre de places et la famille de genre. */
+export function getTpvSegmentLabel(places: number, famille?: TpvFamille): string | null {
+  const segment = TPV_SEGMENTS.find(
+    (s) => places >= s.min && (s.max === undefined || places <= s.max),
+  );
+  if (!segment) return null;
+  if (resolveFamilleTpv(places, famille) === "CAR" && places <= TPV_FAMILLE_PLACES_MAX_TAXI)
+    return TPV_LABEL_CAR_PETIT;
+  return segment.label;
+}

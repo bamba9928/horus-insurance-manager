@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeTarif, TarifError } from "../../src/lib/tarification";
-import type { TpvFamille } from "../../src/lib/tarification-tpv";
+import { getTpvSegmentLabel, type TpvFamille } from "../../src/lib/tarification-tpv";
 
 const tpv = (puissance: number, places: number, dureeMois = 12, frais = 2000) =>
   computeTarif({ categorie: "CAT_04_TPV", puissance, places, dureeMois, frais });
@@ -237,5 +237,21 @@ describe("TPV — règles", () => {
 
   it("refuse une puissance sous le barème", () => {
     expect(() => tpv(1, 5)).toThrow(/1 CV/);
+  });
+});
+
+describe("TPV — libellé selon le genre", () => {
+  it.each([
+    [5, undefined, "Taxi urbain"],
+    [5, "TAXI", "Taxi urbain"],
+    [5, "CAR", "Car / minibus"],
+    [9, "CAR", "Car / minibus"],
+    [9, undefined, "Taxi inter-urbain"],
+    [15, undefined, "Minicar"],
+    [15, "CAR", "Minicar"],
+    [45, "CAR", "Autocar"],
+    [3, undefined, null],
+  ] as const)("%i places, genre %s : %s", (places, famille, label) => {
+    expect(getTpvSegmentLabel(places, famille)).toBe(label);
   });
 });
