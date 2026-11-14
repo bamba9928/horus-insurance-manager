@@ -20,9 +20,9 @@ import {
 } from "../../lib/tarification";
 import { BAREME_CONSTANTS } from "../../lib/tarification-bareme";
 import {
+  getTpvSegmentLabel,
   TPV_FAMILLES,
   TPV_PLACES_MIN,
-  TPV_SEGMENTS,
   type TpvFamille,
 } from "../../lib/tarification-tpv";
 
@@ -37,13 +37,6 @@ const formatPercent = (rate: number) =>
 const inputClass =
   "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-[#614e1a] focus:ring-1 focus:ring-[#614e1a] focus:outline-none";
 const labelClass = "block text-sm font-medium text-gray-700";
-
-function findSegmentLabel(places: number): string | null {
-  const segment = TPV_SEGMENTS.find(
-    (s) => places >= s.min && (s.max === undefined || places <= s.max),
-  );
-  return segment?.label ?? null;
-}
 
 export function TarificationTpvPage() {
   const { t } = useTranslation();
@@ -93,7 +86,7 @@ export function TarificationTpvPage() {
           carteBrune,
         }),
       );
-      setSegment(findSegmentLabel(nbPlaces));
+      setSegment(getTpvSegmentLabel(nbPlaces, famille || undefined));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur de calcul.");
     }

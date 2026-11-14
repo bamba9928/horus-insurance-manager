@@ -62,6 +62,20 @@ test("la commission est paramétrable, 8 % par défaut", async ({ page }) => {
   await expect(page.getByLabel(/commission/i)).toHaveValue("8");
 });
 
+test("le genre car n'affiche pas de libellé taxi", async ({ page }) => {
+  await page.goto("/tarification/tpv");
+  await page.getByLabel(/^genre/i).selectOption("CAR");
+  await page.getByLabel(/puissance fiscale/i).fill("5");
+  await page.getByLabel(/nombre de places/i).fill("5");
+  await page.getByLabel(/^durée/i).fill("12");
+  await page.getByRole("button", { name: /valider le calcul/i }).click();
+
+  await expect(page.getByText("Car / minibus", { exact: true })).toBeVisible();
+  await expect(page.getByText("Taxi urbain", { exact: true })).toHaveCount(0);
+  // Tranche car 5 à 7 CV : 117 587 + 28 373.
+  await expect(page.getByText(/145\s960 FCFA/)).toHaveCount(2);
+});
+
 test("la liste générale ne propose plus le TPV", async ({ page }) => {
   await page.goto("/tarification");
   await page.locator("#tarif-cat").click();

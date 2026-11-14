@@ -37,8 +37,8 @@ import {
   TRICYCLE_RC,
 } from "./tarification-bareme";
 import {
+  resolveFamilleTpv,
   TPV_BASE_RC,
-  TPV_FAMILLE_PLACES_MAX_TAXI,
   TPV_INDIVIDUELLE_CONDUCTEUR,
   TPV_MINICAR,
   TPV_PLACES_MIN,
@@ -180,8 +180,10 @@ function resolveRcAnnuel(input: TarifInput): number {
     if (puissance == null || puissance <= 0) throw new TarifError("Puissance fiscale requise.");
     if (places == null || !Number.isInteger(places) || places < TPV_PLACES_MIN)
       throw new TarifError(`Nombre de places requis pour le TPV (minimum ${TPV_PLACES_MIN}).`);
-    const famille = input.familleTpv ?? (places <= TPV_FAMILLE_PLACES_MAX_TAXI ? "TAXI" : "CAR");
-    const bracket = findBracket(TPV_BASE_RC[famille], puissance);
+    const bracket = findBracket(
+      TPV_BASE_RC[resolveFamilleTpv(places, input.familleTpv)],
+      puissance,
+    );
     if (!bracket) throw new TarifError(`Aucune tranche définie pour ${puissance} CV (TPV).`);
     return bracket.rc + resolveSurprimeTpv(places);
   }
