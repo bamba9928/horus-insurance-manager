@@ -25,7 +25,7 @@ Statut : ✅ vérifié sur les données ASS · ⚠️ incohérent ou trop peu de
 | **Prime RC nette** | `ROUND(RC prorata × coef. réduction)` — voir §3 | ✅ |
 | Réduction (affichée) | `RC prorata − Prime RC nette` | ✅ |
 | Prime A.G (garanties annexes) | somme des garanties optionnelles (0 si RC seule) · TPV : **Individuelle Conducteur 1 000, fixe** quelle que soit la durée (Pool TPV, confirmé le 08/11/2026) | ✅ |
-| Coût de la police (frais) | saisi : 3 000 standard · TPV : **2 000 par défaut, modifiable** (vu chez ASS : 0 / 1 000 / 2 000) · TPC souvent 1 000 | ✅ |
+| Coût de la police (frais) | saisi : 3 000 standard · TPV : **1 000 par défaut, modifiable** (depuis le 14/11/2026 ; 2 000 avant) (vu chez ASS : 0 / 1 000 / 2 000) · TPC souvent 1 000 | ✅ |
 | **Taxe** | `ROUND((Prime RC nette + Prime A.G + Frais) × 14 %)` | ✅ 1 958 cas |
 | **FGA** | `ROUND(Prime RC nette × 2,5 %)` (pas sur A.G) | ✅ |
 | **CEDEAO** (carte brune) | **300, facultative** (case cochée par défaut, comme sur le Pool TPV), ajoutée au TTC · compté une seule fois | ✅ |

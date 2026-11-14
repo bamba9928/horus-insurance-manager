@@ -193,6 +193,6 @@ export const BAREME_CONSTANTS = {
   commissionTpvOptions: [0.08, 0.09, 0.1] as readonly number[],
   /** Frais de police par défaut (hors TPV) */
   fraisStandardDefaut: 3000,
-  /** Frais de police par défaut (TPV) */
-  fraisTpvDefaut: 2000,
+  /** Frais de police par défaut (TPV), modifiables à la saisie */
+  fraisTpvDefaut: 1000,
 };
