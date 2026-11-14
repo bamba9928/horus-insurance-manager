@@ -52,7 +52,7 @@ describe("computeDevisRapide", () => {
     expect(devis.aPayer).toBe(devis.tarif.primeTotale);
   });
 
-  it("n'applique ni réduction ni remise au TPV, avec 2000 FCFA de frais", () => {
+  it("n'applique ni réduction ni remise au TPV, avec 1000 FCFA de frais", () => {
     const devis = computeDevisRapide({
       genre: "CAT_04_TPV",
       puissance: 7,
@@ -61,9 +61,9 @@ describe("computeDevisRapide", () => {
     });
 
     expect(devis.bonus).toBe(0);
-    expect(devis.frais).toBe(2000);
+    expect(devis.frais).toBe(1000);
     expect(devis.remiseAPayer).toBe(0);
-    expect(devis.aPayer).toBe(173763);
+    expect(devis.aPayer).toBe(172623);
   });
 });
 
